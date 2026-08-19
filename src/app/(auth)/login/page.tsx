@@ -10,6 +10,7 @@ import { Card } from "@/components/ui/card";
 import { Input, Label, FieldError } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
+import { GoogleAuthButton } from "@/components/auth/google-auth-button";
 import { loginSchema, type LoginInput } from "@/lib/validation";
 import { apiFetch } from "@/lib/api-client";
 
@@ -90,6 +91,16 @@ function LoginForm() {
           Log in
         </Button>
       </form>
+
+      <div className="mt-6 flex items-center gap-3">
+        <div className="h-px flex-1 bg-line" />
+        <span className="text-caption text-muted">or</span>
+        <div className="h-px flex-1 bg-line" />
+      </div>
+
+      <div className="mt-6">
+        <GoogleAuthButton />
+      </div>
 
       <p className="mt-6 text-center text-body-sm text-muted">
         Don&apos;t have an account?{" "}
