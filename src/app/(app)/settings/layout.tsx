@@ -1,0 +1,14 @@
+import type { ReactNode } from "react";
+import { SettingsNav } from "@/components/settings/settings-nav";
+
+export default function SettingsLayout({ children }: { children: ReactNode }) {
+  return (
+    <div>
+      <h1 className="text-heading font-bold text-ink">Settings</h1>
+      <div className="mt-8 grid gap-8 lg:grid-cols-[200px_minmax(0,1fr)]">
+        <SettingsNav />
+        <div>{children}</div>
+      </div>
+    </div>
+  );
+}

@@ -1,0 +1,273 @@
+@import "tailwindcss";
+
+/*
+ * Design tokens matched to leonardo.ai's real, live design system (measured
+ * via computed styles, not an authored doc) — pure black background, solid
+ * white pill CTAs, and a single violet (#6E60EE) accent used for text/
+ * badges/links only, never as a button fill. Single
+ * source of truth for color/type/radius/shadow values — components should
+ * always reach for a Tailwind utility generated from one of these tokens
+ * (bg-surface, text-muted, rounded-2xl, shadow-glow-md, text-body, ...)
+ * rather than hardcoding a hex value or pixel size.
+ *
+ * Tailwind v4 is CSS-first: every key below auto-generates a matching
+ * utility class (no tailwind.config.ts needed). The default numeric
+ * spacing scale (p-1..p-32 at a 4px step) already matches the doc's 4px
+ * grid exactly, so it isn't redeclared here. Breakpoints likewise use
+ * Tailwind's stock sm(640)/md(768)/lg(1024), matching the doc's tiers.
+ */
+@theme {
+  /* Surfaces */
+  --color-surface: #000000; /* Background Primary — pure black, matches leonardo.ai */
+  --color-surface-2: #111111; /* Background Secondary (cards) */
+  --color-surface-3: #1a1a1a; /* Background Tertiary (elevated / card hover) */
+  --color-surface-dark: #141414; /* Input fields */
+  --color-overlay: #000000;
+  --color-dropdown-hover: #1f1f1f; /* Hover states, dropdowns */
+
+  /* App-shell background — the authenticated app (dashboard/generate/
+     gallery/settings, see AppShell) uses a slightly softer near-black than
+     the marketing site's pure --color-surface, closer to ArtCraft's own
+     studio UI (#121212 body / #1a1a1a sidebar, measured live). Kept as its
+     own token rather than changing --color-surface globally so the
+     marketing pages stay pure black, unaffected. */
+  --color-surface-app: #121212;
+
+  /* Text */
+  --color-ink: #fafafa; /* Text Primary — off-white */
+  --color-ink-soft: #fafafa;
+  --color-ink-softer: #fafafa;
+  --color-muted: #a1a1aa; /* Text Secondary */
+  --color-text-tertiary: #71717a; /* Labels, captions */
+
+  /* Borders — translucent white, not opaque gray */
+  --color-line: rgb(255 255 255 / 0.1); /* Default border */
+  --color-border-subtle: rgb(255 255 255 / 0.06); /* Subtle dividers */
+  --color-border-strong: rgb(255 255 255 / 0.15); /* Focus rings, active borders */
+
+  /* Brand — leonardo.ai's real accent violet. Used for text accents, badges,
+     links, and focus/active states — never as a button fill (their own
+     primary CTA is a solid white pill, see button.tsx). */
+  --color-brand: #6e60ee;
+  --color-brand-hover: #8478f2;
+  --color-brand-active: #5548c8;
+
+  /* Status */
+  --color-success: #22c55e;
+  --color-warning: #f59e0b;
+  --color-accent: #ef4444; /* error/destructive */
+  --color-info: #3b82f6;
+
+  /* Fonts (next/font variables set on <html> in layout.tsx) */
+  --font-sans: var(--font-geist-sans), -apple-system, BlinkMacSystemFont,
+    "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: var(--font-geist-mono), "SF Mono", Monaco, "Cascadia Code",
+    "Roboto Mono", Consolas, "Courier New", monospace;
+
+  /* Radius scale — mapped by role from the doc's §2.3 table (buttons/badges
+     stay fully pill via radius-full; inputs and gallery tiles at 24px;
+     cards at 32px). */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-2xl: 32px;
+  --radius-full: 9999px;
+
+  /* Shadows — plain black depth shadows + soft localized gold/white glows,
+     per doc §2.2 (no more purple-tinted glow). */
+  --shadow-raised: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+  --shadow-floating: 0 8px 30px -4px rgb(0 0 0 / 0.5);
+  --shadow-modal: 0 20px 60px -12px rgb(0 0 0 / 0.6);
+  --shadow-inset: inset 0 1px 0 0 rgb(255 255 255 / 0.05);
+  --shadow-card: 0 4px 12px rgb(0 0 0 / 0.4), inset 0 1px 0 0 rgb(255 255 255 / 0.05);
+  --shadow-glow-sm: 0 0 20px rgb(110 96 238 / 0.15);
+  --shadow-glow-md: 0 0 40px rgb(110 96 238 / 0.2);
+  --shadow-glow-lg: 0 0 80px rgb(110 96 238 / 0.15);
+  --shadow-glow-white: 0 0 30px rgb(255 255 255 / 0.05);
+
+  /* Gradients — single-hue violet, not a multi-hue blend (leonardo.ai's own
+     accent text is solid, not gradient-clipped — see .text-gradient below). */
+  --gradient-primary: linear-gradient(135deg, #6e60ee 0%, #5548c8 100%);
+  --gradient-primary-radial: radial-gradient(circle at 30% 30%, #8478f2 0%, #6e60ee 100%);
+  --gradient-hero-glow: radial-gradient(ellipse 80% 50% at 50% -20%, rgb(110 96 238 / 0.15) 0%, transparent 100%);
+
+  /* Type scale: each pairs font-size with its documented line-height (and,
+     where the doc specifies one, letter-spacing) in a single utility.
+     Font-weight is intentionally NOT bundled here — apply it explicitly via
+     font-normal/medium/semibold/bold alongside these.
+     Sizes are the doc's §3.2 scale, mapped onto existing token *names* so
+     call sites don't need touching: display=display-1 (hero only),
+     heading=h2 "Section title" (every current text-heading call site is a
+     section heading), subheading=h3 "Card title" (also used for app-page
+     headers), feature-title=h4 "Subsection" (card/step titles). */
+  --text-display: 72px;
+  --text-display--line-height: 1;
+  --text-display--letter-spacing: -0.03em;
+
+  --text-heading: 36px;
+  --text-heading--line-height: 1.15;
+  --text-heading--letter-spacing: -0.01em;
+
+  --text-subheading: 28px;
+  --text-subheading--line-height: 1.2;
+  --text-subheading--letter-spacing: -0.01em;
+
+  --text-feature-title: 22px;
+  --text-feature-title--line-height: 1.3;
+
+  --text-body-lg: 18px;
+  --text-body-lg--line-height: 1.7;
+
+  --text-body: 16px;
+  --text-body--line-height: 1.65;
+
+  --text-body-sm: 14px;
+  --text-body-sm--line-height: 1.6;
+
+  --text-label: 14px;
+  --text-label--line-height: 20px;
+
+  --text-caption: 12px;
+  --text-caption--line-height: 1.5;
+  --text-caption--letter-spacing: 0.02em;
+
+  --text-input: 14px;
+  --text-input--line-height: 20px;
+
+  /* Motion — landing-page-only decorative animation. Every utility built
+     from these is applied with a motion-safe:/motion-reduce: variant at
+     the call site, never bare, so prefers-reduced-motion always wins.
+     Scroll/viewport/spring animation lives in Framer Motion components
+     instead (see src/lib/animations.ts) — these keyframes are only for
+     effects that don't need JS (float, marquee, fade-up fallback). */
+  --animate-glow-float: glow-float 6s ease-in-out infinite;
+  --animate-marquee: marquee 32s linear infinite;
+  --animate-fade-up: fade-up 600ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes glow-float {
+  0%,
+  100% {
+    transform: translateY(-10px) rotate(-2deg);
+  }
+  50% {
+    transform: translateY(10px) rotate(2deg);
+  }
+}
+
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@layer base {
+  :root {
+    color-scheme: dark;
+  }
+
+  * {
+    border-color: var(--color-line);
+  }
+
+  html {
+    background: var(--color-surface);
+  }
+
+  body {
+    background: var(--color-surface);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  ::selection {
+    background: var(--color-brand);
+    color: var(--color-surface);
+  }
+
+  /* Belt-and-suspenders on top of the per-component motion-safe:/
+     motion-reduce: variants used everywhere above: forces any animation or
+     transition (ours or a future one) to be effectively instant when the
+     user has asked the OS for reduced motion. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-brand);
+    outline-offset: 2px;
+  }
+}
+
+@layer utilities {
+  /* Shared page container: max-width 1440px, 32/20/16px padding across
+     desktop/tablet/mobile. */
+  .container-page {
+    width: 100%;
+    max-width: 1440px;
+    margin-inline: auto;
+    padding-inline: 16px;
+  }
+  @media (min-width: 640px) {
+    .container-page {
+      padding-inline: 20px;
+    }
+  }
+  @media (min-width: 1024px) {
+    .container-page {
+      padding-inline: 32px;
+    }
+  }
+
+  /* Accent text — used for hero accent words, stat numbers, wordmarks.
+     leonardo.ai's own accent text is solid violet, not gradient-clipped. */
+  .text-gradient {
+    color: var(--color-brand);
+  }
+
+  /* Glassmorphism surface — floating toolbars, demo widgets, overlays. */
+  .glass {
+    background: rgb(10 10 10 / 0.7);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgb(255 255 255 / 0.06);
+  }
+
+  /* Marketing-only heading treatment — leonardo.ai's own real app UI (not
+     just its marketing site) stays normal-case, so this is scoped to a
+     wrapper class applied in (marketing)/layout.tsx rather than a global
+     h1..h4 base rule that would also hit the dashboard/generate/settings
+     shell. */
+  .marketing-headings h1,
+  .marketing-headings h2,
+  .marketing-headings h3,
+  .marketing-headings h4 {
+    text-transform: uppercase;
+    font-weight: 900;
+    letter-spacing: -0.02em;
+  }
+}

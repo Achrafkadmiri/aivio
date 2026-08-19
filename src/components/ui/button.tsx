@@ -1,0 +1,65 @@
+import { forwardRef, type ButtonHTMLAttributes } from "react";
+import { Loader2 } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+export type ButtonVariant = "primary" | "secondary" | "ghost" | "circular";
+export type ButtonSize = "default" | "sm" | "icon" | "icon-circular";
+
+// Focus ring comes from the global :focus-visible rule in globals.css —
+// no need to repeat it on every interactive primitive.
+const base =
+  "inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-full text-label font-semibold " +
+  "transition-[background-color,border-color,box-shadow,transform] duration-300 ease-out disabled:pointer-events-none disabled:opacity-40";
+
+// primary = leonardo.ai's real Primary Button: solid white pill, black text
+// — their brand violet never fills a button, it's reserved for text/badge/
+// link accents (see globals.css). secondary = their ghost pill ("Tutorial"
+// in the real nav): transparent + translucent white border.
+const variants: Record<ButtonVariant, string> = {
+  primary:
+    "border-0 bg-white text-black shadow-[0_0_20px_rgb(255_255_255_/_0.1)] hover:bg-white/90 hover:shadow-[0_0_30px_rgb(255_255_255_/_0.15)] hover:scale-[1.02] active:scale-[0.98] disabled:bg-line disabled:text-muted disabled:shadow-none disabled:hover:scale-100",
+  secondary:
+    "border border-line bg-transparent text-ink hover:bg-white/5 hover:border-border-strong active:scale-[0.98] disabled:text-muted",
+  ghost:
+    "rounded-full border-0 bg-transparent text-ink-soft hover:bg-white/8 hover:text-ink active:bg-white/12",
+  circular:
+    "border-0 rounded-full bg-white/5 text-muted hover:bg-white/10 hover:text-ink-soft active:scale-95",
+};
+
+const sizes: Record<ButtonSize, string> = {
+  default: "px-7 py-3.5 sm:px-6 sm:py-3",
+  sm: "px-4 py-2",
+  icon: "size-11 p-0 sm:size-10",
+  "icon-circular": "size-11 p-0 sm:size-9",
+};
+
+export function buttonVariants(
+  options: { variant?: ButtonVariant; size?: ButtonSize; className?: string } = {},
+) {
+  const { variant = "primary", size = "default", className } = options;
+  return cn(base, variants[variant], sizes[size], className);
+}
+
+export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+  variant?: ButtonVariant;
+  size?: ButtonSize;
+  loading?: boolean;
+}
+
+export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
+  ({ className, variant, size, loading, disabled, children, ...props }, ref) => {
+    return (
+      <button
+        ref={ref}
+        className={buttonVariants({ variant, size, className })}
+        disabled={disabled || loading}
+        aria-busy={loading || undefined}
+        {...props}
+      >
+        {loading && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
+        {children}
+      </button>
+    );
+  },
+);
+Button.displayName = "Button";
