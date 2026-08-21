@@ -5,7 +5,7 @@ import { gridContainerVariants, gridItemVariants } from "@/lib/animations";
 import { getNanoBananaImage } from "@/lib/nano-banana-showcase";
 import { cn } from "@/lib/utils";
 
-// "Why creatives choose Aivio" — leonardo.ai's real section has four cards;
+// "Why creatives choose Vixerra" — leonardo.ai's real section has four cards;
 // each here is backed by an actual Nano Banana example output rather than
 // an icon or invented stat.
 const REASONS = [
@@ -41,9 +41,9 @@ export function CapabilitiesGrid() {
         transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
         className="mx-auto max-w-2xl text-center"
       >
-        <h2 className="text-heading font-bold text-ink">Why creatives choose Aivio</h2>
+        <h2 className="text-heading font-bold text-ink">Why creatives choose Vixerra</h2>
         <p className="mt-4 text-body text-muted">
-          Most AI tools promise fast results. Aivio is built for the work that comes after —
+          Most AI tools promise fast results. Vixerra is built for the work that comes after —
           shots you can actually ship.
         </p>
       </motion.div>

@@ -15,7 +15,7 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "v3b.fal.media" },
       { protocol: "https", hostname: "storage.googleapis.com" },
       { protocol: "https", hostname: "picsum.photos" },
-      { protocol: "http", hostname: "localhost", port: "4000" }, // backend dev, uploads
+      { protocol: "https", hostname: "pdbhvyklkrasersozbqe.supabase.co" }, // R2-backed uploads, served via the Edge Function
     ],
   },
   async rewrites() {

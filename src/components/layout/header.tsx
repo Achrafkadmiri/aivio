@@ -1,7 +1,11 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useMe } from "@/hooks/use-me";
+import { cn } from "@/lib/utils";
+import { buttonVariants } from "@/components/ui/button";
 import { Logo } from "./logo";
 import { MobileNav } from "./mobile-nav";
 
@@ -12,41 +16,67 @@ const NAV_LINKS = [
   { href: "/gallery", label: "Gallery" },
 ];
 
-// White-pill / ghost-pill treatment mirrors leonardo.ai's own transparent,
-// borderless navbar (Log in = solid white pill, other links = ghost pill).
-const primaryPill =
-  "inline-flex items-center justify-center rounded-full bg-white px-6 py-2.5 text-label font-semibold text-black transition-transform duration-300 hover:scale-[1.02] active:scale-[0.98]";
-const ghostPill =
-  "rounded-full px-4 py-2 text-label font-medium text-white/80 transition-colors hover:bg-white/5 hover:text-white";
-
 export function Header() {
   const { data: user } = useMe();
   const isAuthed = Boolean(user);
+  const pathname = usePathname();
+
+  // Flat and transparent over the hero, picks up a hairline border + blur
+  // once content scrolls underneath — a static glass bar on every page
+  // (including short ones with no hero) reads as boilerplate.
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 12);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   return (
-    <header className="sticky top-0 z-20 bg-transparent">
+    <header
+      className={cn(
+        "sticky top-0 z-20 border-b transition-colors duration-300",
+        scrolled ? "border-line bg-surface/75 backdrop-blur-lg" : "border-transparent bg-transparent",
+      )}
+    >
       <div className="container-page flex h-16 items-center justify-between">
         <Logo />
 
-        <nav className="hidden items-center gap-1 lg:flex">
-          {NAV_LINKS.map((link) => (
-            <Link key={link.href} href={link.href} className={ghostPill}>
-              {link.label}
-            </Link>
-          ))}
+        <nav className="hidden items-center gap-8 lg:flex">
+          {NAV_LINKS.map((link) => {
+            const active = pathname === link.href;
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={cn(
+                  "relative py-2 text-body-sm font-medium transition-colors",
+                  active ? "text-ink" : "text-muted hover:text-ink",
+                )}
+              >
+                {link.label}
+                {active && (
+                  <span className="absolute inset-x-0 -bottom-px h-px bg-brand" aria-hidden="true" />
+                )}
+              </Link>
+            );
+          })}
         </nav>
 
-        <div className="hidden items-center gap-2 lg:flex">
+        <div className="hidden items-center gap-5 lg:flex">
           {isAuthed ? (
-            <Link href="/dashboard" className={primaryPill}>
+            <Link href="/dashboard" className={buttonVariants({ size: "sm" })}>
               Dashboard
             </Link>
           ) : (
             <>
-              <Link href="/login" className={ghostPill}>
+              <Link
+                href="/login"
+                className="text-body-sm font-medium text-muted transition-colors hover:text-ink"
+              >
                 Log in
               </Link>
-              <Link href="/signup" className={primaryPill}>
+              <Link href="/signup" className={buttonVariants({ size: "sm" })}>
                 Get started
               </Link>
             </>

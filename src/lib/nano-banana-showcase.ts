@@ -1,6 +1,6 @@
 // DUPLIQUÉ dans aiVideo-backend/src/lib/nano-banana-showcase.ts — garder synchronisé.
 // Real, publicly hosted example outputs from Google's Nano Banana image
-// model family — the same model Aivio itself offers as
+// model family — the same model Vixerra itself offers as
 // "@cf/google/nano-banana-2-lite" (see cloudflare-models.ts). No generated
 // output exists yet in this app's own database (the one Nano Banana row in
 // dev.db is a failed seed generation with no resultUrl), so these are

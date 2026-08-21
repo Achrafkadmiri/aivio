@@ -45,7 +45,7 @@ export function Footer() {
       </div>
       <div className="container-page flex flex-col items-center justify-between gap-4 border-t border-line py-6 sm:flex-row">
         <p className="text-caption text-muted">
-          © {new Date().getFullYear()} Aivio. All rights reserved.
+          © {new Date().getFullYear()} Vixerra. All rights reserved.
         </p>
         <p className="text-caption text-muted">Built with Next.js on Cloudflare Workers AI.</p>
       </div>

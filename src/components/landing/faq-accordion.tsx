@@ -11,7 +11,7 @@ import { TIER_INFO } from "@/lib/constants";
 // than invented claims.
 const FAQS = [
   {
-    question: "What models does Aivio support?",
+    question: "What models does Vixerra support?",
     answer:
       "Several video models — Seedance 2.5 and 2.0, Google's Veo 3.1, and more from ByteDance, Black Forest Labs, and xAI — and several image models, including Recraft, Stable Diffusion, and Google's Nano Banana — the model behind the example images throughout this page.",
   },

@@ -23,7 +23,7 @@ export function UseCasesGallery() {
         <Reveal className="mx-auto max-w-2xl text-center">
           <h2 className="text-heading font-bold text-ink">A closer look</h2>
           <p className="mt-4 text-body text-muted">
-            Real output from Nano Banana, one of the image models built into Aivio. Hover to see
+            Real output from Nano Banana, one of the image models built into Vixerra. Hover to see
             the prompt.
           </p>
         </Reveal>

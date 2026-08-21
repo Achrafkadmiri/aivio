@@ -28,7 +28,7 @@ export function PublicGalleryClient() {
           Community <span className="text-gradient">gallery</span>
         </h1>
         <p className="mt-4 text-body text-muted">
-          A public showcase of generations from the Aivio community.
+          A public showcase of generations from the Vixerra community.
         </p>
       </div>
       <div className="mt-12">

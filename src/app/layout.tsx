@@ -19,11 +19,11 @@ const mono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "Aivio — AI Video & Image Generation",
-    template: "%s · Aivio",
+    default: "Vixerra — AI Video & Image Generation",
+    template: "%s · Vixerra",
   },
   description:
-    "Generate cinematic video and imagery from text, images, or audio in seconds. Aivio is an AI creative studio for teams that ship fast.",
+    "Generate cinematic video and imagery from text, images, or audio in seconds. Vixerra is an AI creative studio for teams that ship fast.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

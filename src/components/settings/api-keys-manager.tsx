@@ -74,7 +74,7 @@ export function ApiKeysManager() {
         <div>
           <h2 className="text-subheading font-semibold text-ink">API keys</h2>
           <p className="mt-1 text-body-sm text-muted">
-            Use these to call the Aivio API from your own apps.
+            Use these to call the Vixerra API from your own apps.
           </p>
         </div>
         <Button onClick={() => setCreateOpen(true)}>

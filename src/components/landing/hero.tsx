@@ -10,7 +10,7 @@ import { heroContainerVariants, heroWordVariants } from "@/lib/animations";
 
 // Two-tone split mirroring leonardo.ai's own hero headline structure
 // ("THE AI IMAGE GENERATOR FOR AMBITIOUS CREATIVES") — adapted to what
-// Aivio actually does (video-first, not image-first).
+// Vixerra actually does (video-first, not image-first).
 const TITLE_WORDS_WHITE = ["THE", "AI", "VIDEO"];
 const TITLE_WORDS_ACCENT = ["GENERATOR", "FOR", "AMBITIOUS", "CREATORS"];
 
@@ -102,7 +102,7 @@ export function Hero() {
             transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1], delay: 0.6 }}
             className="mx-auto mt-6 max-w-xl text-body-lg text-muted"
           >
-            Describe a scene, animate a photo, or drop in audio. Aivio generates
+            Describe a scene, animate a photo, or drop in audio. Vixerra generates
             broadcast-ready video and imagery in minutes — no crew, no timeline,
             no waiting.
           </motion.p>

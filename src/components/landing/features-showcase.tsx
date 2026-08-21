@@ -8,7 +8,7 @@ import { gridContainerVariants, gridItemVariants } from "@/lib/animations";
 // "AI [video] generator features that go beyond the basics" — leonardo.ai's
 // own Create/Refine/Scale features section (separate from their linear
 // "How it works" steps — this used to be merged into how-it-works.tsx here,
-// now split to match their real page structure). Populated with real Aivio
+// now split to match their real page structure). Populated with real Vixerra
 // features only — the reference site's own example invents a couple of
 // items (Background Removal, Upscale) that don't exist in this app; these
 // are swapped for real equivalents (AI prompt enhancement, reference-guided
@@ -47,7 +47,7 @@ export function FeaturesShowcase() {
           Features that go beyond the basics
         </h2>
         <p className="mt-4 text-body text-muted">
-          Aivio&apos;s AI tools help creators move from idea to finished shot without losing
+          Vixerra&apos;s AI tools help creators move from idea to finished shot without losing
           quality or control.
         </p>
       </Reveal>
