@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
+import { useInvalidateCredits } from "@/hooks/use-credits";
 import { useForm, Controller, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Clock, Monitor, RectangleHorizontal, ScanFace, SlidersHorizontal, type LucideIcon } from "lucide-react";
@@ -73,7 +74,7 @@ export function DynamicModelForm<T extends string>({
   busy: boolean;
 }) {
   const { toast } = useToast();
-  const queryClient = useQueryClient();
+  const invalidateCredits = useInvalidateCredits();
   const [preview, setPreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
 
@@ -138,7 +139,7 @@ export function DynamicModelForm<T extends string>({
     },
     onSuccess: (data) => {
       onCreated(data.id);
-      queryClient.invalidateQueries({ queryKey: ["usage"] });
+      invalidateCredits();
     },
     onError: (err: Error) => {
       toast({ title: "Couldn't start generation", description: err.message, variant: "error" });

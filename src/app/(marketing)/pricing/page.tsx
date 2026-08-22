@@ -18,7 +18,7 @@ const FAQS = [
   },
   {
     q: "Do unused credits roll over?",
-    a: "Up to 50% of unused monthly credits roll over to the next month on paid plans.",
+    a: "On Créateur and Studio, unused monthly credits roll over for 1 extra month. Découverte and Starter credits reset each month.",
   },
   {
     q: "Can I change plans anytime?",
@@ -26,7 +26,7 @@ const FAQS = [
   },
   {
     q: "Is there a free trial?",
-    a: "The Free plan gives you 10 credits every month at no cost, forever — no credit card required.",
+    a: "The Découverte plan gives you 50 credits every month at no cost, forever — no credit card required.",
   },
 ];
 
@@ -49,7 +49,7 @@ export default function PricingPage() {
       <div className="mt-16 grid gap-6 lg:grid-cols-4">
         {TIERS.map((tier) => {
           const info = TIER_INFO[tier];
-          const isPopular = tier === "starter";
+          const isPopular = tier === "creator";
           return (
             <Card
               key={tier}
@@ -84,13 +84,13 @@ export default function PricingPage() {
                 ))}
               </ul>
               <Link
-                href={tier === "enterprise" ? "/contact" : "/signup"}
+                href="/signup"
                 className={buttonVariants({
                   variant: isPopular ? "primary" : "secondary",
                   className: "mt-8 w-full",
                 })}
               >
-                {tier === "enterprise" ? "Contact sales" : "Get started"}
+                Get started
               </Link>
             </Card>
           );

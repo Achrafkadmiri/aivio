@@ -1,6 +1,7 @@
 "use client";
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
+import { useInvalidateCredits } from "@/hooks/use-credits";
 import { useForm, Controller, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Maximize, RectangleHorizontal, Palette } from "lucide-react";
@@ -40,7 +41,7 @@ export function GenericImageForm({
   busy: boolean;
 }) {
   const { toast } = useToast();
-  const queryClient = useQueryClient();
+  const invalidateCredits = useInvalidateCredits();
   const {
     control,
     handleSubmit,
@@ -76,7 +77,7 @@ export function GenericImageForm({
     },
     onSuccess: (data) => {
       onCreated(data.id);
-      queryClient.invalidateQueries({ queryKey: ["usage"] });
+      invalidateCredits();
     },
     onError: (err: Error) => {
       toast({ title: "Couldn't start generation", description: err.message, variant: "error" });

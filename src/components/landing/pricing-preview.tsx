@@ -8,7 +8,7 @@ import { TIER_INFO } from "@/lib/constants";
 import { Reveal } from "@/components/marketing/reveal";
 import { PlanPrice } from "@/components/pricing/plan-price";
 
-const PREVIEW_TIERS = ["free", "starter", "pro"] as const;
+const PREVIEW_TIERS = ["free", "starter", "creator"] as const;
 
 export function PricingPreview() {
   return (
@@ -22,7 +22,7 @@ export function PricingPreview() {
         <div className="mt-16 grid gap-6 lg:grid-cols-3">
           {PREVIEW_TIERS.map((tier, index) => {
             const info = TIER_INFO[tier];
-            const isPopular = tier === "starter";
+            const isPopular = tier === "creator";
             return (
               <Reveal key={tier} delayMs={index * 100}>
               <Card

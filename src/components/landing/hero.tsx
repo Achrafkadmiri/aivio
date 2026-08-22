@@ -65,7 +65,7 @@ export function Hero() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
           >
-            <span className="mx-auto inline-flex items-center gap-1.5 rounded-full border border-[#6E60EE]/30 bg-[#6E60EE]/10 px-3 py-1 text-[11px] leading-4 font-semibold tracking-wide text-[#6E60EE] uppercase">
+            <span className="mx-auto inline-flex items-center gap-1.5 rounded-full border border-[#1df072]/30 bg-[#1df072]/10 px-3 py-1 text-[11px] leading-4 font-semibold tracking-wide text-[#1df072] uppercase">
               New — cinematic-grade AI video generation
             </span>
           </motion.div>
@@ -89,7 +89,7 @@ export function Hero() {
               <motion.span
                 key={`a-${i}`}
                 variants={shouldReduceMotion ? undefined : heroWordVariants}
-                className="mr-[0.25em] inline-block text-[#6E60EE]"
+                className="mr-[0.25em] inline-block text-[#1df072]"
               >
                 {word}
               </motion.span>

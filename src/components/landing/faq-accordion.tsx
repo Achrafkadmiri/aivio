@@ -17,7 +17,7 @@ const FAQS = [
   },
   {
     question: "What's the pricing?",
-    answer: `Free starts at $0 with ${TIER_INFO.free.monthlyCredits} credits a month. Starter is $${TIER_INFO.starter.priceMonthly}/month, Pro is $${TIER_INFO.pro.priceMonthly}/month, and Enterprise is custom-priced — see the full comparison on the Pricing page.`,
+    answer: `Découverte starts at $0 with ${TIER_INFO.free.monthlyCredits} credits a month. Starter is $${TIER_INFO.starter.priceMonthly}/month, Créateur is $${TIER_INFO.creator.priceMonthly}/month, and Studio is $${TIER_INFO.studio.priceMonthly}/month — see the full comparison on the Pricing page.`,
   },
   {
     question: "Is there an API?",
@@ -34,7 +34,7 @@ const FAQS = [
   },
   {
     question: "Do I need a credit card to start?",
-    answer: "No — sign up and start creating free with 10 credits, no credit card required.",
+    answer: "No — sign up and start creating free with 50 credits, no credit card required.",
   },
 ] as const;
 

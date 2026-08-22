@@ -31,7 +31,7 @@ import {
   DropdownSeparator,
 } from "@/components/ui/dropdown";
 
-type UsageResponse = { credits_used_this_month: number; credits_limit: number | null };
+type UsageResponse = { credit_balance: number };
 
 function CreditsBadge() {
   const { data } = useQuery({
@@ -45,17 +45,14 @@ function CreditsBadge() {
 
   if (!data) return null;
 
-  const remaining =
-    data.credits_limit !== null ? Math.max(0, data.credits_limit - data.credits_used_this_month) : null;
-
   return (
     <Link
       href="/settings/billing"
       className="flex items-center gap-1.5 rounded-full border border-line bg-surface-2 px-3 py-1.5 text-label text-ink-soft transition-colors hover:border-border-strong"
-      title="Credits remaining this month"
+      title="Credits remaining"
     >
       <Zap className="size-3.5 text-brand" aria-hidden="true" />
-      <span className="font-semibold">{remaining === null ? "∞" : formatCredits(remaining)}</span>
+      <span className="font-semibold">{formatCredits(data.credit_balance)}</span>
       <span className="hidden text-muted sm:inline">credits</span>
     </Link>
   );
