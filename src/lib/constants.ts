@@ -1,91 +1,131 @@
 // DUPLIQUÉ dans aiVideo-backend/src/lib/constants.ts — garder synchronisé.
 import { CLOUDFLARE_MODELS } from "@/lib/cloudflare-models";
 
-export const TIERS = ["free", "starter", "pro", "enterprise"] as const;
+// Real-money value backing each credit ($0.01 = 1 credit), for display (e.g.
+// "this generation costs ~$0.45") AND as the actual conversion rate used to
+// price every generation in credit-estimate.ts (credits/s = round(rateUsd /
+// CREDIT_VALUE_USD)) — i.e. a generation's credit cost tracks its real infra
+// cost 1:1, no markup. Margin instead comes from each tier granting fewer
+// credits than its price would buy at this rate (see TIER_INFO comments) —
+// see the "Plan Tarifaire Créateur" pricing artifact this was modeled on.
+export const CREDIT_VALUE_USD = 0.01;
+
+export const TIERS = ["free", "starter", "creator", "studio"] as const;
 export type Tier = (typeof TIERS)[number];
-
-// Real-money value backing each credit, for display only (e.g. "this
-// generation costs ~$0.045") — not used in any billing math, since payments
-// are simulated (see api/subscription/upgrade). Paid tiers' monthlyCredits
-// below are priceMonthly / CREDIT_VALUE_USD (rounded), so the credit
-// allowance actually matches what the plan's price buys at this rate.
-export const CREDIT_VALUE_USD = 0.009;
-
-// Markup applied on top of Cloudflare's raw per-second Neuron cost before
-// converting to credits (see LIVE_VIDEO_RATE in credit-estimate.ts) — covers
-// overhead, the free tier's giveaway credits, and support costs.
-export const PROVIDER_COST_MARGIN = 2;
 
 export const TIER_INFO: Record<
   Tier,
   {
     label: string;
-    priceMonthly: number | null; // null = "contact sales"
-    monthlyCredits: number | null; // null = unlimited
+    priceMonthly: number;
+    monthlyCredits: number;
     maxResolution: string;
     maxDurationSeconds: number;
     concurrentGenerations: number;
+    // Extra months a monthly grant stays spendable after the month it was
+    // granted in — 0 = expires at month end, 1 = "1-month rollover".
+    rolloverMonths: number;
+    videoWatermark: boolean;
+    commercialLicense: boolean;
+    seats: number;
+    priorityQueue: boolean;
     features: string[];
   }
 > = {
   free: {
-    label: "Free",
+    label: "Découverte",
     priceMonthly: 0,
-    monthlyCredits: 10,
+    monthlyCredits: 50,
     maxResolution: "720p",
     maxDurationSeconds: 5,
     concurrentGenerations: 1,
+    rolloverMonths: 0,
+    videoWatermark: true,
+    commercialLicense: false,
+    seats: 1,
+    priorityQueue: false,
     features: [
-      "10 credits / month",
-      "720p max resolution",
-      "5s max video length",
-      "Community gallery",
+      "50 credits / month",
+      "720p image · 480p video",
+      "Video watermark",
+      "Standard queue",
     ],
   },
   starter: {
     label: "Starter",
     priceMonthly: 9.99,
-    monthlyCredits: 1110, // 9.99 / CREDIT_VALUE_USD
+    monthlyCredits: 525,
     maxResolution: "1080p",
-    maxDurationSeconds: 15,
+    maxDurationSeconds: 20,
     concurrentGenerations: 2,
+    rolloverMonths: 0,
+    videoWatermark: false,
+    commercialLicense: false,
+    seats: 1,
+    priorityQueue: false,
     features: [
-      "1,110 credits / month",
-      "1080p max resolution",
-      "15s max video length",
+      "525 credits / month",
       "No watermark",
-      "Private gallery",
+      "Standard queue",
+      "1 seat",
     ],
   },
-  pro: {
-    label: "Pro",
-    priceMonthly: 29.99,
-    monthlyCredits: 3332, // round(29.99 / CREDIT_VALUE_USD)
+  creator: {
+    label: "Créateur",
+    priceMonthly: 24,
+    monthlyCredits: 1340,
     maxResolution: "1080p",
-    maxDurationSeconds: 20,
-    concurrentGenerations: 5,
+    maxDurationSeconds: 30,
+    concurrentGenerations: 3,
+    rolloverMonths: 1,
+    videoWatermark: false,
+    commercialLicense: false,
+    seats: 1,
+    priorityQueue: true,
     features: [
-      "3,332 credits / month",
-      "All resolutions & frame rates",
+      "1,340 credits / month",
       "Priority queue",
-      "Advanced analytics",
+      "Unused credits roll over 1 month",
+      "1080p & video-to-video (higher credit cost)",
     ],
   },
-  enterprise: {
-    label: "Enterprise",
-    priceMonthly: null,
-    monthlyCredits: null,
+  studio: {
+    label: "Studio",
+    priceMonthly: 49,
+    monthlyCredits: 2740,
     maxResolution: "1080p",
-    maxDurationSeconds: 20,
-    concurrentGenerations: 20,
+    maxDurationSeconds: 30,
+    concurrentGenerations: 5,
+    rolloverMonths: 1,
+    videoWatermark: false,
+    commercialLicense: true,
+    seats: 3,
+    priorityQueue: true,
     features: [
-      "Unlimited generations",
-      "Dedicated infrastructure",
-      "Custom model fine-tuning",
-      "99.9% SLA",
+      "2,740 credits / month",
+      "Commercial license",
+      "3 team seats + API access",
+      "Max priority queue",
     ],
   },
 };
+
+// Display-only annual-billing prices (~16-20% off monthly) — payments are
+// simulated in this build, so this isn't wired to any real billing cycle.
+export const ANNUAL_PRICE_MONTHLY: Partial<Record<Tier, number>> = {
+  starter: 8.33,
+  creator: 20,
+  studio: 41,
+};
+
+// Pay-per-use top-ups — credits never expire (see grantRecharge in
+// aiVideo-backend's credits.ts), unlike the monthly plan grants above.
+export const RECHARGE_PACKS = [
+  { id: "pack_500", credits: 500, priceUsd: 8.49 },
+  { id: "pack_2000", credits: 2000, priceUsd: 33.49 },
+  { id: "pack_5000", credits: 5000, priceUsd: 83.49 },
+] as const;
+export type RechargePackId = (typeof RECHARGE_PACKS)[number]["id"];
 
 export const GENERATION_TYPES = [
   "text-to-video",

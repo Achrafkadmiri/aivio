@@ -8,6 +8,7 @@ import { Progress } from "@/components/ui/progress";
 import { Spinner } from "@/components/ui/spinner";
 import { formatCredits } from "@/lib/utils";
 import { PlanSwitcher } from "@/components/settings/plan-switcher";
+import { RechargePacks } from "@/components/settings/recharge-packs";
 import { PlanPrice } from "@/components/pricing/plan-price";
 import { CreditValue } from "@/components/credit-value";
 import { CurrencySelector } from "@/components/currency-selector";
@@ -16,7 +17,9 @@ type SubscriptionResponse = {
   tier: string;
   info: (typeof TIER_INFO)[Tier];
   credits_used_this_month: number;
-  credits_limit: number | null;
+  credits_limit: number;
+  credit_balance: number;
+  credits_expiring_soon: number;
 };
 
 function useSubscription() {
@@ -41,7 +44,7 @@ export function BillingClient() {
     );
   }
 
-  const { tier, info, credits_used_this_month, credits_limit } = data;
+  const { tier, info, credits_used_this_month, credits_limit, credit_balance, credits_expiring_soon } = data;
   const usedPct = credits_limit
     ? Math.min(100, Math.round((credits_used_this_month / credits_limit) * 100))
     : 0;
@@ -63,25 +66,37 @@ export function BillingClient() {
             <PlanPrice priceMonthly={info.priceMonthly} suffixClassName="text-body-sm text-muted" />
           </p>
         </div>
-        {credits_limit !== null && (
-          <div className="mt-6">
-            <Progress value={usedPct} />
-            <p className="mt-2 text-caption text-muted">
-              {formatCredits(credits_used_this_month)} / {formatCredits(credits_limit)} credits used
-              this month
-              {" · "}
-              <CreditValue credits={credits_used_this_month} />
-            </p>
-          </div>
+
+        <div className="mt-6 flex items-baseline justify-between">
+          <p className="text-caption text-muted">Credit balance</p>
+          <p className="text-subheading font-bold text-ink">
+            {formatCredits(credit_balance)}
+            <CreditValue credits={credit_balance} className="ml-2 text-caption font-normal text-muted" />
+          </p>
+        </div>
+        {credits_expiring_soon > 0 && (
+          <p className="mt-1 text-right text-caption text-warning">
+            {formatCredits(credits_expiring_soon)} credits expire soon
+          </p>
         )}
+
+        <div className="mt-4">
+          <Progress value={usedPct} />
+          <p className="mt-2 text-caption text-muted">
+            {formatCredits(credits_used_this_month)} / {formatCredits(credits_limit)} credits used
+            this month
+          </p>
+        </div>
       </Card>
 
       <div className="rounded-xl border border-line bg-surface-2/50 px-4 py-3 text-caption text-muted">
-        Payments are simulated in this preview — switching plans below is instant and free, no
-        card required.
+        Payments are simulated in this preview — switching plans and buying credit packs below is
+        instant and free, no card required.
       </div>
 
       <PlanSwitcher currentTier={tier} />
+
+      <RechargePacks />
     </div>
   );
 }

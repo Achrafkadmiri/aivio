@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { apiUrl } from "@/lib/api-client";
+import { useInvalidateCredits } from "@/hooks/use-credits";
 
 export type GenerationStatus = "idle" | "queued" | "processing" | "completed" | "failed";
 
@@ -18,6 +19,7 @@ const IDLE_STATE: GenerationState = { status: "idle", progress: 0, result: null,
 
 export function useGeneration(jobId: string | null) {
   const [state, setState] = useState<GenerationState>(IDLE_STATE);
+  const invalidateCredits = useInvalidateCredits();
 
   useEffect(() => {
     // jobId only ever goes null -> set in this app (a new generation gets a
@@ -61,10 +63,15 @@ export function useGeneration(jobId: string | null) {
         error: data.message ?? "Generation failed.",
       }));
       source.close();
+      // The server has already refunded this generation's credits by the
+      // time this event fires (see internal.ts's sweepStuckJobs / the
+      // generation-runner failure path) — without this, that refund is
+      // invisible in the UI until the next unrelated refetch.
+      invalidateCredits();
     });
 
     return () => source.close();
-  }, [jobId]);
+  }, [jobId, invalidateCredits]);
 
   return state;
 }

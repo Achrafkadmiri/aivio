@@ -18,7 +18,9 @@ import { CreditValue } from "@/components/credit-value";
 
 type DashboardSummary = {
   usage: { creditsUsed: number; generationsCount: number };
-  limit: number | null;
+  limit: number;
+  creditBalance: number;
+  creditsExpiringSoon: number;
   tierInfo: (typeof TIER_INFO)[Tier];
   recentGenerations: GalleryItem[];
   dailyCounts: { date: string; count: number }[];
@@ -47,7 +49,7 @@ export function DashboardClient() {
     );
   }
 
-  const { usage, limit, tierInfo, recentGenerations, dailyCounts } = data;
+  const { usage, limit, creditBalance, creditsExpiringSoon, tierInfo, recentGenerations, dailyCounts } = data;
   const usedPct = limit ? Math.min(100, Math.round((usage.creditsUsed / limit) * 100)) : 0;
 
   return (
@@ -64,21 +66,18 @@ export function DashboardClient() {
       <div className="grid gap-4 sm:grid-cols-3">
         <Card variant="compact">
           <p className="text-caption text-muted">Credits remaining</p>
-          <p className="mt-2 text-heading font-bold text-ink">
-            {limit === null ? "Unlimited" : formatCredits(Math.max(0, limit - usage.creditsUsed))}
+          <p className="mt-2 text-heading font-bold text-ink">{formatCredits(creditBalance)}</p>
+          <p className="mt-1 text-caption text-muted">
+            <CreditValue credits={creditBalance} />
           </p>
-          {limit !== null && (
-            <p className="mt-1 text-caption text-muted">
-              <CreditValue credits={Math.max(0, limit - usage.creditsUsed)} />
+          <Progress value={usedPct} className="mt-4" />
+          <p className="mt-2 text-caption text-muted">
+            {formatCredits(usage.creditsUsed)} / {formatCredits(limit)} used this month
+          </p>
+          {creditsExpiringSoon > 0 && (
+            <p className="mt-2 text-caption text-warning">
+              {formatCredits(creditsExpiringSoon)} credits expire soon
             </p>
-          )}
-          {limit !== null && (
-            <>
-              <Progress value={usedPct} className="mt-4" />
-              <p className="mt-2 text-caption text-muted">
-                {formatCredits(usage.creditsUsed)} / {formatCredits(limit)} used this month
-              </p>
-            </>
           )}
         </Card>
         <Card variant="compact">

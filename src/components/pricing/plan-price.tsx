@@ -10,16 +10,12 @@ export function PlanPrice({
   suffixClassName,
   showSuffix = true,
 }: {
-  priceMonthly: number | null;
+  priceMonthly: number;
   className?: string;
   suffixClassName?: string;
   showSuffix?: boolean;
 }) {
   const { currency } = useCurrency();
-
-  if (priceMonthly === null) {
-    return <span className={className}>Custom</span>;
-  }
 
   return (
     <>

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { Check } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,17 +8,14 @@ import { useToast } from "@/components/ui/toast";
 import { TIERS, TIER_INFO, type Tier } from "@/lib/constants";
 import { PlanPrice } from "@/components/pricing/plan-price";
 import { apiFetch } from "@/lib/api-client";
+import { useInvalidateCredits } from "@/hooks/use-credits";
 
 export function PlanSwitcher({ currentTier }: { currentTier: string }) {
-  const router = useRouter();
   const { toast } = useToast();
+  const invalidateCredits = useInvalidateCredits();
   const [loadingTier, setLoadingTier] = useState<string | null>(null);
 
   async function switchTo(tier: Tier) {
-    if (tier === "enterprise") {
-      router.push("/contact");
-      return;
-    }
     setLoadingTier(tier);
     try {
       const res = await apiFetch("/api/subscription/upgrade", {
@@ -30,7 +26,7 @@ export function PlanSwitcher({ currentTier }: { currentTier: string }) {
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? "Failed to switch plan");
       toast({ title: `Switched to ${TIER_INFO[tier].label}`, variant: "success" });
-      router.refresh();
+      invalidateCredits();
     } catch (err) {
       toast({
         title: "Couldn't switch plan",
@@ -68,7 +64,7 @@ export function PlanSwitcher({ currentTier }: { currentTier: string }) {
               onClick={() => switchTo(tier)}
               className="mt-4 w-full"
             >
-              {isCurrent ? "Current plan" : tier === "enterprise" ? "Contact sales" : "Switch"}
+              {isCurrent ? "Current plan" : "Switch"}
             </Button>
           </Card>
         );

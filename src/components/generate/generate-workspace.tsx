@@ -20,7 +20,7 @@ import {
   type GenerationType,
 } from "@/lib/constants";
 
-type UsageResponse = { credits_used_this_month: number; credits_limit: number | null };
+type UsageResponse = { credit_balance: number };
 
 // Each modality is its own route (/generate, /generate/image-to-video,
 // /generate/image) rather than client-side tabs — mirrors ArtCraft's
@@ -104,11 +104,6 @@ export function GenerateStudio({ type }: { type: GenerationType }) {
     };
   }
 
-  const remaining =
-    usageQuery.data && usageQuery.data.credits_limit !== null
-      ? Math.max(0, usageQuery.data.credits_limit - usageQuery.data.credits_used_this_month)
-      : null;
-
   return (
     // The fixed composer bar below is deliberately OUTSIDE this [zoom:0.7]
     // wrapper: zoom scales an element's own box model (padding included),
@@ -143,9 +138,7 @@ export function GenerateStudio({ type }: { type: GenerationType }) {
           {usageQuery.data && (
             <div className="flex items-center gap-2 text-body-sm text-muted">
               <Zap className="size-4 text-brand" aria-hidden="true" />
-              {remaining === null
-                ? "Unlimited credits"
-                : `${formatCredits(remaining)} credits remaining this month`}
+              {`${formatCredits(usageQuery.data.credit_balance)} credits remaining`}
             </div>
           )}
         </div>

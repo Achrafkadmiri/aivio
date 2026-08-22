@@ -48,7 +48,7 @@
   /* Brand — leonardo.ai's real accent violet. Used for text accents, badges,
      links, and focus/active states — never as a button fill (their own
      primary CTA is a solid white pill, see button.tsx). */
-  --color-brand: #6e60ee;
+  --color-brand: #1df072;
   --color-brand-hover: #8478f2;
   --color-brand-active: #5548c8;
 
@@ -89,8 +89,8 @@
 
   /* Gradients — single-hue violet, not a multi-hue blend (leonardo.ai's own
      accent text is solid, not gradient-clipped — see .text-gradient below). */
-  --gradient-primary: linear-gradient(135deg, #6e60ee 0%, #5548c8 100%);
-  --gradient-primary-radial: radial-gradient(circle at 30% 30%, #8478f2 0%, #6e60ee 100%);
+  --gradient-primary: linear-gradient(135deg, #1df072 0%, #10a34a 100%);
+  --gradient-primary-radial: radial-gradient(circle at 30% 30%, #1df072 0%, #10a34a 100%);
   --gradient-hero-glow: radial-gradient(ellipse 80% 50% at 50% -20%, rgb(110 96 238 / 0.15) 0%, transparent 100%);
 
   /* Type scale: each pairs font-size with its documented line-height (and,
