@@ -31,7 +31,7 @@ export function DropdownContent({
         side={side}
         sideOffset={8}
         className={cn(
-          "z-50 min-w-[200px] rounded-lg border border-line bg-surface-3 py-2 text-ink shadow-floating",
+          "z-[65] min-w-[200px] rounded-lg border border-line bg-surface-3 py-2 text-ink shadow-floating",
           className,
         )}
       >

@@ -65,6 +65,8 @@ export function SeedanceVideoForm({
   const invalidateCredits = useInvalidateCredits();
   const [uploading, setUploading] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
+  const [uploadingEndFrame, setUploadingEndFrame] = useState(false);
+  const [endFramePreview, setEndFramePreview] = useState<string | null>(null);
   const [uploadingVideo, setUploadingVideo] = useState(false);
   const [videoPreview, setVideoPreview] = useState<string | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -95,6 +97,7 @@ export function SeedanceVideoForm({
   const aspectRatio = watch("aspectRatio");
   const outputFormat = watch("outputFormat");
   const referenceVideoUrl = watch("referenceVideoUrl");
+  const image = watch("image");
   const isAuto = duration === SEEDANCE_DURATION_AUTO;
   const estimatedCredits = estimateVideoCredits(SEEDANCE_MODEL_ID, duration, resolution, {
     hasReferenceVideo: Boolean(referenceVideoUrl),
@@ -115,6 +118,24 @@ export function SeedanceVideoForm({
       setPreview(null);
     } finally {
       setUploading(false);
+    }
+  }
+
+  async function handleEndFrameFile(file: File) {
+    setUploadingEndFrame(true);
+    setEndFramePreview(URL.createObjectURL(file));
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await apiFetch("/api/upload", { method: "POST", body: formData });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? "Upload failed.");
+      setValue("lastFrameImage", json.url, { shouldValidate: true });
+    } catch (err) {
+      toast({ title: "Upload failed", description: (err as Error).message, variant: "error" });
+      setEndFramePreview(null);
+    } finally {
+      setUploadingEndFrame(false);
     }
   }
 
@@ -177,14 +198,32 @@ export function SeedanceVideoForm({
             <ReferenceUploadRow>
               <ReferenceUploadTile
                 kind="image"
-                label="Reference Images"
+                label="Start Frame"
+                shortLabel="Start"
                 previewUrl={preview}
                 uploading={uploading}
                 onFile={handleFile}
                 onRemove={() => {
                   setPreview(null);
                   setValue("image", undefined, { shouldValidate: true });
+                  // An end frame without a start frame isn't a valid pairing.
+                  setEndFramePreview(null);
+                  setValue("lastFrameImage", undefined, { shouldValidate: true });
                 }}
+              />
+              <ReferenceUploadTile
+                kind="image"
+                label="End Frame"
+                shortLabel="End"
+                previewUrl={endFramePreview}
+                uploading={uploadingEndFrame}
+                onFile={handleEndFrameFile}
+                onRemove={() => {
+                  setEndFramePreview(null);
+                  setValue("lastFrameImage", undefined, { shouldValidate: true });
+                }}
+                disabled={!image}
+                disabledHint="Add a start frame first."
               />
               <ReferenceUploadTile
                 kind="video"

@@ -92,6 +92,26 @@ export function TextToVideoForm({
     );
   }
 
+  // Alibaba's image-to-video-only models (hh1.1-i2v, wan-2.7-i2v) still live
+  // in this merged "Video" tab now that the dedicated Image to Video tab is
+  // gone — they just need their own required-image mode.
+  if (dynamicConfig && dynamicConfig.category === "image-to-video") {
+    return (
+      <DynamicModelForm
+        key={model}
+        config={dynamicConfig}
+        mode="image-to-video"
+        models={VIDEO_MODELS}
+        model={model}
+        onModelChange={setModel}
+        initialPrompt={prompt}
+        onPromptChange={setPrompt}
+        onCreated={onCreated}
+        busy={busy}
+      />
+    );
+  }
+
   return (
     <GenericVideoForm
       key={model}

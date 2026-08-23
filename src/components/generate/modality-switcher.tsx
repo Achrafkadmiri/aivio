@@ -1,14 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { Video, Wand2, Image as ImageIcon, AudioLines, ChevronDown, type LucideIcon } from "lucide-react";
+import { Video, Image as ImageIcon, AudioLines, ChevronDown, type LucideIcon } from "lucide-react";
 import { DropdownRoot, DropdownTrigger, DropdownContent, DropdownItem } from "@/components/ui/dropdown";
 import { pillClass } from "./composer";
 import { cn } from "@/lib/utils";
 import type { GenerationType } from "@/lib/constants";
 
-// Each modality is its own route (/generate, /generate/image-to-video,
-// /generate/image) rather than client-side tabs — mirrors ArtCraft's
+// Each modality is its own route (/generate, /generate/image) rather than
+// client-side tabs — mirrors ArtCraft's
 // separate /create-video, /create-image pages, and makes each mode
 // independently linkable/bookmarkable. Shared between generate-workspace.tsx
 // (desktop tab row + hero copy) and every composer form's mobile row (see
@@ -28,14 +28,6 @@ export const MODALITIES: {
     icon: Video,
     heroTitle: "Create Video",
     heroSubtitle: "Describe a scene. See it in motion.",
-  },
-  {
-    type: "image-to-video",
-    href: "/generate/image-to-video",
-    label: "Image to Video",
-    icon: Wand2,
-    heroTitle: "Animate an Image",
-    heroSubtitle: "Bring a still photo to life.",
   },
   {
     type: "text-to-image",

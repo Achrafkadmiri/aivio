@@ -6,7 +6,6 @@ import { useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { Sparkles, Zap } from "lucide-react";
 import { TextToVideoForm } from "./text-to-video-form";
-import { ImageToVideoForm } from "./image-to-video-form";
 import { TextToImageForm } from "./text-to-image-form";
 import { JobStatusCard } from "./job-status-card";
 import { MODALITIES } from "./modality-switcher";
@@ -197,9 +196,6 @@ export function GenerateStudio({ type }: { type: GenerationType }) {
               initialPrompt={initialPrompt}
               initialParams={initialParams}
             />
-          )}
-          {type === "image-to-video" && (
-            <ImageToVideoForm onCreated={handleCreated(true)} busy={busy} />
           )}
           {type === "text-to-image" && (
             <TextToImageForm

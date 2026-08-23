@@ -107,6 +107,7 @@ export const seedanceVideoSchema = z
   .object({
     prompt: z.string().trim().max(2000).optional(),
     image: z.string().min(1).optional(),
+    lastFrameImage: z.string().min(1).optional(),
     referenceVideoUrl: z.string().min(1).optional(),
     duration: z
       .number()
@@ -126,6 +127,10 @@ export const seedanceVideoSchema = z
   .refine((data) => Boolean(data.prompt?.trim()) || Boolean(data.image), {
     error: "Add a prompt or a reference image.",
     path: ["prompt"],
+  })
+  .refine((data) => !data.lastFrameImage || Boolean(data.image), {
+    error: "Add a start frame before setting an end frame.",
+    path: ["lastFrameImage"],
   });
 export type SeedanceVideoInput = z.infer<typeof seedanceVideoSchema>;
 
@@ -137,6 +142,7 @@ export const seedance2VideoSchema = z
   .object({
     prompt: z.string().trim().max(2000).optional(),
     image: z.string().min(1).optional(),
+    lastFrameImage: z.string().min(1).optional(),
     duration: z
       .number()
       .int()
@@ -158,6 +164,10 @@ export const seedance2VideoSchema = z
   .refine((data) => Boolean(data.prompt?.trim()) || Boolean(data.image), {
     error: "Add a prompt or a reference image.",
     path: ["prompt"],
+  })
+  .refine((data) => !data.lastFrameImage || Boolean(data.image), {
+    error: "Add a start frame before setting an end frame.",
+    path: ["lastFrameImage"],
   });
 export type Seedance2VideoInput = z.infer<typeof seedance2VideoSchema>;
 

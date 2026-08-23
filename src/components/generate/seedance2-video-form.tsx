@@ -77,6 +77,8 @@ export function Seedance2VideoForm({
   const invalidateCredits = useInvalidateCredits();
   const [uploading, setUploading] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
+  const [uploadingEndFrame, setUploadingEndFrame] = useState(false);
+  const [endFramePreview, setEndFramePreview] = useState<string | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
 
   const {
@@ -125,6 +127,24 @@ export function Seedance2VideoForm({
     }
   }
 
+  async function handleEndFrameFile(file: File) {
+    setUploadingEndFrame(true);
+    setEndFramePreview(URL.createObjectURL(file));
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await apiFetch("/api/upload", { method: "POST", body: formData });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? "Upload failed.");
+      setValue("lastFrameImage", json.url, { shouldValidate: true });
+    } catch (err) {
+      toast({ title: "Upload failed", description: (err as Error).message, variant: "error" });
+      setEndFramePreview(null);
+    } finally {
+      setUploadingEndFrame(false);
+    }
+  }
+
   const mutation = useMutation({
     mutationFn: async (data: Seedance2VideoInput) => {
       const res = await apiFetch("/api/generations/text-to-video", {
@@ -162,14 +182,32 @@ export function Seedance2VideoForm({
             <ReferenceUploadRow>
               <ReferenceUploadTile
                 kind="image"
-                label="Reference Images"
+                label="Start Frame"
+                shortLabel="Start"
                 previewUrl={preview}
                 uploading={uploading}
                 onFile={handleFile}
                 onRemove={() => {
                   setPreview(null);
                   setValue("image", undefined, { shouldValidate: true });
+                  // An end frame without a start frame isn't a valid pairing.
+                  setEndFramePreview(null);
+                  setValue("lastFrameImage", undefined, { shouldValidate: true });
                 }}
+              />
+              <ReferenceUploadTile
+                kind="image"
+                label="End Frame"
+                shortLabel="End"
+                previewUrl={endFramePreview}
+                uploading={uploadingEndFrame}
+                onFile={handleEndFrameFile}
+                onRemove={() => {
+                  setEndFramePreview(null);
+                  setValue("lastFrameImage", undefined, { shouldValidate: true });
+                }}
+                disabled={!image}
+                disabledHint="Add a start frame first."
               />
               <ReferenceUploadTile
                 kind="video"

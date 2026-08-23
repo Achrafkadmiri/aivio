@@ -176,7 +176,8 @@ export function DynamicModelForm<T extends string>({
               <ReferenceUploadRow>
                 <ReferenceUploadTile
                   kind="image"
-                  label="Reference Images"
+                  label={isVideoModel ? "Start Frame" : "Reference Images"}
+                  shortLabel={isVideoModel ? "Start" : undefined}
                   optional={!imageRequired}
                   previewUrl={preview}
                   uploading={uploading}

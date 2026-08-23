@@ -20,6 +20,7 @@ export function ReferenceUploadRow({ children }: { children: React.ReactNode }) 
 export function ReferenceUploadTile({
   kind,
   label,
+  shortLabel: shortLabelProp,
   optional = true,
   previewUrl,
   uploading,
@@ -30,6 +31,10 @@ export function ReferenceUploadTile({
 }: {
   kind: UploadKind;
   label: string;
+  /** Overrides the default last-word-of-label caption — needed when two
+   * tiles would otherwise collide (e.g. "Start Frame" / "End Frame" both
+   * ending in "Frame"). */
+  shortLabel?: string;
   /** Set false for a required reference (e.g. image-to-video's source image). */
   optional?: boolean;
   previewUrl?: string | null;
@@ -47,7 +52,7 @@ export function ReferenceUploadTile({
   // for an icon and a one-word caption (see ArtCraft's own compact
   // "+ Reference" button, which does the same trade-off).
   const title = disabled ? disabledHint : `${label}${optional ? " (optional)" : " (required)"}`;
-  const shortLabel = label.split(" ").pop();
+  const shortLabel = shortLabelProp ?? label.split(" ").pop();
 
   return (
     <div
