@@ -9,6 +9,7 @@ import { Maximize, RectangleHorizontal, Palette } from "lucide-react";
 import { FieldError } from "@/components/ui/input";
 import { useToast } from "@/components/ui/toast";
 import { BottomSheet } from "@/components/ui/bottom-sheet";
+import { ModalitySwitcherMobile } from "./modality-switcher";
 import { estimateImageCredits } from "@/lib/credit-estimate";
 import { textToImageSchema, type TextToImageInput } from "@/lib/validation";
 import { IMAGE_RESOLUTIONS, IMAGE_ASPECT_RATIOS, IMAGE_STYLE_PRESETS, type ImageModelId } from "@/lib/constants";
@@ -130,11 +131,11 @@ export function GenericImageForm({
           <span className="mt-3 shrink-0 text-caption text-muted">{prompt.length}/500</span>
         </div>
 
-        {/* Mobile: just the model picker + a single "Options" trigger that
-            opens a BottomSheet with every field — see seedance-video-form.tsx
-            for the full rationale. */}
+        {/* Mobile: modality switcher + a single "Options" trigger that opens
+            a BottomSheet with every field, including the model picker — see
+            seedance-video-form.tsx for the full rationale. */}
         <div className="mt-3 flex items-center gap-2 sm:hidden">
-          <ProviderModelPicker models={models} value={model} onChange={onModelChange} />
+          <ModalitySwitcherMobile type="text-to-image" />
           <MobileOptionsTrigger onClick={() => setSheetOpen(true)} />
           <div className="ml-auto">
             <CreditsSubmitPill credits={estimatedCredits} loading={mutation.isPending || busy} />
@@ -142,6 +143,9 @@ export function GenericImageForm({
         </div>
 
         <BottomSheet open={sheetOpen} onOpenChange={setSheetOpen} title="Image settings">
+          <MobileFieldRow label="Model">
+            <ProviderModelPicker models={models} value={model} onChange={onModelChange} />
+          </MobileFieldRow>
           <MobileFieldRow label="Resolution">
             <PillSelect
               icon={Maximize}

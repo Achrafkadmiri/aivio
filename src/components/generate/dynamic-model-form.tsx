@@ -11,6 +11,7 @@ import { Switch } from "@/components/ui/switch";
 import { Tooltip } from "@/components/ui/tooltip";
 import { useToast } from "@/components/ui/toast";
 import { BottomSheet } from "@/components/ui/bottom-sheet";
+import { ModalitySwitcherMobile } from "./modality-switcher";
 import { estimateVideoCredits, estimateImageCredits } from "@/lib/credit-estimate";
 import { buildDynamicSchema } from "@/lib/validation";
 import type { CloudflareModelConfig } from "@/lib/cloudflare-models";
@@ -225,11 +226,11 @@ export function DynamicModelForm<T extends string>({
           <span className="mt-3 shrink-0 text-caption text-muted">{prompt.length}/2000</span>
         </div>
 
-        {/* Mobile: just the model picker + a single "Options" trigger that
-            opens a BottomSheet with every pill/panel field — see
-            seedance-video-form.tsx for the full rationale. */}
+        {/* Mobile: modality switcher + a single "Options" trigger that opens
+            a BottomSheet with every pill/panel field, including the model
+            picker — see seedance-video-form.tsx for the full rationale. */}
         <div className="mt-3 flex items-center gap-2 sm:hidden">
-          <ProviderModelPicker models={models} value={model} onChange={onModelChange} />
+          <ModalitySwitcherMobile type={mode} />
           <MobileOptionsTrigger onClick={() => setSheetOpen(true)} />
           <div className="ml-auto">
             <CreditsSubmitPill
@@ -241,6 +242,10 @@ export function DynamicModelForm<T extends string>({
         </div>
 
         <BottomSheet open={sheetOpen} onOpenChange={setSheetOpen} title="Settings">
+          <MobileFieldRow label="Model">
+            <ProviderModelPicker models={models} value={model} onChange={onModelChange} />
+          </MobileFieldRow>
+
           {isVideoModel && (
             <MobileFieldRow label="Characters" description="Coming soon — character consistency isn't wired up yet.">
               <ScanFace className="size-4 text-muted" aria-hidden="true" />

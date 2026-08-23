@@ -180,12 +180,18 @@ export function SettingRow({
 
 /** The trigger for the mobile BottomSheet that replaces the composer's
  * pill row on narrow viewports — see e.g. seedance-video-form.tsx, which
- * renders this instead of the full horizontal-scroll row below `sm:`. */
+ * renders this instead of the full horizontal-scroll row below `sm:`.
+ * Icon-only (no label) — matches the reference mobile composer, where this
+ * sits between the modality switcher and the submit button. */
 export function MobileOptionsTrigger({ onClick }: { onClick: () => void }) {
   return (
-    <button type="button" onClick={onClick} className={pillClass}>
-      <SlidersHorizontal className="size-3.5 text-muted" aria-hidden="true" />
-      <span className="font-medium">Options</span>
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label="Settings"
+      className={cn(pillClass, "px-2.5")}
+    >
+      <SlidersHorizontal className="size-4 text-muted" aria-hidden="true" />
     </button>
   );
 }

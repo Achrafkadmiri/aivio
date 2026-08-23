@@ -11,6 +11,7 @@ import { Tooltip } from "@/components/ui/tooltip";
 import { textToVideoSchema, type TextToVideoInput } from "@/lib/validation";
 import { useToast } from "@/components/ui/toast";
 import { BottomSheet } from "@/components/ui/bottom-sheet";
+import { ModalitySwitcherMobile } from "./modality-switcher";
 import { estimateVideoCredits } from "@/lib/credit-estimate";
 import { apiFetch } from "@/lib/api-client";
 import {
@@ -125,11 +126,11 @@ export function GenericVideoForm({
           <span className="mt-3 shrink-0 text-caption text-muted">{prompt.length}/1000</span>
         </div>
 
-        {/* Mobile: just the model picker + a single "Options" trigger that
-            opens a BottomSheet with every field — see seedance-video-form.tsx
-            for the full rationale. */}
+        {/* Mobile: modality switcher + a single "Options" trigger that opens
+            a BottomSheet with every field, including the model picker — see
+            seedance-video-form.tsx for the full rationale. */}
         <div className="mt-3 flex items-center gap-2 sm:hidden">
-          <ProviderModelPicker models={models} value={model} onChange={onModelChange} />
+          <ModalitySwitcherMobile type="text-to-video" />
           <MobileOptionsTrigger onClick={() => setSheetOpen(true)} />
           <div className="ml-auto">
             <CreditsSubmitPill credits={estimatedCredits} loading={mutation.isPending || busy} />
@@ -137,6 +138,10 @@ export function GenericVideoForm({
         </div>
 
         <BottomSheet open={sheetOpen} onOpenChange={setSheetOpen} title="Video settings">
+          <MobileFieldRow label="Model">
+            <ProviderModelPicker models={models} value={model} onChange={onModelChange} />
+          </MobileFieldRow>
+
           <MobileFieldRow label="Characters" description="Coming soon — character consistency isn't wired up yet.">
             <ScanFace className="size-4 text-muted" aria-hidden="true" />
           </MobileFieldRow>

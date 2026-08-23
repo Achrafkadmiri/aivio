@@ -13,6 +13,7 @@ import { DropdownRoot, DropdownTrigger, DropdownContent } from "@/components/ui/
 import { Tooltip } from "@/components/ui/tooltip";
 import { useToast } from "@/components/ui/toast";
 import { BottomSheet } from "@/components/ui/bottom-sheet";
+import { ModalitySwitcherMobile } from "./modality-switcher";
 import { cn } from "@/lib/utils";
 import { estimateVideoCredits } from "@/lib/credit-estimate";
 import { seedanceVideoSchema, type SeedanceVideoInput } from "@/lib/validation";
@@ -224,14 +225,14 @@ export function SeedanceVideoForm({
           <span className="mt-3 shrink-0 text-caption text-muted">{prompt.length}/2000</span>
         </div>
 
-        {/* Mobile: just the model picker + a single "Options" trigger that
-            opens a full BottomSheet with everything else (see the sheet
-            below) — 7 controls never comfortably fit on a phone screen,
-            scrolling or not, and collapsing them into one native-style
-            drawer (inspired by Artlist's mobile composer) reads far better
-            than a horizontally-scrolling toolbar. */}
+        {/* Mobile: modality switcher + a single "Options" trigger that opens
+            a full BottomSheet with everything else, including the model
+            picker (see the sheet below) — 7+ controls never comfortably fit
+            on a phone screen, scrolling or not, and collapsing them into one
+            native-style drawer (inspired by Artlist's mobile composer) reads
+            far better than a horizontally-scrolling toolbar. */}
         <div className="mt-3 flex items-center gap-2 sm:hidden">
-          <ProviderModelPicker models={models} value={model} onChange={onModelChange} />
+          <ModalitySwitcherMobile type="text-to-video" />
           <MobileOptionsTrigger onClick={() => setSheetOpen(true)} />
           <div className="ml-auto">
             <CreditsSubmitPill credits={estimatedCredits} loading={mutation.isPending || busy || uploading} />
@@ -239,6 +240,9 @@ export function SeedanceVideoForm({
         </div>
 
         <BottomSheet open={sheetOpen} onOpenChange={setSheetOpen} title="Video settings">
+          <MobileFieldRow label="Model">
+            <ProviderModelPicker models={models} value={model} onChange={onModelChange} />
+          </MobileFieldRow>
           <MobileFieldRow label="Duration">
             <DropdownRoot>
               <DropdownTrigger asChild>

@@ -4,15 +4,15 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { Sparkles, Zap, Video, Wand2, Image as ImageIcon, AudioLines, ChevronDown, type LucideIcon } from "lucide-react";
+import { Sparkles, Zap } from "lucide-react";
 import { TextToVideoForm } from "./text-to-video-form";
 import { ImageToVideoForm } from "./image-to-video-form";
 import { TextToImageForm } from "./text-to-image-form";
 import { JobStatusCard } from "./job-status-card";
+import { MODALITIES } from "./modality-switcher";
 import { useGeneration } from "@/hooks/use-generation";
 import { cn, formatCredits } from "@/lib/utils";
 import { apiFetch } from "@/lib/api-client";
-import { DropdownRoot, DropdownTrigger, DropdownContent, DropdownItem } from "@/components/ui/dropdown";
 import {
   VIDEO_MODELS,
   IMAGE_MODELS,
@@ -30,44 +30,6 @@ type UsageResponse = { credit_balance: number };
 // its build-time scanner to pick them up, so this can't be derived from one
 // shared source.
 const HERO_ZOOM = 0.7;
-
-// Each modality is its own route (/generate, /generate/image-to-video,
-// /generate/image) rather than client-side tabs — mirrors ArtCraft's
-// separate /create-video, /create-image pages, and makes each mode
-// independently linkable/bookmarkable.
-const MODALITIES: {
-  type: GenerationType;
-  href: string;
-  label: string;
-  icon: LucideIcon;
-  heroTitle: string;
-  heroSubtitle: string;
-}[] = [
-  {
-    type: "text-to-video",
-    href: "/generate",
-    label: "Video",
-    icon: Video,
-    heroTitle: "Create Video",
-    heroSubtitle: "Describe a scene. See it in motion.",
-  },
-  {
-    type: "image-to-video",
-    href: "/generate/image-to-video",
-    label: "Image to Video",
-    icon: Wand2,
-    heroTitle: "Animate an Image",
-    heroSubtitle: "Bring a still photo to life.",
-  },
-  {
-    type: "text-to-image",
-    href: "/generate/image",
-    label: "Image",
-    icon: ImageIcon,
-    heroTitle: "Create Image",
-    heroSubtitle: "Describe a scene. See it rendered.",
-  },
-];
 
 export function GenerateStudio({ type }: { type: GenerationType }) {
   const [activeJobId, setActiveJobId] = useState<string | null>(null);
@@ -147,44 +109,11 @@ export function GenerateStudio({ type }: { type: GenerationType }) {
     <>
       <div className="flex h-full flex-col [zoom:0.7]">
         <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
-          {/* Mobile: a single "Video ▾"-style dropdown trigger instead of the
-              full pill row — four pills (two of them two-word labels) never
-              comfortably fit in one line under ~380px, and a compact
-              dropdown reads more like a native app switcher (see e.g.
-              Artlist's mobile composer) than a horizontally-scrolling tab
-              bar does. */}
-          <div className="sm:hidden">
-            <DropdownRoot>
-              <DropdownTrigger asChild>
-                <button
-                  type="button"
-                  className="glass inline-flex items-center gap-2 rounded-full py-2 pr-3 pl-4 text-label font-medium text-ink-soft"
-                >
-                  <active.icon className="size-4 text-brand" aria-hidden="true" />
-                  {active.label}
-                  <ChevronDown className="size-3.5 text-muted" aria-hidden="true" />
-                </button>
-              </DropdownTrigger>
-              <DropdownContent align="start" className="w-56">
-                {MODALITIES.map((m) => (
-                  <DropdownItem key={m.type} asChild className={cn(m.type === type && "text-brand")}>
-                    <Link href={m.href} className="flex items-center gap-2.5">
-                      <m.icon className="size-4" aria-hidden="true" />
-                      {m.label}
-                    </Link>
-                  </DropdownItem>
-                ))}
-                <div className="flex cursor-not-allowed items-center gap-2.5 px-4 py-3 text-label text-muted opacity-50">
-                  <AudioLines className="size-4" aria-hidden="true" />
-                  Audio to Video
-                </div>
-              </DropdownContent>
-            </DropdownRoot>
-          </div>
-
           {/* Desktop: full pill row. overflow-x-auto + shrink-0/whitespace-nowrap
               on each pill (same pattern as settings-nav.tsx) is kept as a
-              belt-and-suspenders fallback for in-between widths. */}
+              belt-and-suspenders fallback for in-between widths. On mobile
+              this switcher instead lives inside the composer's own bottom
+              row — see modality-switcher.tsx's ModalitySwitcherMobile. */}
           <div className="glass hidden max-w-full items-center gap-1 overflow-x-auto rounded-full p-1 sm:flex">
             {MODALITIES.map((m) => (
               <Link

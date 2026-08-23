@@ -11,6 +11,7 @@ import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/components/ui/toast";
 import { Tooltip } from "@/components/ui/tooltip";
 import { BottomSheet } from "@/components/ui/bottom-sheet";
+import { ModalitySwitcherMobile } from "./modality-switcher";
 import { estimateVideoCredits } from "@/lib/credit-estimate";
 import { seedance2VideoSchema, type Seedance2VideoInput } from "@/lib/validation";
 import { apiFetch } from "@/lib/api-client";
@@ -206,11 +207,11 @@ export function Seedance2VideoForm({
           <span className="mt-3 shrink-0 text-caption text-muted">{prompt.length}/2000</span>
         </div>
 
-        {/* Mobile: model picker + a single "Options" trigger opening a
-            BottomSheet with everything else — see seedance-video-form.tsx
-            for the full rationale. */}
+        {/* Mobile: modality switcher + a single "Options" trigger opening a
+            BottomSheet with everything else, including the model picker —
+            see seedance-video-form.tsx for the full rationale. */}
         <div className="mt-3 flex items-center gap-2 sm:hidden">
-          <ProviderModelPicker models={models} value={model} onChange={onModelChange} />
+          <ModalitySwitcherMobile type="text-to-video" />
           <MobileOptionsTrigger onClick={() => setSheetOpen(true)} />
           <div className="ml-auto">
             <CreditsSubmitPill credits={estimatedCredits} loading={mutation.isPending || busy || uploading} />
@@ -218,6 +219,9 @@ export function Seedance2VideoForm({
         </div>
 
         <BottomSheet open={sheetOpen} onOpenChange={setSheetOpen} title="Video settings">
+          <MobileFieldRow label="Model">
+            <ProviderModelPicker models={models} value={model} onChange={onModelChange} />
+          </MobileFieldRow>
           <MobileFieldRow label="Duration">
             <PillSelect
               icon={Clock}
