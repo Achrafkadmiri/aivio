@@ -25,8 +25,7 @@ import {
 } from "@/lib/constants";
 import {
   ComposerShell,
-  ReferenceUploadRow,
-  ReferenceUploadTile,
+  KeyframeReferenceControl,
   ComposerPromptField,
   ProviderModelPicker,
   PillSelect,
@@ -37,6 +36,7 @@ import {
   CreditsSubmitPill,
   pillClass,
   type PickerModel,
+  type ReferenceMode,
 } from "./composer";
 
 const DURATIONS = Array.from(
@@ -80,6 +80,7 @@ export function Seedance2VideoForm({
   const [uploadingEndFrame, setUploadingEndFrame] = useState(false);
   const [endFramePreview, setEndFramePreview] = useState<string | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [refMode, setRefMode] = useState<ReferenceMode>("reference");
 
   const {
     register,
@@ -145,6 +146,26 @@ export function Seedance2VideoForm({
     }
   }
 
+  function handleModeChange(next: ReferenceMode) {
+    setRefMode(next);
+    // A last frame without a mode that supports it isn't a valid pairing —
+    // switching back to "Reference" drops whatever end frame was set.
+    if (next === "reference") {
+      setEndFramePreview(null);
+      setValue("lastFrameImage", undefined, { shouldValidate: true });
+    }
+  }
+
+  function handleSwapFrames() {
+    const nextImage = watch("lastFrameImage");
+    const nextLastFrame = watch("image");
+    setValue("image", nextImage, { shouldValidate: true });
+    setValue("lastFrameImage", nextLastFrame, { shouldValidate: true });
+    const nextPreview = endFramePreview;
+    setEndFramePreview(preview);
+    setPreview(nextPreview);
+  }
+
   const mutation = useMutation({
     mutationFn: async (data: Seedance2VideoInput) => {
       const res = await apiFetch("/api/generations/text-to-video", {
@@ -179,37 +200,33 @@ export function Seedance2VideoForm({
             rationale. Desktop keeps them side by side. */}
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
           <div className="shrink-0">
-            <ReferenceUploadRow>
-              <ReferenceUploadTile
-                kind="image"
-                label="Start Frame"
-                shortLabel="Start"
-                previewUrl={preview}
-                uploading={uploading}
-                onFile={handleFile}
-                onRemove={() => {
+            <KeyframeReferenceControl
+              mode={refMode}
+              onModeChange={handleModeChange}
+              first={{
+                previewUrl: preview,
+                uploading,
+                onFile: handleFile,
+                onRemove: () => {
                   setPreview(null);
                   setValue("image", undefined, { shouldValidate: true });
                   // An end frame without a start frame isn't a valid pairing.
                   setEndFramePreview(null);
                   setValue("lastFrameImage", undefined, { shouldValidate: true });
-                }}
-              />
-              <ReferenceUploadTile
-                kind="image"
-                label="End Frame"
-                shortLabel="End"
-                previewUrl={endFramePreview}
-                uploading={uploadingEndFrame}
-                onFile={handleEndFrameFile}
-                onRemove={() => {
+                },
+              }}
+              last={{
+                previewUrl: endFramePreview,
+                uploading: uploadingEndFrame,
+                onFile: handleEndFrameFile,
+                onRemove: () => {
                   setEndFramePreview(null);
                   setValue("lastFrameImage", undefined, { shouldValidate: true });
-                }}
-                disabled={!image}
-                disabledHint="Add a start frame first."
-              />
-            </ReferenceUploadRow>
+                },
+              }}
+              lastDisabled={!image}
+              onSwap={handleSwapFrames}
+            />
           </div>
 
           <div className="flex min-w-0 flex-1 items-start gap-3">

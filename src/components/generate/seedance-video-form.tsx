@@ -32,6 +32,7 @@ import {
   ComposerShell,
   ReferenceUploadRow,
   ReferenceUploadTile,
+  KeyframeReferenceControl,
   ComposerPromptField,
   ProviderModelPicker,
   PillSelect,
@@ -42,6 +43,7 @@ import {
   CreditsSubmitPill,
   pillClass,
   type PickerModel,
+  type ReferenceMode,
 } from "./composer";
 
 export function SeedanceVideoForm({
@@ -70,6 +72,7 @@ export function SeedanceVideoForm({
   const [uploadingVideo, setUploadingVideo] = useState(false);
   const [videoPreview, setVideoPreview] = useState<string | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [refMode, setRefMode] = useState<ReferenceMode>("reference");
 
   const {
     register,
@@ -139,6 +142,26 @@ export function SeedanceVideoForm({
     }
   }
 
+  function handleModeChange(next: ReferenceMode) {
+    setRefMode(next);
+    // A last frame without a mode that supports it isn't a valid pairing —
+    // switching back to "Reference" drops whatever end frame was set.
+    if (next === "reference") {
+      setEndFramePreview(null);
+      setValue("lastFrameImage", undefined, { shouldValidate: true });
+    }
+  }
+
+  function handleSwapFrames() {
+    const nextImage = watch("lastFrameImage");
+    const nextLastFrame = watch("image");
+    setValue("image", nextImage, { shouldValidate: true });
+    setValue("lastFrameImage", nextLastFrame, { shouldValidate: true });
+    const nextPreview = endFramePreview;
+    setEndFramePreview(preview);
+    setPreview(nextPreview);
+  }
+
   async function handleVideoFile(file: File) {
     setUploadingVideo(true);
     setVideoPreview(URL.createObjectURL(file));
@@ -194,37 +217,35 @@ export function SeedanceVideoForm({
             width, wrapping short placeholder text onto 3-4 lines. Desktop
             keeps them side by side. */}
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
-          <div className="shrink-0">
-            <ReferenceUploadRow>
-              <ReferenceUploadTile
-                kind="image"
-                label="Start Frame"
-                shortLabel="Start"
-                previewUrl={preview}
-                uploading={uploading}
-                onFile={handleFile}
-                onRemove={() => {
+          <div className="shrink-0 space-y-2.5">
+            <KeyframeReferenceControl
+              mode={refMode}
+              onModeChange={handleModeChange}
+              first={{
+                previewUrl: preview,
+                uploading,
+                onFile: handleFile,
+                onRemove: () => {
                   setPreview(null);
                   setValue("image", undefined, { shouldValidate: true });
                   // An end frame without a start frame isn't a valid pairing.
                   setEndFramePreview(null);
                   setValue("lastFrameImage", undefined, { shouldValidate: true });
-                }}
-              />
-              <ReferenceUploadTile
-                kind="image"
-                label="End Frame"
-                shortLabel="End"
-                previewUrl={endFramePreview}
-                uploading={uploadingEndFrame}
-                onFile={handleEndFrameFile}
-                onRemove={() => {
+                },
+              }}
+              last={{
+                previewUrl: endFramePreview,
+                uploading: uploadingEndFrame,
+                onFile: handleEndFrameFile,
+                onRemove: () => {
                   setEndFramePreview(null);
                   setValue("lastFrameImage", undefined, { shouldValidate: true });
-                }}
-                disabled={!image}
-                disabledHint="Add a start frame first."
-              />
+                },
+              }}
+              lastDisabled={!image}
+              onSwap={handleSwapFrames}
+            />
+            <ReferenceUploadRow>
               <ReferenceUploadTile
                 kind="video"
                 label="Reference Video"

@@ -176,8 +176,8 @@ export function DynamicModelForm<T extends string>({
               <ReferenceUploadRow>
                 <ReferenceUploadTile
                   kind="image"
-                  label={isVideoModel ? "Start Frame" : "Reference Images"}
-                  shortLabel={isVideoModel ? "Start" : undefined}
+                  label={isVideoModel ? "Start Frame" : "Reference"}
+                  shortLabel={isVideoModel ? "Start frame" : "Reference"}
                   optional={!imageRequired}
                   previewUrl={preview}
                   uploading={uploading}
@@ -186,6 +186,7 @@ export function DynamicModelForm<T extends string>({
                     setPreview(null);
                     setValue("image", undefined, { shouldValidate: true });
                   }}
+                  size="lg"
                 />
               </ReferenceUploadRow>
             </div>

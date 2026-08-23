@@ -28,6 +28,7 @@ export function ReferenceUploadTile({
   onRemove,
   disabled,
   disabledHint,
+  size = "sm",
 }: {
   kind: UploadKind;
   label: string;
@@ -43,16 +44,79 @@ export function ReferenceUploadTile({
   onRemove?: () => void;
   disabled?: boolean;
   disabledHint?: string;
+  /** "lg" is the primary keyframe/reference slot (see
+   * KeyframeReferenceControl below) — a bigger dashed drop-zone with a
+   * centered Plus badge and a visible label, matching the reference mock.
+   * "sm" (default) is the compact corner-badge tile used for secondary
+   * reference video/audio slots. */
+  size?: "sm" | "lg";
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const Icon = ICONS[kind];
   const hasFile = Boolean(previewUrl);
   const clickable = !disabled && !hasFile;
-  // Full context lives in the title tooltip — the tile itself only has room
-  // for an icon and a one-word caption (see ArtCraft's own compact
-  // "+ Reference" button, which does the same trade-off).
+  // Full context lives in the title tooltip on the "sm" tile — the "lg" tile
+  // has room to show its label directly.
   const title = disabled ? disabledHint : `${label}${optional ? " (optional)" : " (required)"}`;
   const shortLabel = shortLabelProp ?? label.split(" ").pop();
+
+  if (size === "lg") {
+    return (
+      <div
+        className={cn(
+          "group relative flex size-20 shrink-0 flex-col items-center justify-center gap-2 overflow-hidden rounded-2xl border-2 transition-colors",
+          hasFile ? "border-solid border-line bg-surface-2 shadow-glow-sm" : "border-dashed border-line bg-surface-2/40",
+          clickable && "cursor-pointer hover:border-border-strong hover:bg-white/[0.04]",
+          disabled && "cursor-not-allowed opacity-35",
+        )}
+        onClick={() => {
+          if (clickable) inputRef.current?.click();
+        }}
+        title={title}
+      >
+        <input
+          ref={inputRef}
+          type="file"
+          accept={ACCEPT[kind]}
+          className="hidden"
+          disabled={disabled}
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) onFile?.(file);
+            e.target.value = "";
+          }}
+        />
+        {previewUrl && kind === "image" ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={previewUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />
+        ) : (
+          <>
+            <span className="flex size-8 items-center justify-center rounded-full bg-white/8 text-ink-soft">
+              {uploading ? (
+                <span className="size-3 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+              ) : (
+                <Plus className="size-4" aria-hidden="true" strokeWidth={2.5} />
+              )}
+            </span>
+            <span className="px-1 text-center text-caption font-medium text-ink-soft">{shortLabel}</span>
+          </>
+        )}
+        {hasFile && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onRemove?.();
+            }}
+            aria-label={`Remove ${label.toLowerCase()}`}
+            className="absolute top-1 right-1 flex size-5 items-center justify-center rounded-full bg-black/70 text-white opacity-0 backdrop-blur-sm transition-opacity group-hover:opacity-100"
+          >
+            <X className="size-3" />
+          </button>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div
