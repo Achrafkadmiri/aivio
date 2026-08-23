@@ -63,7 +63,10 @@ export function DashboardClient() {
             Here&apos;s what&apos;s happening with your account.
           </p>
         </div>
-        <Link href="/generate" className={buttonVariants({ variant: "gradient" })}>
+        <Link
+          href="/generate"
+          className={buttonVariants({ variant: "gradient", className: "w-full sm:w-auto" })}
+        >
           <Sparkles className="size-4" /> New generation
         </Link>
       </div>
@@ -74,7 +77,7 @@ export function DashboardClient() {
       <div className="grid gap-4 lg:grid-cols-3">
         <Card
           variant="standard"
-          className="relative overflow-hidden lg:col-span-2 hover:translate-y-0 hover:shadow-card"
+          className="relative overflow-hidden p-6 sm:p-8 lg:col-span-2 hover:translate-y-0 hover:shadow-card"
         >
           <div
             className="pointer-events-none absolute -top-24 -right-24 size-64 rounded-full opacity-40 blur-3xl"
@@ -85,7 +88,7 @@ export function DashboardClient() {
             <Zap className="size-3.5 text-brand" aria-hidden="true" />
             Credits remaining
           </div>
-          <p className="relative mt-2 text-display font-bold text-ink">
+          <p className="relative mt-2 text-heading font-bold text-ink sm:text-display">
             {formatCredits(creditBalance)}
           </p>
           <p className="relative mt-1 text-body-sm text-muted">
