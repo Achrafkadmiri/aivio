@@ -5,9 +5,9 @@ import { DropdownRoot, DropdownTrigger, DropdownContent, DropdownItem } from "@/
 import { ReferenceUploadTile } from "./reference-row";
 import { cn } from "@/lib/utils";
 
-export type ReferenceMode = "reference" | "keyframe";
+export type ReferenceMode = "reference" | "keyframe" | "video";
 
-type FrameSlot = {
+type UploadSlot = {
   previewUrl?: string | null;
   uploading?: boolean;
   onFile: (file: File) => void;
@@ -17,15 +17,17 @@ type FrameSlot = {
 const MODE_LABEL: Record<ReferenceMode, string> = {
   reference: "Reference",
   keyframe: "Keyframe",
+  video: "Reference video",
 };
 
-/** Dropdown-driven switcher between a single "Reference" image slot and a
+/** Dropdown-driven switcher between a single "Reference" image slot, a
  * "Keyframe" pair (first frame → last frame, with a swap control between
- * them) — the box(es) shown below the dropdown change with the selection,
- * matching ArtCraft/Higgsfield's own first/last-frame picker. The caller
- * owns the actual upload state for both slots (same `image` /
- * `lastFrameImage` fields either way) and is responsible for clearing the
- * last-frame slot when switching back to "Reference". */
+ * them), and — when the model supports it — a "Reference video" slot. Only
+ * one box (or pair) is ever on screen at once, all living under the same
+ * dropdown + box footprint, rather than a separate always-visible video
+ * tile bolted on beside it. The caller owns the actual upload state for
+ * every slot and is responsible for clearing whichever fields don't apply
+ * to the newly selected mode. */
 export function KeyframeReferenceControl({
   mode,
   onModeChange,
@@ -33,13 +35,17 @@ export function KeyframeReferenceControl({
   last,
   lastDisabled,
   onSwap,
+  video,
 }: {
   mode: ReferenceMode;
   onModeChange: (mode: ReferenceMode) => void;
-  first: FrameSlot;
-  last: FrameSlot;
+  first: UploadSlot;
+  last: UploadSlot;
   lastDisabled?: boolean;
   onSwap?: () => void;
+  /** Omit to hide the "Reference video" option entirely — only Seedance
+   * 2.5's Cloudflare integration actually supports a reference video. */
+  video?: UploadSlot;
 }) {
   return (
     <div className="flex flex-col items-start gap-1.5">
@@ -72,10 +78,21 @@ export function KeyframeReferenceControl({
               <p className="text-caption text-muted">Set a first and last frame</p>
             </div>
           </DropdownItem>
+          {video && (
+            <DropdownItem
+              onSelect={() => onModeChange("video")}
+              className={cn("rounded-lg px-3 py-2.5", mode === "video" && "text-brand")}
+            >
+              <div>
+                <p className="text-label font-medium">Reference video</p>
+                <p className="text-caption text-muted">Restyle an existing clip</p>
+              </div>
+            </DropdownItem>
+          )}
         </DropdownContent>
       </DropdownRoot>
 
-      {mode === "keyframe" ? (
+      {mode === "keyframe" && (
         <div className="flex items-center">
           <ReferenceUploadTile
             kind="image"
@@ -109,7 +126,9 @@ export function KeyframeReferenceControl({
             disabledHint="Add a first frame first."
           />
         </div>
-      ) : (
+      )}
+
+      {mode === "reference" && (
         <ReferenceUploadTile
           kind="image"
           label="Reference"
@@ -119,6 +138,19 @@ export function KeyframeReferenceControl({
           uploading={first.uploading}
           onFile={first.onFile}
           onRemove={first.onRemove}
+        />
+      )}
+
+      {mode === "video" && video && (
+        <ReferenceUploadTile
+          kind="video"
+          label="Reference video"
+          shortLabel="Reference video"
+          size="lg"
+          previewUrl={video.previewUrl}
+          uploading={video.uploading}
+          onFile={video.onFile}
+          onRemove={video.onRemove}
         />
       )}
     </div>

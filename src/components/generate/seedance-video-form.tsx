@@ -30,8 +30,6 @@ import {
 } from "@/lib/constants";
 import {
   ComposerShell,
-  ReferenceUploadRow,
-  ReferenceUploadTile,
   KeyframeReferenceControl,
   ComposerPromptField,
   ProviderModelPicker,
@@ -144,11 +142,21 @@ export function SeedanceVideoForm({
 
   function handleModeChange(next: ReferenceMode) {
     setRefMode(next);
-    // A last frame without a mode that supports it isn't a valid pairing —
-    // switching back to "Reference" drops whatever end frame was set.
-    if (next === "reference") {
+    // The three modes are mutually exclusive — leaving "Keyframe" drops
+    // whatever end frame was set (a last frame with no mode that supports
+    // it isn't a valid pairing), and switching to/from "Reference video"
+    // clears whichever of image/video doesn't belong to the new mode so the
+    // request never carries a stale reference from the mode just left.
+    if (next !== "keyframe") {
       setEndFramePreview(null);
       setValue("lastFrameImage", undefined, { shouldValidate: true });
+    }
+    if (next === "video") {
+      setPreview(null);
+      setValue("image", undefined, { shouldValidate: true });
+    } else {
+      setVideoPreview(null);
+      setValue("referenceVideoUrl", undefined, { shouldValidate: true });
     }
   }
 
@@ -244,20 +252,16 @@ export function SeedanceVideoForm({
               }}
               lastDisabled={!image}
               onSwap={handleSwapFrames}
-            />
-            <ReferenceUploadRow>
-              <ReferenceUploadTile
-                kind="video"
-                label="Reference Video"
-                previewUrl={videoPreview}
-                uploading={uploadingVideo}
-                onFile={handleVideoFile}
-                onRemove={() => {
+              video={{
+                previewUrl: videoPreview,
+                uploading: uploadingVideo,
+                onFile: handleVideoFile,
+                onRemove: () => {
                   setVideoPreview(null);
                   setValue("referenceVideoUrl", undefined, { shouldValidate: true });
-                }}
-              />
-            </ReferenceUploadRow>
+                },
+              }}
+            />
           </div>
 
           <div className="flex min-w-0 flex-1 items-start gap-3">

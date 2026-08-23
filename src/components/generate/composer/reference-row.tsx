@@ -89,6 +89,16 @@ export function ReferenceUploadTile({
         {previewUrl && kind === "image" ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={previewUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />
+        ) : hasFile ? (
+          // Non-image kinds (video/audio) have no inline thumbnail to show —
+          // but the tile still needs to visibly confirm "attached" instead
+          // of sitting on the same Plus glyph as the empty state.
+          <>
+            <span className="flex size-8 items-center justify-center rounded-full bg-[image:var(--gradient-primary)] text-white shadow-glow-sm">
+              <Icon className="size-4" aria-hidden="true" />
+            </span>
+            <span className="px-1 text-center text-caption font-medium text-ink-soft">Added</span>
+          </>
         ) : (
           <>
             <span className="flex size-8 items-center justify-center rounded-full bg-white/8 text-ink-soft">
