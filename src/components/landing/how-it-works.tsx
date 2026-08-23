@@ -1,10 +1,17 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { Type, Sparkles, Wand2, Download } from "lucide-react";
 import { Reveal } from "@/components/marketing/reveal";
 import { useInView } from "@/hooks/use-in-view";
 import { cn } from "@/lib/utils";
+import { SHOWCASE_VIDEOS } from "@/lib/showcase-media";
+
+// "The result" preview — a real, distinct clip (unused elsewhere on this
+// page) shown as a small floating panel next to the step-by-step copy, so
+// the flow ends on an actual output rather than just four icons.
+const RESULT_VIDEO = SHOWCASE_VIDEOS.find((v) => v.id === "studio-portrait")!;
 
 // leonardo.ai's real "How it works" section is a simple linear 4-step flow
 // (Prompt/upload → Pick a style → Refine & adjust → Export with ease) —
@@ -33,16 +40,68 @@ const STEPS = [
   },
 ];
 
+function ResultPreview() {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [inView, setInView] = useState(false);
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setInView(entry.isIntersecting);
+        if (entry.isIntersecting) setHasLoadedOnce(true);
+      },
+      { rootMargin: "200px" },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    const videoEl = videoRef.current;
+    if (!videoEl) return;
+    if (inView) videoEl.play().catch(() => {});
+    else videoEl.pause();
+  }, [inView, hasLoadedOnce]);
+
+  return (
+    <div
+      ref={containerRef}
+      className="relative mx-auto aspect-square w-40 flex-none overflow-hidden rounded-2xl border border-line bg-surface-2 shadow-glow-sm sm:w-48"
+    >
+      {hasLoadedOnce && (
+        <video
+          ref={videoRef}
+          className="absolute inset-0 h-full w-full object-cover"
+          muted
+          loop
+          playsInline
+          preload="none"
+          aria-hidden="true"
+        >
+          <source src={RESULT_VIDEO.url} type="video/mp4" />
+        </video>
+      )}
+    </div>
+  );
+}
+
 export function HowItWorks() {
   const { ref, inView } = useInView<HTMLDivElement>(0.4);
 
   return (
     <section className="container-page py-20 sm:py-28">
-      <Reveal className="mx-auto max-w-2xl text-center">
-        <h2 className="text-heading font-bold text-ink">How Vixerra works</h2>
-        <p className="mt-4 text-body text-muted">
-          Prompt, refine, and export — ready to share.
-        </p>
+      <Reveal className="mx-auto flex max-w-3xl flex-col items-center gap-6 text-center sm:flex-row sm:text-left">
+        <div className="flex-1">
+          <h2 className="text-heading font-bold text-ink">How Vixerra works</h2>
+          <p className="mt-4 text-body text-muted">
+            Prompt, refine, and export — ready to share.
+          </p>
+        </div>
+        <ResultPreview />
       </Reveal>
 
       <div ref={ref} className="mt-16">

@@ -17,13 +17,17 @@
  * Tailwind's stock sm(640)/md(768)/lg(1024), matching the doc's tiers.
  */
 @theme {
-  /* Surfaces */
-  --color-surface: #000000; /* Background Primary — pure black, matches leonardo.ai */
-  --color-surface-2: #111111; /* Background Secondary (cards) */
-  --color-surface-3: #1a1a1a; /* Background Tertiary (elevated / card hover) */
-  --color-surface-dark: #141414; /* Input fields */
-  --color-overlay: #000000;
-  --color-dropdown-hover: #1f1f1f; /* Hover states, dropdowns */
+  /* Surfaces — near-black rather than a literally flat #000000. Pure black
+     with zero warmth reads as an unstyled/"AI-template" void at a glance;
+     a faint violet undertone (still dark enough to look black in normal
+     viewing conditions) keeps depth and brand identity even where no
+     gradient/media is layered on top. */
+  --color-surface: #050308; /* Background Primary — near-black, faint violet undertone */
+  --color-surface-2: #120f1a; /* Background Secondary (cards) */
+  --color-surface-3: #1c1728; /* Background Tertiary (elevated / card hover) */
+  --color-surface-dark: #17121f; /* Input fields */
+  --color-overlay: #050308;
+  --color-dropdown-hover: #241d33; /* Hover states, dropdowns */
 
   /* App-shell background — the authenticated app (dashboard/generate/
      gallery/settings, see AppShell) uses a slightly softer near-black than
@@ -199,8 +203,22 @@
     background: var(--color-surface);
   }
 
+  /* Layered, fixed color washes instead of a flat single-color body —
+     large, very low-opacity violet/pink glows anchored to the viewport
+     corners so the whole page reads as one continuous colored space
+     (rather than a stack of identical black sections), without ever
+     getting bright enough to hurt legibility or look like a colored
+     theme. background-attachment: fixed keeps the wash static while
+     content scrolls past it, like ambient lighting rather than a
+     decoration tied to any one section. */
   body {
-    background: var(--color-surface);
+    background:
+      radial-gradient(ellipse 55% 45% at 12% 0%, rgb(124 92 252 / 0.16) 0%, transparent 60%),
+      radial-gradient(ellipse 50% 40% at 88% 28%, rgb(236 72 153 / 0.12) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 50% at 20% 75%, rgb(124 92 252 / 0.1) 0%, transparent 65%),
+      radial-gradient(ellipse 55% 45% at 95% 100%, rgb(236 72 153 / 0.09) 0%, transparent 60%),
+      var(--color-surface);
+    background-attachment: fixed;
     color: var(--color-ink);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;

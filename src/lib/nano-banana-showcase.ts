@@ -54,6 +54,32 @@ export const NANO_BANANA_IMAGES: NanoBananaImage[] = [
     url: "https://storage.ghost.io/c/0e/15/0e15ee8a-bd95-4b71-9258-950f77f4d196/content/images/2025/11/LTr0ggIhhQnIcs0awva5x.png",
     prompt: "Clean, legible text rendered directly in the scene — signage, labels, and packaging.",
   },
+  // The 4 below are from fal.ai's own Nano Banana 2 landing page (fal.ai/nano-banana-2),
+  // verified reachable with `curl -I` (200 OK, image/webp) on 2026-08-23.
+  {
+    id: "coffee-mug-product",
+    url: "https://refinery.fal.media/url/https%3A%2F%2Fir7z8qsacw4tk54b.public.blob.vercel-storage.com%2Fnano-banana-2%2Fexample-1.png/tr:w-1920,q-80/example-1.webp",
+    prompt:
+      "A hyperrealistic product photo of a matte ceramic coffee mug on a wooden table, morning light streaming through a window casting soft shadows, steam rising from the cup with the text 'GOOD MORNING' embossed on the side in a clean serif font, shallow depth of field, 85mm lens",
+  },
+  {
+    id: "fisherman-portrait",
+    url: "https://refinery.fal.media/url/https%3A%2F%2Fir7z8qsacw4tk54b.public.blob.vercel-storage.com%2Fnano-banana-2%2Fexample-2.png/tr:w-1920,q-80/example-2.webp",
+    prompt:
+      "A cinematic portrait of an elderly Japanese fisherman mending nets at dawn, weathered hands in sharp focus, fishing village harbor in soft bokeh behind him, golden hour side lighting, documentary photography style, Leica 50mm Summilux wide open",
+  },
+  {
+    id: "bioluminescent-bay",
+    url: "https://refinery.fal.media/url/https%3A%2F%2Fir7z8qsacw4tk54b.public.blob.vercel-storage.com%2Fnano-banana-2%2Fexample-3.png/tr:w-1920,q-80/example-3.webp",
+    prompt:
+      "An aerial view of a bioluminescent bay at night, glowing blue-green plankton tracing the wake of a small wooden boat, stars reflected in the calm water, long exposure effect, the Milky Way arching overhead, National Geographic cover quality",
+  },
+  {
+    id: "hillside-house-viz",
+    url: "https://refinery.fal.media/url/https%3A%2F%2Fir7z8qsacw4tk54b.public.blob.vercel-storage.com%2Fnano-banana-2%2Fexample-4.png/tr:w-1920,q-80/example-4.webp",
+    prompt:
+      "A detailed architectural visualization of a modern hillside house with floor-to-ceiling glass walls, infinity pool merging with the ocean horizon, warm interior lighting at dusk, tropical vegetation, rendered in photorealistic style with accurate reflections and volumetric light",
+  },
 ];
 
 export function getNanoBananaImage(id: string): NanoBananaImage {
