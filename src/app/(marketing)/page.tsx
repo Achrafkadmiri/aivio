@@ -1,7 +1,7 @@
 import { Hero } from "@/components/landing/hero";
 import { SeedancePromoBanner } from "@/components/landing/seedance-promo-banner";
 import { ModelStrip } from "@/components/landing/model-strip";
-import { ShowcaseGrid } from "@/components/landing/showcase-grid";
+import { ShowcaseTabs } from "@/components/landing/showcase-tabs";
 import { HowItWorks } from "@/components/landing/how-it-works";
 import { FeaturesShowcase } from "@/components/landing/features-showcase";
 import { CapabilitiesGrid } from "@/components/landing/capabilities-grid";
@@ -23,11 +23,11 @@ export default function LandingPage() {
           <h2 className="text-heading font-bold text-ink">See it in action</h2>
           <p className="mt-4 text-body text-muted">
             Real output from the models behind Vixerra — no cherry-picked renders, just what
-            the pipeline produces.
+            the pipeline produces. Hover a tile to try that exact model yourself.
           </p>
         </div>
         <div className="mt-12">
-          <ShowcaseGrid />
+          <ShowcaseTabs />
         </div>
       </section>
 

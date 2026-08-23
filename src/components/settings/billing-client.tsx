@@ -56,8 +56,13 @@ export function BillingClient() {
         <CurrencySelector />
       </div>
 
-      <Card variant="standard">
-        <div className="flex items-center justify-between">
+      <Card variant="standard" className="relative overflow-hidden hover:translate-y-0 hover:shadow-card">
+        <div
+          className="pointer-events-none absolute -top-20 -right-20 size-56 rounded-full opacity-30 blur-3xl"
+          style={{ background: "var(--gradient-primary-radial)" }}
+          aria-hidden="true"
+        />
+        <div className="relative flex items-center justify-between">
           <div>
             <p className="text-caption text-muted">Current plan</p>
             <h2 className="mt-1 text-subheading font-semibold text-ink">{info.label}</h2>
@@ -67,7 +72,7 @@ export function BillingClient() {
           </p>
         </div>
 
-        <div className="mt-6 flex items-baseline justify-between">
+        <div className="relative mt-6 flex items-baseline justify-between">
           <p className="text-caption text-muted">Credit balance</p>
           <p className="text-subheading font-bold text-ink">
             {formatCredits(credit_balance)}
@@ -75,12 +80,12 @@ export function BillingClient() {
           </p>
         </div>
         {credits_expiring_soon > 0 && (
-          <p className="mt-1 text-right text-caption text-warning">
+          <p className="relative mt-1 text-right text-caption text-warning">
             {formatCredits(credits_expiring_soon)} credits expire soon
           </p>
         )}
 
-        <div className="mt-4">
+        <div className="relative mt-4">
           <Progress value={usedPct} />
           <p className="mt-2 text-caption text-muted">
             {formatCredits(credits_used_this_month)} / {formatCredits(credits_limit)} credits used

@@ -45,12 +45,19 @@
   --color-border-subtle: rgb(255 255 255 / 0.06); /* Subtle dividers */
   --color-border-strong: rgb(255 255 255 / 0.15); /* Focus rings, active borders */
 
-  /* Brand — leonardo.ai's real accent violet. Used for text accents, badges,
-     links, and focus/active states — never as a button fill (their own
-     primary CTA is a solid white pill, see button.tsx). */
-  --color-brand: #1df072;
-  --color-brand-hover: #8478f2;
-  --color-brand-active: #5548c8;
+  /* Brand — AI-studio violet (was inconsistently lime-green while hover/
+     active stayed violet; unified back to one violet family, closer to
+     higgsfield.ai/leonardo.ai's real accent). Used for text accents,
+     badges, links, focus/active states, and gradient CTAs — the primary
+     button itself stays a solid white pill (see button.tsx). */
+  --color-brand: #7c5cfc;
+  --color-brand-hover: #9c87ff;
+  --color-brand-active: #6247d6;
+
+  /* Secondary AI-generation accent — paired with --color-brand in gradients
+     (hero glow, gradient CTA button, generate-workspace accents) so bold
+     surfaces read as violet→pink rather than a flat single hue. */
+  --color-accent-pink: #ec4899;
 
   /* Status */
   --color-success: #22c55e;
@@ -82,16 +89,18 @@
   --shadow-modal: 0 20px 60px -12px rgb(0 0 0 / 0.6);
   --shadow-inset: inset 0 1px 0 0 rgb(255 255 255 / 0.05);
   --shadow-card: 0 4px 12px rgb(0 0 0 / 0.4), inset 0 1px 0 0 rgb(255 255 255 / 0.05);
-  --shadow-glow-sm: 0 0 20px rgb(110 96 238 / 0.15);
-  --shadow-glow-md: 0 0 40px rgb(110 96 238 / 0.2);
-  --shadow-glow-lg: 0 0 80px rgb(110 96 238 / 0.15);
+  --shadow-glow-sm: 0 0 20px rgb(124 92 252 / 0.18);
+  --shadow-glow-md: 0 0 40px rgb(124 92 252 / 0.22);
+  --shadow-glow-lg: 0 0 80px rgb(124 92 252 / 0.18);
   --shadow-glow-white: 0 0 30px rgb(255 255 255 / 0.05);
 
-  /* Gradients — single-hue violet, not a multi-hue blend (leonardo.ai's own
-     accent text is solid, not gradient-clipped — see .text-gradient below). */
-  --gradient-primary: linear-gradient(135deg, #1df072 0%, #10a34a 100%);
-  --gradient-primary-radial: radial-gradient(circle at 30% 30%, #1df072 0%, #10a34a 100%);
-  --gradient-hero-glow: radial-gradient(ellipse 80% 50% at 50% -20%, rgb(110 96 238 / 0.15) 0%, transparent 100%);
+  /* Gradients — violet → pink, used for the bold gradient CTA variant, the
+     generate-workspace canvas accent, and glow surfaces. .text-gradient
+     stays solid violet (leonardo.ai's own accent text is solid, not
+     gradient-clipped) — these are for larger surfaces/buttons instead. */
+  --gradient-primary: linear-gradient(135deg, #7c5cfc 0%, #ec4899 100%);
+  --gradient-primary-radial: radial-gradient(circle at 30% 30%, #7c5cfc 0%, #ec4899 100%);
+  --gradient-hero-glow: radial-gradient(ellipse 80% 50% at 50% -20%, rgb(124 92 252 / 0.18) 0%, transparent 100%);
 
   /* Type scale: each pairs font-size with its documented line-height (and,
      where the doc specifies one, letter-spacing) in a single utility.

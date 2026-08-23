@@ -105,7 +105,7 @@ export function GenerationCard({
   );
 
   return (
-    <div className="group relative aspect-square overflow-hidden rounded-xl border border-line bg-surface-2">
+    <div className="group relative aspect-square overflow-hidden rounded-2xl border border-line bg-surface-2 shadow-card transition-[border-color,box-shadow,transform] duration-300 ease-out hover:-translate-y-1 hover:border-border-strong hover:shadow-glow-sm">
       <button
         type="button"
         onClick={onOpen}

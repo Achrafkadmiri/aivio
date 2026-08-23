@@ -2,7 +2,7 @@ import { forwardRef, type ButtonHTMLAttributes } from "react";
 import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export type ButtonVariant = "primary" | "secondary" | "ghost" | "circular";
+export type ButtonVariant = "primary" | "secondary" | "ghost" | "circular" | "gradient";
 export type ButtonSize = "default" | "sm" | "icon" | "icon-circular";
 
 // Focus ring comes from the global :focus-visible rule in globals.css —
@@ -14,7 +14,10 @@ const base =
 // primary = leonardo.ai's real Primary Button: solid white pill, black text
 // — their brand violet never fills a button, it's reserved for text/badge/
 // link accents (see globals.css). secondary = their ghost pill ("Tutorial"
-// in the real nav): transparent + translucent white border.
+// in the real nav): transparent + translucent white border. gradient = the
+// one deliberate exception to "brand never fills a button": reserved for
+// the single highest-emphasis CTA on a screen (hero, generate submit,
+// upgrade/recharge) so it doesn't compete with the white primary pill.
 const variants: Record<ButtonVariant, string> = {
   primary:
     "border-0 bg-white text-black shadow-[0_0_20px_rgb(255_255_255_/_0.1)] hover:bg-white/90 hover:shadow-[0_0_30px_rgb(255_255_255_/_0.15)] hover:scale-[1.02] active:scale-[0.98] disabled:bg-line disabled:text-muted disabled:shadow-none disabled:hover:scale-100",
@@ -24,6 +27,8 @@ const variants: Record<ButtonVariant, string> = {
     "rounded-full border-0 bg-transparent text-ink-soft hover:bg-white/8 hover:text-ink active:bg-white/12",
   circular:
     "border-0 rounded-full bg-white/5 text-muted hover:bg-white/10 hover:text-ink-soft active:scale-95",
+  gradient:
+    "border-0 bg-[image:var(--gradient-primary)] text-white shadow-glow-md hover:shadow-glow-lg hover:scale-[1.02] active:scale-[0.98] disabled:opacity-40 disabled:hover:scale-100",
 };
 
 const sizes: Record<ButtonSize, string> = {

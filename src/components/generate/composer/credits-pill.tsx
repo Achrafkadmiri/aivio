@@ -22,9 +22,9 @@ export function CreditsSubmitPill({
       title={`Generate — costs ~${credits} credit${credits === 1 ? "" : "s"}`}
       aria-label="Generate"
       className={cn(
-        "inline-flex shrink-0 items-center gap-2 rounded-full bg-ink px-3.5 py-2 text-label font-semibold text-surface",
-        "transition-transform hover:-translate-y-px active:translate-y-0",
-        "disabled:pointer-events-none disabled:opacity-50",
+        "inline-flex shrink-0 items-center gap-2 rounded-full bg-[image:var(--gradient-primary)] px-3.5 py-2 text-label font-semibold text-white shadow-glow-sm",
+        "transition-[transform,box-shadow] hover:-translate-y-px hover:shadow-glow-md active:translate-y-0",
+        "disabled:pointer-events-none disabled:opacity-50 disabled:shadow-none",
         className,
       )}
     >

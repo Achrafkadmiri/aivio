@@ -51,12 +51,18 @@ export function RechargePacks() {
       </p>
       <div className="mt-3 grid gap-4 sm:grid-cols-3">
         {RECHARGE_PACKS.map((pack) => (
-          <Card key={pack.id} variant="compact" className="flex flex-col items-center text-center">
-            <Zap className="size-5 text-brand" aria-hidden="true" />
-            <p className="mt-2 text-subheading font-bold text-ink">{formatCredits(pack.credits)}</p>
+          <Card
+            key={pack.id}
+            variant="compact"
+            className="flex flex-col items-center text-center transition-[border-color,transform] hover:-translate-y-1 hover:border-border-strong"
+          >
+            <span className="flex size-10 items-center justify-center rounded-full bg-[image:var(--gradient-primary)] shadow-glow-sm">
+              <Zap className="size-4.5 text-white" aria-hidden="true" />
+            </span>
+            <p className="mt-3 text-subheading font-bold text-ink">{formatCredits(pack.credits)}</p>
             <p className="text-caption text-muted">credits</p>
             <Button
-              variant="secondary"
+              variant="gradient"
               loading={loadingPack === pack.id}
               onClick={() => buy(pack.id, pack.credits)}
               className="mt-4 w-full"

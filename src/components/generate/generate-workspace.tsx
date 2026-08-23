@@ -14,9 +14,11 @@ import { cn, formatCredits } from "@/lib/utils";
 import { apiFetch } from "@/lib/api-client";
 import {
   VIDEO_MODELS,
+  IMAGE_MODELS,
   SEEDANCE2_RESOLUTIONS,
   SEEDANCE2_ASPECT_RATIOS,
   type VideoModelId,
+  type ImageModelId,
   type GenerationType,
 } from "@/lib/constants";
 
@@ -71,6 +73,9 @@ export function GenerateStudio({ type }: { type: GenerationType }) {
   const initialModel = VIDEO_MODELS.some((m) => m.id === requestedModel)
     ? (requestedModel as VideoModelId)
     : undefined;
+  const initialImageModel = IMAGE_MODELS.some((m) => m.id === requestedModel)
+    ? (requestedModel as ImageModelId)
+    : undefined;
   const initialPrompt = searchParams.get("prompt") ?? undefined;
   const requestedDuration = Number(searchParams.get("duration"));
   const requestedResolution = searchParams.get("resolution");
@@ -114,14 +119,16 @@ export function GenerateStudio({ type }: { type: GenerationType }) {
     <>
       <div className="flex h-full flex-col [zoom:0.7]">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="inline-flex items-center gap-1 rounded-full border border-line bg-surface-2 p-1">
+          <div className="glass inline-flex items-center gap-1 rounded-full p-1">
             {MODALITIES.map((m) => (
               <Link
                 key={m.type}
                 href={m.href}
                 className={cn(
                   "rounded-full px-4 py-2 text-label font-medium transition-colors",
-                  m.type === type ? "bg-ink text-surface" : "text-muted hover:text-ink-soft",
+                  m.type === type
+                    ? "bg-[image:var(--gradient-primary)] text-white shadow-glow-sm"
+                    : "text-muted hover:text-ink-soft",
                 )}
               >
                 {m.label}
@@ -136,9 +143,10 @@ export function GenerateStudio({ type }: { type: GenerationType }) {
           </div>
 
           {usageQuery.data && (
-            <div className="flex items-center gap-2 text-body-sm text-muted">
+            <div className="flex items-center gap-1.5 rounded-full border border-line bg-surface-2 px-3 py-1.5 text-body-sm text-ink-soft">
               <Zap className="size-4 text-brand" aria-hidden="true" />
-              {`${formatCredits(usageQuery.data.credit_balance)} credits remaining`}
+              <span className="font-semibold">{formatCredits(usageQuery.data.credit_balance)}</span>
+              <span className="text-muted">credits remaining</span>
             </div>
           )}
         </div>
@@ -150,10 +158,17 @@ export function GenerateStudio({ type }: { type: GenerationType }) {
               <JobStatusCard generation={generation} hasJob={hasJob} isVideo={activeIsVideo} />
             </div>
           ) : (
-            <div className="flex h-full min-h-[50vh] flex-col items-center justify-center text-center">
-              <Sparkles className="mb-4 size-8 text-muted" aria-hidden="true" />
-              <h2 className="text-display font-bold text-ink">{active.heroTitle}</h2>
-              <p className="mt-3 text-body text-muted">{active.heroSubtitle}</p>
+            <div className="relative flex h-full min-h-[50vh] flex-col items-center justify-center overflow-hidden text-center">
+              <div
+                className="pointer-events-none absolute size-[32rem] rounded-full opacity-30 blur-3xl"
+                style={{ background: "var(--gradient-primary-radial)" }}
+                aria-hidden="true"
+              />
+              <span className="relative mb-5 flex size-16 items-center justify-center rounded-2xl bg-[image:var(--gradient-primary)] shadow-glow-md">
+                <Sparkles className="size-7 text-white" aria-hidden="true" />
+              </span>
+              <h2 className="relative text-display font-bold text-ink">{active.heroTitle}</h2>
+              <p className="relative mt-3 text-body text-muted">{active.heroSubtitle}</p>
             </div>
           )}
         </div>
@@ -181,7 +196,14 @@ export function GenerateStudio({ type }: { type: GenerationType }) {
           {type === "image-to-video" && (
             <ImageToVideoForm onCreated={handleCreated(true)} busy={busy} />
           )}
-          {type === "text-to-image" && <TextToImageForm onCreated={handleCreated(false)} busy={busy} />}
+          {type === "text-to-image" && (
+            <TextToImageForm
+              onCreated={handleCreated(false)}
+              busy={busy}
+              initialModel={initialImageModel}
+              initialPrompt={initialPrompt}
+            />
+          )}
         </div>
       </div>
     </>

@@ -1,7 +1,7 @@
 import { type HTMLAttributes } from "react";
 import { cn } from "@/lib/utils";
 
-export type CardVariant = "standard" | "compact" | "feature";
+export type CardVariant = "standard" | "compact" | "feature" | "glass";
 
 const variants: Record<CardVariant, string> = {
   standard:
@@ -11,6 +11,12 @@ const variants: Record<CardVariant, string> = {
   // tertiary + stronger border + bigger shadow on hover — no lift/scale.
   feature:
     "rounded-2xl border border-border-subtle bg-surface-2 px-8 py-12 text-ink transition-[background-color,border-color,box-shadow] duration-500 ease-out hover:border-border-strong hover:bg-surface-3 hover:shadow-floating",
+  // Frosted glass panel — floating/overlay surfaces that sit on top of
+  // imagery or gradients (docked composer, canvas toolbars, stat callouts)
+  // where an opaque bg-surface-2 card would look flat. Reuses the .glass
+  // utility's blur/translucency, just as a Card variant.
+  glass:
+    "glass rounded-2xl p-6 shadow-floating",
 };
 
 export function Card({

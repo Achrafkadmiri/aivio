@@ -56,14 +56,17 @@ export function CollectionsClient() {
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {collections.map((collection) => (
               <Link key={collection.id} href={`/collections/${collection.id}`}>
-                <Card variant="standard" className="h-full">
-                  <h2 className="text-subheading font-semibold text-ink">{collection.name}</h2>
+                <Card variant="standard" className="flex h-full flex-col">
+                  <span className="flex size-11 items-center justify-center rounded-xl bg-[image:var(--gradient-primary)] shadow-glow-sm">
+                    <FolderKanban className="size-5 text-white" aria-hidden="true" />
+                  </span>
+                  <h2 className="mt-4 text-subheading font-semibold text-ink">{collection.name}</h2>
                   {collection.description && (
                     <p className="mt-2 line-clamp-2 text-body-sm text-muted">
                       {collection.description}
                     </p>
                   )}
-                  <p className="mt-4 text-caption text-muted">
+                  <p className="mt-auto pt-4 text-caption text-muted">
                     {collection.itemCount} item{collection.itemCount === 1 ? "" : "s"}
                   </p>
                 </Card>

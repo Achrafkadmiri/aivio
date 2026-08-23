@@ -46,7 +46,7 @@ export function Hero() {
         className="pointer-events-none absolute inset-0"
         style={{
           background:
-            "radial-gradient(ellipse 80% 50% at 50% -20%, rgb(110 96 238 / 0.25) 0%, transparent 100%)",
+            "radial-gradient(ellipse 80% 50% at 50% -20%, rgb(124 92 252 / 0.25) 0%, transparent 100%)",
         }}
         aria-hidden="true"
       />
@@ -65,7 +65,7 @@ export function Hero() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
           >
-            <span className="mx-auto inline-flex items-center gap-1.5 rounded-full border border-[#1df072]/30 bg-[#1df072]/10 px-3 py-1 text-[11px] leading-4 font-semibold tracking-wide text-[#1df072] uppercase">
+            <span className="mx-auto inline-flex items-center gap-1.5 rounded-full border border-brand/30 bg-brand/10 px-3 py-1 text-[11px] leading-4 font-semibold tracking-wide text-brand uppercase">
               New — cinematic-grade AI video generation
             </span>
           </motion.div>
@@ -89,7 +89,7 @@ export function Hero() {
               <motion.span
                 key={`a-${i}`}
                 variants={shouldReduceMotion ? undefined : heroWordVariants}
-                className="mr-[0.25em] inline-block text-[#1df072]"
+                className="mr-[0.25em] inline-block text-brand"
               >
                 {word}
               </motion.span>

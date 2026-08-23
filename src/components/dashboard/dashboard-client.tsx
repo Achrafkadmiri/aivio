@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Sparkles, Video } from "lucide-react";
+import { ArrowUpRight, Sparkles, TrendingUp, Video, Zap } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api-client";
 import { useMe } from "@/hooks/use-me";
@@ -54,48 +54,79 @@ export function DashboardClient() {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-heading font-bold text-ink">
-          Welcome back, {user.name.split(" ")[0]}
-        </h1>
-        <p className="mt-2 text-body-sm text-muted">
-          Here&apos;s what&apos;s happening with your account.
-        </p>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h1 className="text-heading font-bold text-ink">
+            Welcome back, {user.name.split(" ")[0]}
+          </h1>
+          <p className="mt-2 text-body-sm text-muted">
+            Here&apos;s what&apos;s happening with your account.
+          </p>
+        </div>
+        <Link href="/generate" className={buttonVariants({ variant: "gradient" })}>
+          <Sparkles className="size-4" /> New generation
+        </Link>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-3">
-        <Card variant="compact">
-          <p className="text-caption text-muted">Credits remaining</p>
-          <p className="mt-2 text-heading font-bold text-ink">{formatCredits(creditBalance)}</p>
-          <p className="mt-1 text-caption text-muted">
+      {/* Bento layout: the credit balance is the one number people check
+          most, so it gets a wide hero cell with a glow ring behind the
+          number; generations count + plan sit stacked beside it. */}
+      <div className="grid gap-4 lg:grid-cols-3">
+        <Card
+          variant="standard"
+          className="relative overflow-hidden lg:col-span-2 hover:translate-y-0 hover:shadow-card"
+        >
+          <div
+            className="pointer-events-none absolute -top-24 -right-24 size-64 rounded-full opacity-40 blur-3xl"
+            style={{ background: "var(--gradient-primary-radial)" }}
+            aria-hidden="true"
+          />
+          <div className="relative flex items-center gap-2 text-caption text-muted">
+            <Zap className="size-3.5 text-brand" aria-hidden="true" />
+            Credits remaining
+          </div>
+          <p className="relative mt-2 text-display font-bold text-ink">
+            {formatCredits(creditBalance)}
+          </p>
+          <p className="relative mt-1 text-body-sm text-muted">
             <CreditValue credits={creditBalance} />
           </p>
-          <Progress value={usedPct} className="mt-4" />
-          <p className="mt-2 text-caption text-muted">
-            {formatCredits(usage.creditsUsed)} / {formatCredits(limit)} used this month
-          </p>
-          {creditsExpiringSoon > 0 && (
-            <p className="mt-2 text-caption text-warning">
-              {formatCredits(creditsExpiringSoon)} credits expire soon
-            </p>
-          )}
-        </Card>
-        <Card variant="compact">
-          <p className="text-caption text-muted">Generations this month</p>
-          <p className="mt-2 text-heading font-bold text-ink">{usage.generationsCount}</p>
-          <p className="mt-2 text-caption text-muted">On the {tierInfo.label} plan</p>
-        </Card>
-        <Card variant="compact">
-          <p className="text-caption text-muted">Quick actions</p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            <Link href="/generate" className={buttonVariants({ size: "sm" })}>
-              <Sparkles className="size-4" /> New generation
-            </Link>
+          <Progress value={usedPct} className="relative mt-6" />
+          <div className="relative mt-2 flex flex-wrap items-center justify-between gap-2 text-caption text-muted">
+            <span>
+              {formatCredits(usage.creditsUsed)} / {formatCredits(limit)} used this month
+            </span>
+            {creditsExpiringSoon > 0 && (
+              <span className="text-warning">
+                {formatCredits(creditsExpiringSoon)} credits expire soon
+              </span>
+            )}
           </div>
         </Card>
+
+        <div className="flex flex-col gap-4">
+          <Card variant="compact" className="flex-1">
+            <div className="flex items-center gap-2 text-caption text-muted">
+              <TrendingUp className="size-3.5" aria-hidden="true" />
+              Generations this month
+            </div>
+            <p className="mt-2 text-subheading font-bold text-ink">{usage.generationsCount}</p>
+            <p className="mt-1 text-caption text-muted">On the {tierInfo.label} plan</p>
+          </Card>
+          <Link
+            href="/settings/billing"
+            className="group flex flex-1 items-center justify-between rounded-2xl border border-border-subtle bg-surface-2 p-6 transition-colors hover:border-border-strong hover:bg-surface-3"
+          >
+            <span className="text-label text-ink-soft">Manage plan &amp; billing</span>
+            <ArrowUpRight
+              className="size-4 text-muted transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-ink-soft"
+              aria-hidden="true"
+            />
+          </Link>
+        </div>
       </div>
 
-      <Card variant="standard">
+      <Card variant="standard" className="hover:translate-y-0 hover:shadow-card">
         <h2 className="text-subheading font-semibold text-ink">Usage — last 30 days</h2>
         <div className="mt-6">
           <UsageChart data={dailyCounts} />
@@ -119,7 +150,7 @@ export function DashboardClient() {
                   Create your first video or image to see it here.
                 </p>
               </div>
-              <Link href="/generate" className={buttonVariants()}>
+              <Link href="/generate" className={buttonVariants({ variant: "gradient" })}>
                 Generate your first video
               </Link>
             </Card>
