@@ -49,7 +49,10 @@ export const MODALITIES: {
 
 /** Compact modality dropdown for the composer's mobile row — replaces the
  * model picker there (which moves into the settings BottomSheet instead),
- * matching the reference mobile app's "Video ▾" pill in the bottom bar. */
+ * matching the reference mobile app's "Video ▾" pill in the bottom bar.
+ * Forced to open upward (side="top") since the composer is docked to the
+ * bottom of the viewport — see DropdownContent's `side` prop. Styled as a
+ * bigger glass card with roomier rows, also matching the reference. */
 export function ModalitySwitcherMobile({ type }: { type: GenerationType }) {
   const active = MODALITIES.find((m) => m.type === type) ?? MODALITIES[0];
   return (
@@ -61,16 +64,24 @@ export function ModalitySwitcherMobile({ type }: { type: GenerationType }) {
           <ChevronDown className="size-3 text-muted" aria-hidden="true" />
         </button>
       </DropdownTrigger>
-      <DropdownContent align="start" className="w-56">
+      <DropdownContent
+        align="start"
+        side="top"
+        className="glass w-60 rounded-2xl border-white/10 p-1.5 shadow-floating"
+      >
         {MODALITIES.map((m) => (
-          <DropdownItem key={m.type} asChild className={cn(m.type === type && "text-brand")}>
+          <DropdownItem
+            key={m.type}
+            asChild
+            className={cn("gap-2.5 rounded-xl px-3.5 py-3", m.type === type && "text-brand")}
+          >
             <Link href={m.href} className="flex items-center gap-2.5">
               <m.icon className="size-4" aria-hidden="true" />
               {m.label}
             </Link>
           </DropdownItem>
         ))}
-        <div className="flex cursor-not-allowed items-center gap-2.5 px-4 py-3 text-label text-muted opacity-50">
+        <div className="flex cursor-not-allowed items-center gap-2.5 rounded-xl px-3.5 py-3 text-label text-muted opacity-50">
           <AudioLines className="size-4" aria-hidden="true" />
           Audio to Video
         </div>

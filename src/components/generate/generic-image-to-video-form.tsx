@@ -124,7 +124,9 @@ export function GenericImageToVideoForm({
   return (
     <form onSubmit={submit} noValidate>
       <ComposerShell>
-        <div className="flex items-start gap-3">
+        {/* Stacked on mobile — see seedance-video-form.tsx for the full
+            rationale. Desktop keeps them side by side. */}
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
           <div className="shrink-0">
             <ReferenceUploadRow>
               <ReferenceUploadTile
@@ -154,24 +156,26 @@ export function GenericImageToVideoForm({
             </ReferenceUploadRow>
           </div>
 
-          <div className="min-w-0 flex-1">
-            <Controller
-              control={control}
-              name="prompt"
-              render={({ field }) => (
-                <ComposerPromptField
-                  value={field.value ?? ""}
-                  onChange={field.onChange}
-                  onSubmit={submit}
-                  placeholder="Describe the motion — slow push in, gentle breeze through hair…"
-                  maxLength={500}
-                />
-              )}
-            />
-            <FieldError>{!imageUrl ? errors.imageUrl?.message : undefined}</FieldError>
-          </div>
+          <div className="flex min-w-0 flex-1 items-start gap-3">
+            <div className="min-w-0 flex-1">
+              <Controller
+                control={control}
+                name="prompt"
+                render={({ field }) => (
+                  <ComposerPromptField
+                    value={field.value ?? ""}
+                    onChange={field.onChange}
+                    onSubmit={submit}
+                    placeholder="Describe the motion — slow push in, gentle breeze through hair…"
+                    maxLength={500}
+                  />
+                )}
+              />
+              <FieldError>{!imageUrl ? errors.imageUrl?.message : undefined}</FieldError>
+            </div>
 
-          <span className="mt-3 shrink-0 text-caption text-muted">{prompt.length}/500</span>
+            <span className="mt-3 shrink-0 text-caption text-muted">{prompt.length}/500</span>
+          </div>
         </div>
 
         {/* Mobile: modality switcher + a single "Options" trigger that opens

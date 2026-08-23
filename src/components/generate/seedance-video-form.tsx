@@ -168,7 +168,11 @@ export function SeedanceVideoForm({
       </p>
 
       <ComposerShell>
-        <div className="flex items-start gap-3">
+        {/* Stacked on mobile — the reference-upload tiles and the prompt
+            field sharing one row squeezes the textarea down to almost no
+            width, wrapping short placeholder text onto 3-4 lines. Desktop
+            keeps them side by side. */}
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
           <div className="shrink-0">
             <ReferenceUploadRow>
               <ReferenceUploadTile
@@ -202,27 +206,29 @@ export function SeedanceVideoForm({
             </ReferenceUploadRow>
           </div>
 
-          <div className="min-w-0 flex-1">
-            <Controller
-              control={control}
-              name="prompt"
-              render={({ field }) => (
-                <ComposerPromptField
-                  value={field.value ?? ""}
-                  onChange={(v) => {
-                    field.onChange(v);
-                    onPromptChange(v);
-                  }}
-                  onSubmit={submit}
-                  placeholder="Describe the scene you imagine"
-                  maxLength={2000}
-                />
-              )}
-            />
-            <FieldError>{errors.prompt?.message}</FieldError>
-          </div>
+          <div className="flex min-w-0 flex-1 items-start gap-3">
+            <div className="min-w-0 flex-1">
+              <Controller
+                control={control}
+                name="prompt"
+                render={({ field }) => (
+                  <ComposerPromptField
+                    value={field.value ?? ""}
+                    onChange={(v) => {
+                      field.onChange(v);
+                      onPromptChange(v);
+                    }}
+                    onSubmit={submit}
+                    placeholder="Describe the scene you imagine"
+                    maxLength={2000}
+                  />
+                )}
+              />
+              <FieldError>{errors.prompt?.message}</FieldError>
+            </div>
 
-          <span className="mt-3 shrink-0 text-caption text-muted">{prompt.length}/2000</span>
+            <span className="mt-3 shrink-0 text-caption text-muted">{prompt.length}/2000</span>
+          </div>
         </div>
 
         {/* Mobile: modality switcher + a single "Options" trigger that opens
