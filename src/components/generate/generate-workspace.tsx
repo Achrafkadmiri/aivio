@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { Sparkles, Zap } from "lucide-react";
+import { Sparkles, Wand2, Zap } from "lucide-react";
 import { TextToVideoForm } from "./text-to-video-form";
 import { TextToImageForm } from "./text-to-image-form";
 import { JobStatusCard } from "./job-status-card";
@@ -98,6 +98,24 @@ export function GenerateStudio({ type }: { type: GenerationType }) {
     };
   }
 
+  // Quick-start suggestion chips seed the composer's prompt field. RHF's
+  // defaultValues aren't reactive after mount, so instead of threading a
+  // setValue call down through every leaf form, bumping formKey forces the
+  // active composer form to fully remount with the new initialPrompt — same
+  // mechanism the ?prompt= deep link already relies on at first mount.
+  const [heroPrompt, setHeroPrompt] = useState(initialPrompt);
+  const [formKey, setFormKey] = useState(0);
+  function handleSuggestion(suggestion: string) {
+    setHeroPrompt(suggestion);
+    setFormKey((k) => k + 1);
+  }
+
+  // "Create another" (completed) / "Try again" (failed) both just clear the
+  // active job so the idle hero + composer come back for a fresh attempt.
+  function handleReset() {
+    setActiveJobId(null);
+  }
+
   return (
     // The fixed composer bar below is deliberately OUTSIDE this [zoom:0.7]
     // wrapper: zoom scales an element's own box model (padding included),
@@ -159,20 +177,52 @@ export function GenerateStudio({ type }: { type: GenerationType }) {
         >
           {hasJob ? (
             <div className="mx-auto w-full max-w-4xl">
-              <JobStatusCard generation={generation} hasJob={hasJob} isVideo={activeIsVideo} />
+              <JobStatusCard
+                generation={generation}
+                hasJob={hasJob}
+                isVideo={activeIsVideo}
+                onReset={handleReset}
+              />
             </div>
           ) : (
             <div className="relative flex h-full min-h-[50vh] flex-col items-center justify-center overflow-hidden text-center">
+              {/* Two offset floating glow orbs (violet + pink) instead of a
+                  single static blob — echoes the body's own layered radial
+                  wash in globals.css and gives the idle canvas a bit of
+                  ArtCraft/Higgsfield-style ambient motion via the existing
+                  glow-float keyframe. */}
               <div
-                className="pointer-events-none absolute size-[32rem] rounded-full opacity-30 blur-3xl"
+                className="pointer-events-none absolute -top-16 left-1/2 size-[34rem] -translate-x-[60%] rounded-full opacity-30 blur-3xl animate-glow-float"
                 style={{ background: "var(--gradient-primary-radial)" }}
                 aria-hidden="true"
               />
+              <div
+                className="pointer-events-none absolute -bottom-24 left-1/2 size-[26rem] -translate-x-[30%] rounded-full opacity-20 blur-3xl animate-glow-float"
+                style={{ background: "var(--gradient-primary-radial)", animationDelay: "-3s" }}
+                aria-hidden="true"
+              />
+
               <span className="relative mb-5 flex size-16 items-center justify-center rounded-2xl bg-[image:var(--gradient-primary)] shadow-glow-md">
                 <Sparkles className="size-7 text-white" aria-hidden="true" />
               </span>
               <h2 className="relative text-display font-bold text-ink">{active.heroTitle}</h2>
               <p className="relative mt-3 text-body text-muted">{active.heroSubtitle}</p>
+
+              {/* Quick-start suggestion chips — tap to seed the composer's
+                  prompt below without typing from scratch. */}
+              <div className="relative mt-8 flex max-w-2xl flex-wrap items-center justify-center gap-2">
+                {active.suggestions.map((suggestion) => (
+                  <button
+                    key={suggestion}
+                    type="button"
+                    onClick={() => handleSuggestion(suggestion)}
+                    className="glass flex items-center gap-1.5 rounded-full px-4 py-2 text-body-sm text-ink-soft transition-colors hover:border-border-strong hover:text-ink"
+                  >
+                    <Wand2 className="size-3.5 shrink-0 text-brand" aria-hidden="true" />
+                    {suggestion}
+                  </button>
+                ))}
+              </div>
             </div>
           )}
         </div>
@@ -190,19 +240,21 @@ export function GenerateStudio({ type }: { type: GenerationType }) {
         <div ref={composerRef} className="pointer-events-auto w-full">
           {type === "text-to-video" && (
             <TextToVideoForm
+              key={formKey}
               onCreated={handleCreated(true)}
               busy={busy}
               initialModel={initialModel}
-              initialPrompt={initialPrompt}
+              initialPrompt={heroPrompt}
               initialParams={initialParams}
             />
           )}
           {type === "text-to-image" && (
             <TextToImageForm
+              key={formKey}
               onCreated={handleCreated(false)}
               busy={busy}
               initialModel={initialImageModel}
-              initialPrompt={initialPrompt}
+              initialPrompt={heroPrompt}
             />
           )}
         </div>

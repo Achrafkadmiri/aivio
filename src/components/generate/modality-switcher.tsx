@@ -20,6 +20,9 @@ export const MODALITIES: {
   icon: LucideIcon;
   heroTitle: string;
   heroSubtitle: string;
+  /** Quick-start prompt chips shown on the idle hero — tap one to seed the
+   * composer's prompt field, ArtCraft/Higgsfield-style. */
+  suggestions: string[];
 }[] = [
   {
     type: "text-to-video",
@@ -28,6 +31,12 @@ export const MODALITIES: {
     icon: Video,
     heroTitle: "Create Video",
     heroSubtitle: "Describe a scene. See it in motion.",
+    suggestions: [
+      "Cinematic drone shot flying over a neon-lit cyberpunk city at night",
+      "Astronaut walking on a glowing alien planet, epic wide shot",
+      "Macro shot of raindrops falling on a window, soft bokeh lights",
+      "A wolf running through a misty forest at golden hour",
+    ],
   },
   {
     type: "text-to-image",
@@ -36,6 +45,12 @@ export const MODALITIES: {
     icon: ImageIcon,
     heroTitle: "Create Image",
     heroSubtitle: "Describe a scene. See it rendered.",
+    suggestions: [
+      "Portrait of a cyberpunk samurai, neon rim light, ultra detailed",
+      "Cozy cabin in a snowy forest, warm window light, matte painting",
+      "Surreal floating islands with waterfalls, dreamlike atmosphere",
+      "Studio product shot of a perfume bottle, dramatic lighting",
+    ],
   },
 ];
 
