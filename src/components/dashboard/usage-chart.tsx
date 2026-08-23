@@ -11,13 +11,21 @@ import {
   CartesianGrid,
 } from "recharts";
 
-// Full "Aug 1, 2026"-style dates (formatDate in lib/utils) are too wide for
-// the x-axis at any tick density — short-form here instead, and fewer ticks
-// on narrow screens so labels don't collide on a 320-375px phone.
+// The API sends dates pre-sliced to "MM-DD" (no year — see buildDailyCounts
+// in the backend's dashboard route). `new Date("08-23")` is NOT a spec-
+// conformant date string, so parsing it is implementation-defined: V8
+// (desktop Chrome) leniently guesses a date and never throws, but Safari/
+// WebKit (real iPhones) returns Invalid Date, and formatting an Invalid
+// Date with Intl.DateTimeFormat throws — crashing the whole page since
+// there's no error boundary. Building the Date from explicit numeric parts
+// via Date.UTC sidesteps string-parsing entirely, so it's consistent across
+// every engine.
 function formatTick(date: ReactNode) {
   if (typeof date !== "string") return "";
-  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }).format(
-    new Date(date),
+  const [month, day] = date.split("-").map(Number);
+  if (!month || !day) return "";
+  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", timeZone: "UTC" }).format(
+    new Date(Date.UTC(2000, month - 1, day)),
   );
 }
 
