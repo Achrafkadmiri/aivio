@@ -187,18 +187,6 @@ export function DynamicModelForm<T extends string>({
                     setValue("image", undefined, { shouldValidate: true });
                   }}
                 />
-                <ReferenceUploadTile
-                  kind="video"
-                  label="Reference Video"
-                  disabled
-                  disabledHint="Coming soon — not yet supported by this model's integration."
-                />
-                <ReferenceUploadTile
-                  kind="audio"
-                  label="Reference Audio"
-                  disabled
-                  disabledHint="Coming soon — not yet supported by this model's integration."
-                />
               </ReferenceUploadRow>
             </div>
           )}

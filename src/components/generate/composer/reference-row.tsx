@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef } from "react";
-import { Image as ImageIcon, FileVideo, Mic, X, type LucideIcon } from "lucide-react";
+import { Image as ImageIcon, FileVideo, Mic, Plus, X, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type UploadKind = "image" | "video" | "audio";
@@ -14,7 +14,7 @@ const ACCEPT: Record<UploadKind, string> = {
 };
 
 export function ReferenceUploadRow({ children }: { children: React.ReactNode }) {
-  return <div className="flex flex-wrap gap-2">{children}</div>;
+  return <div className="flex flex-wrap gap-2.5">{children}</div>;
 }
 
 export function ReferenceUploadTile({
@@ -57,13 +57,13 @@ export function ReferenceUploadTile({
   return (
     <div
       className={cn(
-        "group relative flex size-11 shrink-0 flex-col items-center justify-center gap-0.5 overflow-hidden rounded-md transition-colors",
-        // Dashed border reads as an empty drop zone (ArtCraft's own upload
-        // tiles use the same affordance); once a file lands it firms up into
-        // a solid border to signal "attached" rather than "drop here".
-        hasFile ? "border border-line bg-surface-2" : "border border-dashed border-line",
-        clickable && "cursor-pointer hover:border-border-strong hover:bg-white/[0.03]",
-        disabled && "cursor-not-allowed opacity-50",
+        "group relative flex size-12 shrink-0 flex-col items-center justify-center gap-1 overflow-hidden rounded-xl border transition-colors",
+        // Solid, low-contrast border rather than dashed — a dashed frame
+        // repeated across several adjacent tiles reads as "busy"; the small
+        // Plus badge below is what actually signals "empty, tap to add".
+        hasFile ? "border-line bg-surface-2 shadow-glow-sm" : "border-border-subtle bg-surface-2/50",
+        clickable && "cursor-pointer hover:border-border-strong hover:bg-white/[0.04]",
+        disabled && "cursor-not-allowed opacity-35",
       )}
       onClick={() => {
         if (clickable) inputRef.current?.click();
@@ -90,12 +90,10 @@ export function ReferenceUploadTile({
       ) : (
         <>
           <Icon className="size-3.5 text-ink-soft" aria-hidden="true" />
-          <span className="text-[10px] font-medium text-muted">
-            {uploading ? "…" : hasFile ? "Added" : shortLabel}
-          </span>
+          <span className="text-[10px] font-medium text-muted">{uploading ? "…" : shortLabel}</span>
         </>
       )}
-      {hasFile && (
+      {hasFile ? (
         <button
           type="button"
           onClick={(e) => {
@@ -103,10 +101,16 @@ export function ReferenceUploadTile({
             onRemove?.();
           }}
           aria-label={`Remove ${label.toLowerCase()}`}
-          className="absolute top-0.5 right-0.5 flex size-4 items-center justify-center rounded-full bg-black/60 text-white opacity-0 transition-opacity group-hover:opacity-100"
+          className="absolute top-0.5 right-0.5 flex size-4 items-center justify-center rounded-full bg-black/70 text-white opacity-0 backdrop-blur-sm transition-opacity group-hover:opacity-100"
         >
           <X className="size-2.5" />
         </button>
+      ) : (
+        clickable && (
+          <span className="absolute -right-0.5 -bottom-0.5 flex size-4 items-center justify-center rounded-full bg-[image:var(--gradient-primary)] text-white shadow-glow-sm">
+            <Plus className="size-2.5" aria-hidden="true" strokeWidth={3} />
+          </span>
+        )
       )}
     </div>
   );

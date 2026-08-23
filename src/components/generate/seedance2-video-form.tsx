@@ -209,18 +209,6 @@ export function Seedance2VideoForm({
                 disabled={!image}
                 disabledHint="Add a start frame first."
               />
-              <ReferenceUploadTile
-                kind="video"
-                label="Reference Video"
-                disabled
-                disabledHint="Coming soon — not yet supported by this model's integration."
-              />
-              <ReferenceUploadTile
-                kind="audio"
-                label="Reference Audio"
-                disabled
-                disabledHint="Coming soon — not yet supported by this model's integration."
-              />
             </ReferenceUploadRow>
           </div>
 

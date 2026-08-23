@@ -236,12 +236,6 @@ export function SeedanceVideoForm({
                   setValue("referenceVideoUrl", undefined, { shouldValidate: true });
                 }}
               />
-              <ReferenceUploadTile
-                kind="audio"
-                label="Reference Audio"
-                disabled
-                disabledHint="Coming soon — not yet supported by this model's integration."
-              />
             </ReferenceUploadRow>
           </div>
 
