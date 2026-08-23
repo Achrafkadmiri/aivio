@@ -8,8 +8,22 @@ import { VIDEO_MODELS, IMAGE_MODELS, SEEDANCE2_MODEL_ID } from "@/lib/constants"
 
 const SEEDANCE_2 = VIDEO_MODELS.find((m) => m.id === SEEDANCE2_MODEL_ID);
 const NANO_BANANA = IMAGE_MODELS.find((m) => m.label === "Nano Banana 2 Lite");
+// `.trim()` guards against the leading-whitespace id corruption some
+// CLOUDFLARE_MODELS entries carry (see cloudflare-models.ts) — matching on
+// label instead of id would be more fragile since ids are stable identifiers.
+const VEO_3_1 = VIDEO_MODELS.find((m) => m.id.trim() === "google/veo-3.1");
+const RECRAFT_4_1 = IMAGE_MODELS.find((m) => m.id.trim() === "recraft/recraftv4-1");
 const HERO_VIDEO = SHOWCASE_VIDEOS.find((v) => v.id === "cinematic-scene") ?? SHOWCASE_VIDEOS[0];
 const HERO_IMAGE = NANO_BANANA_IMAGES.find((i) => i.id === "vaporwave-poster") ?? NANO_BANANA_IMAGES[0];
+
+// Real, verified example outputs from each model's own fal.ai playground
+// page (curl-verified 200 OK on 2026-08-23) — one per additional model, same
+// sourcing standard as SHOWCASE_VIDEOS / NANO_BANANA_IMAGES.
+const VEO_3_1_VIDEO_URL = "https://v3.fal.media/files/penguin/D-wlVxx1E8BPr2AG9cxhb_output.mp4";
+const VEO_3_1_PROMPT =
+  "First-person view soaring low over a medieval battlefield at dawn, gliding past clashing knights in armor, fire-lit arrows whizzing overhead, splintered catapults burning near fallen soldiers, flying inches above torn flags and mud-soaked ground, ambient sounds of swords striking, war cries, galloping hooves, and wind rushing in your ears, raw, terrifying, epic";
+const RECRAFT_4_1_IMAGE_URL = "https://v3b.fal.media/files/b/0a9a2a9f/s5xQCa912mB4YWFRl3ggv_image.webp";
+const RECRAFT_4_1_PROMPT = "High-end skincare bottle floating on a swirl of cream texture, macro, soft pink palette";
 
 type ModelCard = {
   kind: "video" | "image";
@@ -36,6 +50,22 @@ const MODEL_CARDS: ModelCard[] = [
     provider: NANO_BANANA.provider,
     description: NANO_BANANA.description,
     mediaUrl: HERO_IMAGE.url,
+  },
+  VEO_3_1 && {
+    kind: "video",
+    href: `/generate?model=${encodeURIComponent(VEO_3_1.id)}&prompt=${encodeURIComponent(VEO_3_1_PROMPT)}`,
+    label: VEO_3_1.label,
+    provider: VEO_3_1.provider,
+    description: VEO_3_1.description,
+    mediaUrl: VEO_3_1_VIDEO_URL,
+  },
+  RECRAFT_4_1 && {
+    kind: "image",
+    href: `/generate/image?model=${encodeURIComponent(RECRAFT_4_1.id)}&prompt=${encodeURIComponent(RECRAFT_4_1_PROMPT)}`,
+    label: RECRAFT_4_1.label,
+    provider: RECRAFT_4_1.provider,
+    description: RECRAFT_4_1.description,
+    mediaUrl: RECRAFT_4_1_IMAGE_URL,
   },
 ].filter((c): c is ModelCard => Boolean(c));
 
