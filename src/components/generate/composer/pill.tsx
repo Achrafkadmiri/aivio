@@ -177,3 +177,42 @@ export function SettingRow({
     </div>
   );
 }
+
+/** The trigger for the mobile BottomSheet that replaces the composer's
+ * pill row on narrow viewports — see e.g. seedance-video-form.tsx, which
+ * renders this instead of the full horizontal-scroll row below `sm:`. */
+export function MobileOptionsTrigger({ onClick }: { onClick: () => void }) {
+  return (
+    <button type="button" onClick={onClick} className={pillClass}>
+      <SlidersHorizontal className="size-3.5 text-muted" aria-hidden="true" />
+      <span className="font-medium">Options</span>
+    </button>
+  );
+}
+
+/** A labeled row inside the mobile BottomSheet — pairs a field's pill
+ * control (or a switch, same as SettingRow) with its name, since the pill
+ * alone (icon + value, no label) doesn't carry enough context once it's not
+ * sitting in a labeled toolbar. Unlike SettingRow (used in the desktop-only
+ * SettingsPopover dropdown, where the panel edge already implies grouping),
+ * this draws its own border so a long stack of rows in a full-height sheet
+ * still reads as a list. */
+export function MobileFieldRow({
+  label,
+  description,
+  children,
+}: {
+  label: string;
+  description?: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-4 border-b border-line py-3.5 last:border-0">
+      <div className="min-w-0">
+        <p className="text-label text-ink-soft">{label}</p>
+        {description && <p className="mt-0.5 text-caption text-muted">{description}</p>}
+      </div>
+      {children}
+    </div>
+  );
+}

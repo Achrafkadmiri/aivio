@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { Sparkles, Zap } from "lucide-react";
+import { Sparkles, Zap, Video, Wand2, Image as ImageIcon, AudioLines, ChevronDown, type LucideIcon } from "lucide-react";
 import { TextToVideoForm } from "./text-to-video-form";
 import { ImageToVideoForm } from "./image-to-video-form";
 import { TextToImageForm } from "./text-to-image-form";
@@ -12,6 +12,7 @@ import { JobStatusCard } from "./job-status-card";
 import { useGeneration } from "@/hooks/use-generation";
 import { cn, formatCredits } from "@/lib/utils";
 import { apiFetch } from "@/lib/api-client";
+import { DropdownRoot, DropdownTrigger, DropdownContent, DropdownItem } from "@/components/ui/dropdown";
 import {
   VIDEO_MODELS,
   IMAGE_MODELS,
@@ -38,6 +39,7 @@ const MODALITIES: {
   type: GenerationType;
   href: string;
   label: string;
+  icon: LucideIcon;
   heroTitle: string;
   heroSubtitle: string;
 }[] = [
@@ -45,6 +47,7 @@ const MODALITIES: {
     type: "text-to-video",
     href: "/generate",
     label: "Video",
+    icon: Video,
     heroTitle: "Create Video",
     heroSubtitle: "Describe a scene. See it in motion.",
   },
@@ -52,6 +55,7 @@ const MODALITIES: {
     type: "image-to-video",
     href: "/generate/image-to-video",
     label: "Image to Video",
+    icon: Wand2,
     heroTitle: "Animate an Image",
     heroSubtitle: "Bring a still photo to life.",
   },
@@ -59,6 +63,7 @@ const MODALITIES: {
     type: "text-to-image",
     href: "/generate/image",
     label: "Image",
+    icon: ImageIcon,
     heroTitle: "Create Image",
     heroSubtitle: "Describe a scene. See it rendered.",
   },
@@ -142,12 +147,45 @@ export function GenerateStudio({ type }: { type: GenerationType }) {
     <>
       <div className="flex h-full flex-col [zoom:0.7]">
         <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
-          {/* overflow-x-auto + shrink-0/whitespace-nowrap on each pill (same
-              pattern as settings-nav.tsx) — at narrow widths the four pills
-              (two of them two-word labels) don't fit in one row, and without
-              this the flex item shrinks by wrapping its own label text
-              instead of the row scrolling. */}
-          <div className="glass flex max-w-full items-center gap-1 overflow-x-auto rounded-full p-1">
+          {/* Mobile: a single "Video ▾"-style dropdown trigger instead of the
+              full pill row — four pills (two of them two-word labels) never
+              comfortably fit in one line under ~380px, and a compact
+              dropdown reads more like a native app switcher (see e.g.
+              Artlist's mobile composer) than a horizontally-scrolling tab
+              bar does. */}
+          <div className="sm:hidden">
+            <DropdownRoot>
+              <DropdownTrigger asChild>
+                <button
+                  type="button"
+                  className="glass inline-flex items-center gap-2 rounded-full py-2 pr-3 pl-4 text-label font-medium text-ink-soft"
+                >
+                  <active.icon className="size-4 text-brand" aria-hidden="true" />
+                  {active.label}
+                  <ChevronDown className="size-3.5 text-muted" aria-hidden="true" />
+                </button>
+              </DropdownTrigger>
+              <DropdownContent align="start" className="w-56">
+                {MODALITIES.map((m) => (
+                  <DropdownItem key={m.type} asChild className={cn(m.type === type && "text-brand")}>
+                    <Link href={m.href} className="flex items-center gap-2.5">
+                      <m.icon className="size-4" aria-hidden="true" />
+                      {m.label}
+                    </Link>
+                  </DropdownItem>
+                ))}
+                <div className="flex cursor-not-allowed items-center gap-2.5 px-4 py-3 text-label text-muted opacity-50">
+                  <AudioLines className="size-4" aria-hidden="true" />
+                  Audio to Video
+                </div>
+              </DropdownContent>
+            </DropdownRoot>
+          </div>
+
+          {/* Desktop: full pill row. overflow-x-auto + shrink-0/whitespace-nowrap
+              on each pill (same pattern as settings-nav.tsx) is kept as a
+              belt-and-suspenders fallback for in-between widths. */}
+          <div className="glass hidden max-w-full items-center gap-1 overflow-x-auto rounded-full p-1 sm:flex">
             {MODALITIES.map((m) => (
               <Link
                 key={m.type}

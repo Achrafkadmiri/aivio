@@ -4,9 +4,11 @@ import { useMutation } from "@tanstack/react-query";
 import { useInvalidateCredits } from "@/hooks/use-credits";
 import { useForm, Controller, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useState } from "react";
 import { Maximize, RectangleHorizontal, Palette } from "lucide-react";
 import { FieldError } from "@/components/ui/input";
 import { useToast } from "@/components/ui/toast";
+import { BottomSheet } from "@/components/ui/bottom-sheet";
 import { estimateImageCredits } from "@/lib/credit-estimate";
 import { textToImageSchema, type TextToImageInput } from "@/lib/validation";
 import { IMAGE_RESOLUTIONS, IMAGE_ASPECT_RATIOS, IMAGE_STYLE_PRESETS, type ImageModelId } from "@/lib/constants";
@@ -17,6 +19,8 @@ import {
   ComposerSecondaryField,
   ProviderModelPicker,
   PillSelect,
+  MobileOptionsTrigger,
+  MobileFieldRow,
   CreditsSubmitPill,
   type PickerModel,
 } from "./composer";
@@ -42,6 +46,7 @@ export function GenericImageForm({
 }) {
   const { toast } = useToast();
   const invalidateCredits = useInvalidateCredits();
+  const [sheetOpen, setSheetOpen] = useState(false);
   const {
     control,
     handleSubmit,
@@ -125,10 +130,52 @@ export function GenericImageForm({
           <span className="mt-3 shrink-0 text-caption text-muted">{prompt.length}/500</span>
         </div>
 
-        {/* Pills scroll horizontally instead of wrapping onto more rows — see
-            seedance-video-form.tsx for the full rationale. Submit stays a
-            sibling of the scroll area so it's always visible. */}
-        <div className="mt-3 flex items-center gap-2">
+        {/* Mobile: just the model picker + a single "Options" trigger that
+            opens a BottomSheet with every field — see seedance-video-form.tsx
+            for the full rationale. */}
+        <div className="mt-3 flex items-center gap-2 sm:hidden">
+          <ProviderModelPicker models={models} value={model} onChange={onModelChange} />
+          <MobileOptionsTrigger onClick={() => setSheetOpen(true)} />
+          <div className="ml-auto">
+            <CreditsSubmitPill credits={estimatedCredits} loading={mutation.isPending || busy} />
+          </div>
+        </div>
+
+        <BottomSheet open={sheetOpen} onOpenChange={setSheetOpen} title="Image settings">
+          <MobileFieldRow label="Resolution">
+            <PillSelect
+              icon={Maximize}
+              value={resolution}
+              options={IMAGE_RESOLUTIONS}
+              onChange={(r) => setValue("resolution", r, { shouldValidate: true })}
+            />
+          </MobileFieldRow>
+
+          <MobileFieldRow label="Aspect ratio">
+            <PillSelect
+              icon={RectangleHorizontal}
+              value={aspectRatio}
+              options={IMAGE_ASPECT_RATIOS}
+              onChange={(a) => setValue("aspectRatio", a, { shouldValidate: true })}
+            />
+          </MobileFieldRow>
+
+          <MobileFieldRow label="Style">
+            <PillSelect
+              icon={Palette}
+              value={style}
+              options={STYLE_OPTIONS}
+              onChange={(s) =>
+                setValue("style", s === "None" ? undefined : s, { shouldValidate: true })
+              }
+            />
+          </MobileFieldRow>
+        </BottomSheet>
+
+        {/* Desktop: full pill row, scrolling horizontally instead of
+            wrapping. Submit stays a sibling of the scroll area so it's
+            always visible. */}
+        <div className="mt-3 hidden items-center gap-2 sm:flex">
         <div className="flex flex-1 items-center gap-2 overflow-x-auto">
           <ProviderModelPicker models={models} value={model} onChange={onModelChange} />
 

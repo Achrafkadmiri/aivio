@@ -10,6 +10,7 @@ import { FieldError, Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/components/ui/toast";
 import { Tooltip } from "@/components/ui/tooltip";
+import { BottomSheet } from "@/components/ui/bottom-sheet";
 import { estimateVideoCredits } from "@/lib/credit-estimate";
 import { seedance2VideoSchema, type Seedance2VideoInput } from "@/lib/validation";
 import { apiFetch } from "@/lib/api-client";
@@ -30,6 +31,8 @@ import {
   PillSelect,
   SettingsPopover,
   SettingRow,
+  MobileOptionsTrigger,
+  MobileFieldRow,
   CreditsSubmitPill,
   pillClass,
   type PickerModel,
@@ -73,6 +76,7 @@ export function Seedance2VideoForm({
   const invalidateCredits = useInvalidateCredits();
   const [uploading, setUploading] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
+  const [sheetOpen, setSheetOpen] = useState(false);
 
   const {
     register,
@@ -202,10 +206,98 @@ export function Seedance2VideoForm({
           <span className="mt-3 shrink-0 text-caption text-muted">{prompt.length}/2000</span>
         </div>
 
-        {/* Pills scroll horizontally instead of wrapping onto more rows — see
-            seedance-video-form.tsx for the full rationale. Submit stays a
-            sibling of the scroll area so it's always visible. */}
-        <div className="mt-3 flex items-center gap-2">
+        {/* Mobile: model picker + a single "Options" trigger opening a
+            BottomSheet with everything else — see seedance-video-form.tsx
+            for the full rationale. */}
+        <div className="mt-3 flex items-center gap-2 sm:hidden">
+          <ProviderModelPicker models={models} value={model} onChange={onModelChange} />
+          <MobileOptionsTrigger onClick={() => setSheetOpen(true)} />
+          <div className="ml-auto">
+            <CreditsSubmitPill credits={estimatedCredits} loading={mutation.isPending || busy || uploading} />
+          </div>
+        </div>
+
+        <BottomSheet open={sheetOpen} onOpenChange={setSheetOpen} title="Video settings">
+          <MobileFieldRow label="Duration">
+            <PillSelect
+              icon={Clock}
+              value={duration}
+              options={DURATIONS}
+              renderLabel={(d) => `${d}s`}
+              onChange={(d) => setValue("duration", d, { shouldValidate: true })}
+            />
+          </MobileFieldRow>
+          <MobileFieldRow label="Resolution">
+            <PillSelect
+              icon={Monitor}
+              value={resolution}
+              options={SEEDANCE2_RESOLUTIONS}
+              renderLabel={(r) => (r === "4k" ? "4K" : r)}
+              onChange={(r) => setValue("resolution", r, { shouldValidate: true })}
+            />
+          </MobileFieldRow>
+          <MobileFieldRow
+            label="Aspect ratio"
+            description={hasReference ? "Ignored while a reference image is set." : undefined}
+          >
+            <PillSelect
+              icon={RectangleHorizontal}
+              value={aspectRatio}
+              options={SEEDANCE2_ASPECT_RATIOS}
+              onChange={(a) => setValue("aspectRatio", a, { shouldValidate: true })}
+              disabled={hasReference}
+              disabledHint="Ignored while a reference image is set — the video inherits its aspect ratio."
+            />
+          </MobileFieldRow>
+          <MobileFieldRow label="Fix camera position" description="Lock the camera instead of letting it move.">
+            <Controller
+              control={control}
+              name="cameraFixed"
+              render={({ field }) => <Switch checked={field.value} onCheckedChange={field.onChange} />}
+            />
+          </MobileFieldRow>
+          <MobileFieldRow label="Generate audio" description="Sync ambient sound / dialogue to the video.">
+            <Controller
+              control={control}
+              name="generateAudio"
+              render={({ field }) => <Switch checked={field.value ?? false} onCheckedChange={field.onChange} />}
+            />
+          </MobileFieldRow>
+          <MobileFieldRow label="Watermark" description="Add a visible watermark to the output.">
+            <Controller
+              control={control}
+              name="watermark"
+              render={({ field }) => <Switch checked={field.value} onCheckedChange={field.onChange} />}
+            />
+          </MobileFieldRow>
+          <MobileFieldRow
+            label="Virtual avatar mode"
+            description="For AI-generated character references — routes around face/deepfake detection via ByteDance's trusted avatar library."
+          >
+            <Controller
+              control={control}
+              name="useVirtualAvatar"
+              render={({ field }) => <Switch checked={field.value} onCheckedChange={field.onChange} />}
+            />
+          </MobileFieldRow>
+          <div className="py-3.5">
+            <label htmlFor="sd2-seed-mobile" className="mb-1.5 block text-label text-ink-soft">
+              Seed (optional)
+            </label>
+            <Input
+              id="sd2-seed-mobile"
+              type="number"
+              placeholder="Random"
+              {...register("seed", {
+                setValueAs: (v) => (v === "" ? undefined : Number(v)),
+              })}
+            />
+          </div>
+        </BottomSheet>
+
+        {/* Desktop: full pill row, scrolling horizontally instead of
+            wrapping onto more rows if it ever runs out of room. */}
+        <div className="mt-3 hidden items-center gap-2 sm:flex">
         <div className="flex flex-1 items-center gap-2 overflow-x-auto">
           <ProviderModelPicker models={models} value={model} onChange={onModelChange} />
 

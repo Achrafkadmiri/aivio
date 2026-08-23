@@ -10,6 +10,7 @@ import { FieldError, Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Tooltip } from "@/components/ui/tooltip";
 import { useToast } from "@/components/ui/toast";
+import { BottomSheet } from "@/components/ui/bottom-sheet";
 import { estimateVideoCredits, estimateImageCredits } from "@/lib/credit-estimate";
 import { buildDynamicSchema } from "@/lib/validation";
 import type { CloudflareModelConfig } from "@/lib/cloudflare-models";
@@ -24,6 +25,8 @@ import {
   PillSlider,
   SettingsPopover,
   SettingRow,
+  MobileOptionsTrigger,
+  MobileFieldRow,
   CreditsSubmitPill,
   pillClass,
   type PickerModel,
@@ -77,6 +80,7 @@ export function DynamicModelForm<T extends string>({
   const invalidateCredits = useInvalidateCredits();
   const [preview, setPreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [sheetOpen, setSheetOpen] = useState(false);
 
   const defaultValues: Record<string, unknown> = { prompt: initialPrompt };
   for (const field of config.fields) {
@@ -221,10 +225,97 @@ export function DynamicModelForm<T extends string>({
           <span className="mt-3 shrink-0 text-caption text-muted">{prompt.length}/2000</span>
         </div>
 
-        {/* Pills scroll horizontally instead of wrapping onto more rows — see
-            seedance-video-form.tsx for the full rationale. Submit stays a
-            sibling of the scroll area so it's always visible. */}
-        <div className="mt-3 flex items-center gap-2">
+        {/* Mobile: just the model picker + a single "Options" trigger that
+            opens a BottomSheet with every pill/panel field — see
+            seedance-video-form.tsx for the full rationale. */}
+        <div className="mt-3 flex items-center gap-2 sm:hidden">
+          <ProviderModelPicker models={models} value={model} onChange={onModelChange} />
+          <MobileOptionsTrigger onClick={() => setSheetOpen(true)} />
+          <div className="ml-auto">
+            <CreditsSubmitPill
+              credits={estimatedCredits}
+              loading={mutation.isPending || busy || uploading}
+              disabled={imageRequired && !image}
+            />
+          </div>
+        </div>
+
+        <BottomSheet open={sheetOpen} onOpenChange={setSheetOpen} title="Settings">
+          {isVideoModel && (
+            <MobileFieldRow label="Characters" description="Coming soon — character consistency isn't wired up yet.">
+              <ScanFace className="size-4 text-muted" aria-hidden="true" />
+            </MobileFieldRow>
+          )}
+
+          {pillFields.map((field) =>
+            field.key === durationField?.key ? (
+              <MobileFieldRow key={field.key} label={field.label}>
+                <PillSlider
+                  icon={Clock}
+                  label={field.label}
+                  value={typeof duration === "number" ? duration : (field.defaultValue as number) ?? field.min!}
+                  min={field.min!}
+                  max={field.max!}
+                  formatValue={(v) => `${v}s`}
+                  onChange={(v) => setValue(field.key, v, { shouldValidate: true })}
+                />
+              </MobileFieldRow>
+            ) : (
+              <MobileFieldRow key={field.key} label={field.label}>
+                <PillSelect
+                  icon={SELECT_FIELD_ICONS[field.key] ?? SlidersHorizontal}
+                  value={(watch(field.key) as string) ?? field.options?.[0] ?? ""}
+                  options={field.options ?? []}
+                  onChange={(v) => setValue(field.key, v, { shouldValidate: true })}
+                />
+              </MobileFieldRow>
+            ),
+          )}
+
+          {panelFields.map((field) =>
+            field.type === "switch" ? (
+              <MobileFieldRow key={field.key} label={field.label} description={field.helperText}>
+                <Controller
+                  control={control}
+                  name={field.key}
+                  render={({ field: controllerField }) => (
+                    <Switch
+                      checked={Boolean(controllerField.value)}
+                      onCheckedChange={controllerField.onChange}
+                    />
+                  )}
+                />
+              </MobileFieldRow>
+            ) : (
+              <div key={field.key} className="py-3.5">
+                <label htmlFor={`dyn-${field.key}-mobile`} className="mb-1.5 block text-label text-ink-soft">
+                  {field.label}
+                </label>
+                {field.type === "number" ? (
+                  <Input
+                    id={`dyn-${field.key}-mobile`}
+                    type="number"
+                    placeholder={field.helperText ?? "Random"}
+                    {...register(field.key, {
+                      setValueAs: (v) => (v === "" ? undefined : Number(v)),
+                    })}
+                  />
+                ) : (
+                  <Input id={`dyn-${field.key}-mobile`} placeholder={field.helperText} {...register(field.key)} />
+                )}
+                {field.helperText && field.type !== "number" && (
+                  <p className="mt-1.5 text-caption text-muted">{field.helperText}</p>
+                )}
+                <FieldError>{errors[field.key]?.message as string | undefined}</FieldError>
+              </div>
+            ),
+          )}
+        </BottomSheet>
+
+        {/* Desktop: full pill row, scrolling horizontally instead of
+            wrapping. Submit stays a sibling of the scroll area so it's
+            always visible. */}
+        <div className="mt-3 hidden items-center gap-2 sm:flex">
         <div className="flex flex-1 items-center gap-2 overflow-x-auto">
           <ProviderModelPicker models={models} value={model} onChange={onModelChange} />
 

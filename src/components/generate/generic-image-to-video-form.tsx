@@ -9,6 +9,7 @@ import { Clock, Monitor, MoveHorizontal, ScanFace, Wind } from "lucide-react";
 import { FieldError } from "@/components/ui/input";
 import { Tooltip } from "@/components/ui/tooltip";
 import { useToast } from "@/components/ui/toast";
+import { BottomSheet } from "@/components/ui/bottom-sheet";
 import { estimateVideoCredits } from "@/lib/credit-estimate";
 import { imageToVideoSchema, type ImageToVideoInput } from "@/lib/validation";
 import { apiFetch } from "@/lib/api-client";
@@ -26,6 +27,8 @@ import {
   ComposerPromptField,
   ProviderModelPicker,
   PillSelect,
+  MobileOptionsTrigger,
+  MobileFieldRow,
   CreditsSubmitPill,
   pillClass,
   type PickerModel,
@@ -48,6 +51,7 @@ export function GenericImageToVideoForm({
   const invalidateCredits = useInvalidateCredits();
   const [preview, setPreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [sheetOpen, setSheetOpen] = useState(false);
 
   const {
     control,
@@ -169,10 +173,70 @@ export function GenericImageToVideoForm({
           <span className="mt-3 shrink-0 text-caption text-muted">{prompt.length}/500</span>
         </div>
 
-        {/* Pills scroll horizontally instead of wrapping onto more rows — see
-            seedance-video-form.tsx for the full rationale. Submit stays a
-            sibling of the scroll area so it's always visible. */}
-        <div className="mt-3 flex items-center gap-2">
+        {/* Mobile: just the model picker + a single "Options" trigger that
+            opens a BottomSheet with every field — see seedance-video-form.tsx
+            for the full rationale. */}
+        <div className="mt-3 flex items-center gap-2 sm:hidden">
+          <ProviderModelPicker models={models} value={model} onChange={onModelChange} />
+          <MobileOptionsTrigger onClick={() => setSheetOpen(true)} />
+          <div className="ml-auto">
+            <CreditsSubmitPill
+              credits={estimatedCredits}
+              loading={mutation.isPending || busy || uploading}
+              disabled={!imageUrl}
+            />
+          </div>
+        </div>
+
+        <BottomSheet open={sheetOpen} onOpenChange={setSheetOpen} title="Video settings">
+          <MobileFieldRow label="Characters" description="Coming soon — character consistency isn't wired up yet.">
+            <ScanFace className="size-4 text-muted" aria-hidden="true" />
+          </MobileFieldRow>
+
+          <MobileFieldRow label="Duration">
+            <PillSelect
+              icon={Clock}
+              value={duration}
+              options={VIDEO_DURATIONS}
+              renderLabel={(d) => `${d}s`}
+              onChange={(d) => setValue("duration", d, { shouldValidate: true })}
+            />
+          </MobileFieldRow>
+
+          <MobileFieldRow label="Resolution">
+            <PillSelect
+              icon={Monitor}
+              value={resolution}
+              options={VIDEO_RESOLUTIONS}
+              onChange={(r) => setValue("resolution", r, { shouldValidate: true })}
+            />
+          </MobileFieldRow>
+
+          <MobileFieldRow label="Motion">
+            <PillSelect
+              icon={Wind}
+              value={motionIntensity}
+              options={MOTION_INTENSITIES}
+              renderLabel={(m) => `${m[0].toUpperCase()}${m.slice(1)} motion`}
+              onChange={(m) => setValue("motionIntensity", m, { shouldValidate: true })}
+            />
+          </MobileFieldRow>
+
+          <MobileFieldRow label="Camera">
+            <PillSelect
+              icon={MoveHorizontal}
+              value={cameraMovement}
+              options={CAMERA_MOVEMENTS}
+              renderLabel={(c) => `${c[0].toUpperCase()}${c.slice(1)} camera`}
+              onChange={(c) => setValue("cameraMovement", c, { shouldValidate: true })}
+            />
+          </MobileFieldRow>
+        </BottomSheet>
+
+        {/* Desktop: full pill row, scrolling horizontally instead of
+            wrapping. Submit stays a sibling of the scroll area so it's
+            always visible. */}
+        <div className="mt-3 hidden items-center gap-2 sm:flex">
         <div className="flex flex-1 items-center gap-2 overflow-x-auto">
           <ProviderModelPicker models={models} value={model} onChange={onModelChange} />
 
