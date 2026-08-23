@@ -169,7 +169,11 @@ export function GenericImageToVideoForm({
           <span className="mt-3 shrink-0 text-caption text-muted">{prompt.length}/500</span>
         </div>
 
-        <div className="mt-3 flex flex-wrap items-center gap-2">
+        {/* Pills scroll horizontally instead of wrapping onto more rows — see
+            seedance-video-form.tsx for the full rationale. Submit stays a
+            sibling of the scroll area so it's always visible. */}
+        <div className="mt-3 flex items-center gap-2">
+        <div className="flex flex-1 items-center gap-2 overflow-x-auto">
           <ProviderModelPicker models={models} value={model} onChange={onModelChange} />
 
           <Tooltip content="Coming soon — character consistency isn't wired up yet.">
@@ -211,14 +215,13 @@ export function GenericImageToVideoForm({
             renderLabel={(c) => `${c[0].toUpperCase()}${c.slice(1)} camera`}
             onChange={(c) => setValue("cameraMovement", c, { shouldValidate: true })}
           />
+        </div>
 
-          <div className="ml-auto">
-            <CreditsSubmitPill
-              credits={estimatedCredits}
-              loading={mutation.isPending || busy || uploading}
-              disabled={!imageUrl}
-            />
-          </div>
+          <CreditsSubmitPill
+            credits={estimatedCredits}
+            loading={mutation.isPending || busy || uploading}
+            disabled={!imageUrl}
+          />
         </div>
       </ComposerShell>
     </form>

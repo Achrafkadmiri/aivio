@@ -125,7 +125,11 @@ export function GenericImageForm({
           <span className="mt-3 shrink-0 text-caption text-muted">{prompt.length}/500</span>
         </div>
 
-        <div className="mt-3 flex flex-wrap items-center gap-2">
+        {/* Pills scroll horizontally instead of wrapping onto more rows — see
+            seedance-video-form.tsx for the full rationale. Submit stays a
+            sibling of the scroll area so it's always visible. */}
+        <div className="mt-3 flex items-center gap-2">
+        <div className="flex flex-1 items-center gap-2 overflow-x-auto">
           <ProviderModelPicker models={models} value={model} onChange={onModelChange} />
 
           <PillSelect
@@ -150,10 +154,9 @@ export function GenericImageForm({
               setValue("style", s === "None" ? undefined : s, { shouldValidate: true })
             }
           />
+        </div>
 
-          <div className="ml-auto">
-            <CreditsSubmitPill credits={estimatedCredits} loading={mutation.isPending || busy} />
-          </div>
+          <CreditsSubmitPill credits={estimatedCredits} loading={mutation.isPending || busy} />
         </div>
       </ComposerShell>
     </form>
