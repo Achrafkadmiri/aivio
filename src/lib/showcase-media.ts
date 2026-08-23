@@ -56,7 +56,7 @@ export const SHOWCASE_VIDEOS: ShowcaseVideo[] = [
   },
   {
     id: "cinematic-scene",
-    url: "https://v3b.fal.media/files/b/0a9f7ecf/jQvhuOlh8iQrO38GC4K_0_video.mp4",
+    url: "https://ir7z8qsacw4tk54b.public.blob.vercel-storage.com/seedance-2/hero.mp4",
     prompt: "Cinematic wide shot with natural camera movement and realistic lighting",
     tile: "wide",
   },
