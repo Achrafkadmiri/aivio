@@ -39,43 +39,43 @@ const LIVE_VIDEO_RATE: Record<
     minCreditsVideo: 68,
   },
   // 0.75x (480p/720p) / 0.8x (1080p) of Seedance 2.0.
-  "  bytedance/seedance-2.0-mini": {
+  "bytedance/seedance-2.0-mini": {
     rates: { "480p": 5.25, "720p": 11.25, "1080p": 29.6 },
     minCredits: 16,
   },
   // 1.33x (720p) / 1.3x (1080p) of Seedance 2.0.
-  "  black-forest-labs/flux-3-video": {
+  "black-forest-labs/flux-3-video": {
     rates: { "720p": 19.95, "1080p": 48.1 },
     minCredits: 60,
   },
   // 1.25x (480p) / 1.17x (720p) of Seedance 2.0.
-  "  xai/grok-imagine-video": {
+  "xai/grok-imagine-video": {
     rates: { "480p": 8.75, "720p": 17.55 },
     minCredits: 26,
   },
   // 1.5x (both) of Seedance 2.0.
-  "  xai/grok-imagine-video-1.5-preview": {
+  "xai/grok-imagine-video-1.5-preview": {
     rates: { "480p": 10.5, "720p": 22.5 },
     minCredits: 32,
   },
   // 0.83x (720p) / 0.8x (1080p) of Seedance 2.0.
-  "  alibaba/hh1.1-i2v": {
+  "alibaba/hh1.1-i2v": {
     rates: { "720p": 12.45, "1080p": 29.6 },
     minCredits: 37,
   },
-  "  alibaba/wan-2.7-i2v": {
+  "alibaba/wan-2.7-i2v": {
     rates: { "720p": 12.45, "1080p": 29.6 },
     minCredits: 37,
   },
   // Google's flagship video model, native audio — 1.67x (720p) / 1.6x
   // (1080p) of Seedance 2.0, the priciest tier here, reflecting that
   // positioning.
-  "  google/veo-3.1": {
+  "google/veo-3.1": {
     rates: { "720p": 25.05, "1080p": 59.2 },
     minCredits: 75,
   },
   // 1.17x (720p) / 1.1x (1080p) of Seedance 2.0.
-  "  google/veo-3.1-fast": {
+  "google/veo-3.1-fast": {
     rates: { "720p": 17.55, "1080p": 40.7 },
     minCredits: 53,
   },

@@ -137,7 +137,11 @@ export function GenerationCard({
         )}
       </button>
 
-      <div className="pointer-events-none absolute inset-0 flex flex-col justify-between bg-gradient-to-t from-black/80 via-black/0 to-black/40 p-3 opacity-0 transition-opacity group-hover:opacity-100">
+      {/* Always visible below sm: — touch devices have no hover state, so a
+          hover-only reveal leaves the actions menu unreachable without
+          opening the lightbox first. Desktop keeps the cleaner hover-to-
+          reveal treatment since a mouse actually has one. */}
+      <div className="pointer-events-none absolute inset-0 flex flex-col justify-between bg-gradient-to-t from-black/80 via-black/0 to-black/40 p-3 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100">
         <div className="flex items-start justify-between gap-2">
           <Badge variant={STATUS_VARIANT[item.status] ?? "neutral"} className="pointer-events-none">
             {item.status}

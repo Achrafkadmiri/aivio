@@ -9,6 +9,7 @@ import { CheckCircle2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Input, Label, FieldError } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { apiFetch } from "@/lib/api-client";
 
 const schema = z.object({ email: z.email({ error: "Enter a valid email." }) });
 type ForgotPasswordInput = z.infer<typeof schema>;
@@ -21,10 +22,17 @@ export default function ForgotPasswordPage() {
     formState: { errors, isSubmitting },
   } = useForm<ForgotPasswordInput>({ resolver: zodResolver(schema) });
 
-  async function onSubmit() {
-    // No email provider is configured in this preview — this simulates the
-    // round trip so the flow is honest about what actually happens.
-    await new Promise((resolve) => setTimeout(resolve, 600));
+  async function onSubmit(data: ForgotPasswordInput) {
+    // The backend always responds success here regardless of whether the
+    // address has an account — that's deliberate (see POST
+    // /auth/forgot-password), so this UI can't be used to check which
+    // emails are registered either. Network/validation failures still
+    // surface below via react-hook-form's own error handling.
+    await apiFetch("/api/auth/forgot-password", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
     setSent(true);
   }
 

@@ -11,6 +11,17 @@ import { useToast } from "@/components/ui/toast";
 import { formatDate } from "@/lib/utils";
 import { apiFetch } from "@/lib/api-client";
 
+// The public base URL a key is actually called against — different from
+// apiFetch's same-origin "/edge-api" rewrite, which only exists inside
+// this Next.js app itself. A third-party client has no such proxy, so it
+// needs the Edge Function's real address.
+const PUBLIC_API_BASE = `${process.env.NEXT_PUBLIC_SUPABASE_URL ?? ""}/functions/v1/api`;
+// The Supabase gateway requires this on every request regardless of the
+// API key above (see supabase/functions/api/index.ts's comment) — it's the
+// project's public anon/publishable key, already shipped in this app's own
+// browser bundle, so showing it here isn't exposing anything new.
+const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
+
 type ApiKeyRow = {
   id: string;
   keyPrefix: string;
@@ -106,6 +117,19 @@ export function ApiKeysManager() {
             </Button>
           </div>
         ))}
+      </Card>
+
+      <Card variant="standard">
+        <h3 className="text-label font-semibold text-ink">Using your key</h3>
+        <p className="mt-1 text-body-sm text-muted">
+          Send it as a bearer token on any endpoint — it acts as your account. Rate-limited to 120
+          requests/minute per key.
+        </p>
+        <pre className="mt-3 overflow-x-auto rounded-lg border border-line bg-surface-3 p-3 font-mono text-caption text-ink-soft">
+{`curl ${PUBLIC_API_BASE}/generations \\
+  -H "Authorization: Bearer sk_live_..." \\
+  -H "apikey: ${SUPABASE_ANON_KEY}"`}
+        </pre>
       </Card>
 
       <Modal open={createOpen} onOpenChange={setCreateOpen} title="New API key">

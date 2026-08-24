@@ -6,6 +6,7 @@ import { z } from "zod";
 import { Input, Textarea, Label, FieldError } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
+import { apiFetch } from "@/lib/api-client";
 
 const contactSchema = z.object({
   name: z.string().trim().min(2, { error: "Enter your name." }),
@@ -27,10 +28,21 @@ export default function ContactPage() {
     reset,
   } = useForm<ContactInput>({ resolver: zodResolver(contactSchema) });
 
-  async function onSubmit() {
-    // No email backend is wired up in this preview — this simulates the
-    // round trip so the form is honest about what actually happens.
-    await new Promise((resolve) => setTimeout(resolve, 500));
+  async function onSubmit(data: ContactInput) {
+    const res = await apiFetch("/api/contact", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) {
+      const json = await res.json().catch(() => ({}));
+      toast({
+        title: "Couldn't send your message",
+        description: json.error ?? "Something went wrong — try again in a moment.",
+        variant: "error",
+      });
+      return;
+    }
     toast({
       title: "Message sent",
       description: "Thanks for reaching out — we'll get back to you within a day.",

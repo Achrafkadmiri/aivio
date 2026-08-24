@@ -12,6 +12,8 @@ import { Button } from "@/components/ui/button";
 import { GoogleAuthButton } from "@/components/auth/google-auth-button";
 import { registerSchema, type RegisterInput } from "@/lib/validation";
 import { apiFetch } from "@/lib/api-client";
+import { TIER_INFO } from "@/lib/constants";
+import { formatCredits } from "@/lib/utils";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -44,7 +46,9 @@ export default function SignupPage() {
   return (
     <Card variant="standard">
       <h1 className="text-subheading font-semibold text-ink">Create your account</h1>
-      <p className="mt-2 text-body-sm text-muted">Start with 10 free credits — no card required.</p>
+      <p className="mt-2 text-body-sm text-muted">
+        Start with {formatCredits(TIER_INFO.free.monthlyCredits)} free credits — no card required.
+      </p>
 
       <form
         onSubmit={handleSubmit((data) => {
@@ -104,6 +108,17 @@ export default function SignupPage() {
         <Link href="/login" className="text-brand hover:text-brand-hover">
           Log in
         </Link>
+      </p>
+      <p className="mt-4 text-center text-caption text-muted">
+        By creating an account, you agree to our{" "}
+        <Link href="/terms" className="text-brand hover:text-brand-hover">
+          Terms
+        </Link>{" "}
+        and{" "}
+        <Link href="/privacy" className="text-brand hover:text-brand-hover">
+          Privacy Policy
+        </Link>
+        .
       </p>
     </Card>
   );

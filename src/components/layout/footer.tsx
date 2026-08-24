@@ -12,8 +12,16 @@ const FOOTER_LINKS: Record<string, { href: string; label: string }[]> = {
     { href: "/signup", label: "Sign up" },
     { href: "/login", label: "Log in" },
   ],
-  Company: [{ href: "/contact", label: "Contact" }],
+  Company: [
+    { href: "/about", label: "About" },
+    { href: "/contact", label: "Contact" },
+  ],
 };
+
+const LEGAL_LINKS = [
+  { href: "/terms", label: "Terms" },
+  { href: "/privacy", label: "Privacy" },
+];
 
 export function Footer() {
   return (
@@ -47,6 +55,17 @@ export function Footer() {
         <p className="text-caption text-muted">
           © {new Date().getFullYear()} Vixerra. All rights reserved.
         </p>
+        <div className="flex items-center gap-4">
+          {LEGAL_LINKS.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className="text-caption text-muted transition-colors hover:text-brand"
+            >
+              {link.label}
+            </Link>
+          ))}
+        </div>
         <p className="text-caption text-muted">Built with Next.js on Cloudflare Workers AI.</p>
       </div>
     </footer>

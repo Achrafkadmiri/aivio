@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Copy, Trash2 } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Spinner } from "@/components/ui/spinner";
+import { Modal } from "@/components/ui/modal";
 import { GalleryGrid } from "@/components/gallery/gallery-grid";
 import { useToast } from "@/components/ui/toast";
 import type { GalleryItem } from "@/components/gallery/generation-card";
@@ -38,25 +39,13 @@ export function CollectionDetailClient({ id }: { id: string }) {
     },
   });
 
-  const [name, setName] = useState("");
-  const [isPublic, setIsPublic] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [seeded, setSeeded] = useState(false);
-
-  useEffect(() => {
-    if (collection && !seeded) {
-      setName(collection.name);
-      setIsPublic(collection.isPublic);
-      setSeeded(true);
-    }
-  }, [collection, seeded]);
+  const [deleting, setDeleting] = useState(false);
 
   function invalidate() {
     queryClient.invalidateQueries({ queryKey: ["collection", id] });
   }
 
   async function save(partial: Partial<{ name: string; isPublic: boolean }>) {
-    setSaving(true);
     try {
       const res = await apiFetch(`/api/collections/${id}`, {
         method: "PUT",
@@ -67,8 +56,6 @@ export function CollectionDetailClient({ id }: { id: string }) {
       invalidate();
     } catch {
       toast({ title: "Couldn't save changes", variant: "error" });
-    } finally {
-      setSaving(false);
     }
   }
 
@@ -78,9 +65,14 @@ export function CollectionDetailClient({ id }: { id: string }) {
   }
 
   async function deleteCollection() {
-    if (!confirm("Delete this collection? Generations inside it won't be deleted.")) return;
-    await apiFetch(`/api/collections/${id}`, { method: "DELETE" });
-    router.push("/collections");
+    setDeleting(true);
+    try {
+      await apiFetch(`/api/collections/${id}`, { method: "DELETE" });
+      router.push("/collections");
+    } catch {
+      toast({ title: "Couldn't delete collection", variant: "error" });
+      setDeleting(false);
+    }
   }
 
   if (isLoading || !collection) {
@@ -101,6 +93,48 @@ export function CollectionDetailClient({ id }: { id: string }) {
     );
   }
 
+  return (
+    <CollectionEditor
+      collection={collection}
+      onSave={save}
+      onRemoveItem={removeItem}
+      onDelete={deleteCollection}
+      deleting={deleting}
+    />
+  );
+}
+
+// Split out from the parent so its editable name/isPublic state can be
+// seeded directly from `collection` via useState's lazy initializer —
+// this component only ever mounts once `collection` is already loaded (see
+// the early return above), so there's no "seed once it arrives" effect
+// needed the way there would be if this lived in the parent alongside its
+// loading state.
+function CollectionEditor({
+  collection,
+  onSave,
+  onRemoveItem,
+  onDelete,
+  deleting,
+}: {
+  collection: CollectionDetail;
+  onSave: (partial: Partial<{ name: string; isPublic: boolean }>) => Promise<void>;
+  onRemoveItem: (generationId: string) => Promise<void>;
+  onDelete: () => Promise<void>;
+  deleting: boolean;
+}) {
+  const { toast } = useToast();
+  const [name, setName] = useState(collection.name);
+  const [isPublic, setIsPublic] = useState(collection.isPublic);
+  const [saving, setSaving] = useState(false);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+
+  async function handleSave(partial: Partial<{ name: string; isPublic: boolean }>) {
+    setSaving(true);
+    await onSave(partial);
+    setSaving(false);
+  }
+
   const shareUrl =
     typeof window !== "undefined" ? `${window.location.origin}/c/${collection.shareToken}` : "";
 
@@ -111,17 +145,33 @@ export function CollectionDetailClient({ id }: { id: string }) {
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
-            onBlur={() => name.trim() && name !== collection.name && save({ name })}
+            onBlur={() => name.trim() && name !== collection.name && handleSave({ name })}
             className="w-full rounded-lg bg-transparent text-heading font-bold tracking-tight text-ink outline-none focus:bg-white/5"
           />
           {collection.description && (
             <p className="mt-2 text-body-sm text-muted">{collection.description}</p>
           )}
         </div>
-        <Button variant="secondary" onClick={deleteCollection}>
+        <Button variant="secondary" onClick={() => setConfirmDeleteOpen(true)}>
           <Trash2 className="size-4" /> Delete
         </Button>
       </div>
+
+      <Modal
+        open={confirmDeleteOpen}
+        onOpenChange={setConfirmDeleteOpen}
+        title="Delete this collection?"
+        description="Generations inside it won't be deleted — only the collection itself."
+      >
+        <div className="flex justify-end gap-2">
+          <Button variant="secondary" onClick={() => setConfirmDeleteOpen(false)}>
+            Cancel
+          </Button>
+          <Button variant="primary" loading={deleting} onClick={onDelete}>
+            <Trash2 className="size-4" /> Delete
+          </Button>
+        </div>
+      </Modal>
 
       <Card
         variant="compact"
@@ -132,7 +182,7 @@ export function CollectionDetailClient({ id }: { id: string }) {
             checked={isPublic}
             onCheckedChange={(checked) => {
               setIsPublic(checked);
-              save({ isPublic: checked });
+              handleSave({ isPublic: checked });
             }}
             disabled={saving}
           />
@@ -165,7 +215,7 @@ export function CollectionDetailClient({ id }: { id: string }) {
           No items in this collection yet. Add some from your gallery.
         </p>
       ) : (
-        <GalleryGrid items={collection.items} onRemoveFromCollection={removeItem} />
+        <GalleryGrid items={collection.items} onRemoveFromCollection={onRemoveItem} />
       )}
     </div>
   );

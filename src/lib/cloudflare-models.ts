@@ -80,7 +80,7 @@ export const CLOUDFLARE_MODELS: CloudflareModelConfig[] = [
     outputKind: "url",
   },
   {
-    id: " /recraft/recraftv4-1-pro",
+    id: "recraft/recraftv4-1-pro",
     label: "Recraft v4.1 Pro",
     provider: "Recraft",
     description: "Real Cloudflare Workers AI model — high-resolution 2048px+ output",
@@ -97,7 +97,7 @@ export const CLOUDFLARE_MODELS: CloudflareModelConfig[] = [
     outputKind: "url",
   },
   {
-    id: "  recraft/recraftv4-1-vector",
+    id: "recraft/recraftv4-1-vector",
     label: "Recraft v4.1 Vector",
     provider: "Recraft",
     description: "Real Cloudflare Workers AI model — production-ready SVG vector graphics",
@@ -114,7 +114,7 @@ export const CLOUDFLARE_MODELS: CloudflareModelConfig[] = [
     outputKind: "url",
   },
   {
-    id: "  leonardo/lucid-origin",
+    id: "leonardo/lucid-origin",
     label: "Lucid Origin",
     provider: "Leonardo",
     description: "Real Cloudflare Workers AI model — highly adaptable and prompt-responsive",
@@ -126,7 +126,7 @@ export const CLOUDFLARE_MODELS: CloudflareModelConfig[] = [
     outputKind: "url",
   },
   {
-    id: "  leonardo/phoenix-1.0",
+    id: "leonardo/phoenix-1.0",
     label: "Phoenix 1.0",
     provider: "Leonardo",
     description: "Real Cloudflare Workers AI model — exceptional prompt adherence and coherent text",
@@ -138,7 +138,7 @@ export const CLOUDFLARE_MODELS: CloudflareModelConfig[] = [
     outputKind: "url",
   },
   {
-    id: "  google/nano-banana-2-lite",
+    id: "google/nano-banana-2-lite",
     label: "Nano Banana 2 Lite",
     provider: "Google",
     description: "Real Cloudflare Workers AI model — Google's fastest Gemini image generation model",
@@ -150,7 +150,7 @@ export const CLOUDFLARE_MODELS: CloudflareModelConfig[] = [
     outputKind: "url",
   },
   {
-    id: "  xai/grok-imagine-image",
+    id: "xai/grok-imagine-image",
     label: "Grok Imagine",
     provider: "xAI",
     description: "Real Cloudflare Workers AI model — configurable aspect ratio and resolution",
@@ -168,7 +168,7 @@ export const CLOUDFLARE_MODELS: CloudflareModelConfig[] = [
     outputKind: "url",
   },
   {
-    id: "  xai/grok-imagine-image-quality",
+    id: "xai/grok-imagine-image-quality",
     label: "Grok Imagine Quality",
     provider: "xAI",
     description: "Real Cloudflare Workers AI model — higher-fidelity, supports image editing",
@@ -187,7 +187,7 @@ export const CLOUDFLARE_MODELS: CloudflareModelConfig[] = [
     outputKind: "url",
   },
   {
-    id: "  stabilityai/stable-diffusion-xl-base-1.0",
+    id: "stabilityai/stable-diffusion-xl-base-1.0",
     label: "Stable Diffusion XL 1.0",
     provider: "Stability AI (Cloudflare)",
     description: "Real Cloudflare Workers AI model — width/height/steps control",
@@ -207,7 +207,7 @@ export const CLOUDFLARE_MODELS: CloudflareModelConfig[] = [
 
   // ---------- text-to-video (no required image) ----------
   {
-    id: "  bytedance/seedance-2.0-mini",
+    id: "bytedance/seedance-2.0-mini",
     label: "Seedance 2.0 Mini",
     provider: "ByteDance",
     description: "Real Cloudflare Workers AI model — compact & cost-efficient, up to 1080p",
@@ -229,7 +229,7 @@ export const CLOUDFLARE_MODELS: CloudflareModelConfig[] = [
     outputKind: "url",
   },
   {
-    id: "  black-forest-labs/flux-3-video",
+    id: "black-forest-labs/flux-3-video",
     label: "Flux 3 Video",
     provider: "Black Forest Labs",
     description: "Real Cloudflare Workers AI model — first FLUX video model, native audio",
@@ -249,7 +249,7 @@ export const CLOUDFLARE_MODELS: CloudflareModelConfig[] = [
     outputKind: "url",
   },
   {
-    id: "  xai/grok-imagine-video",
+    id: "xai/grok-imagine-video",
     label: "Grok Imagine Video",
     provider: "xAI",
     description: "Real Cloudflare Workers AI model — native synchronized audio",
@@ -268,7 +268,7 @@ export const CLOUDFLARE_MODELS: CloudflareModelConfig[] = [
     outputKind: "url",
   },
   {
-    id: "  xai/grok-imagine-video-1.5-preview",
+    id: "xai/grok-imagine-video-1.5-preview",
     label: "Grok Imagine Video 1.5 Preview",
     provider: "xAI",
     description: "Real Cloudflare Workers AI model — next-gen quality improvements",
@@ -287,7 +287,7 @@ export const CLOUDFLARE_MODELS: CloudflareModelConfig[] = [
     outputKind: "url",
   },
   {
-    id: "  google/veo-3.1",
+    id: "google/veo-3.1",
     label: "Veo 3.1",
     provider: "Google",
     description: "Real Cloudflare Workers AI model — Google's flagship video model, native audio & zero data retention",
@@ -306,7 +306,7 @@ export const CLOUDFLARE_MODELS: CloudflareModelConfig[] = [
     outputKind: "url",
   },
   {
-    id: "  google/veo-3.1-fast",
+    id: "google/veo-3.1-fast",
     label: "Veo 3.1 Fast",
     provider: "Google",
     description: "Real Cloudflare Workers AI model — lower-latency Veo variant, same quality & native audio",
@@ -327,7 +327,7 @@ export const CLOUDFLARE_MODELS: CloudflareModelConfig[] = [
 
   // ---------- image-to-video (image required) ----------
   {
-    id: "  alibaba/hh1.1-i2v",
+    id: "alibaba/hh1.1-i2v",
     label: "HappyHorse 1.1 — Live",
     provider: "Alibaba",
     description: "Real Cloudflare Workers AI model — smoother motion, improved close-ups",
@@ -345,7 +345,7 @@ export const CLOUDFLARE_MODELS: CloudflareModelConfig[] = [
     outputKind: "url",
   },
   {
-    id: "  alibaba/wan-2.7-i2v",
+    id: "alibaba/wan-2.7-i2v",
     label: "Wan 2.7",
     provider: "Alibaba",
     description: "Real Cloudflare Workers AI model — Wan 2.7 image-to-video",
