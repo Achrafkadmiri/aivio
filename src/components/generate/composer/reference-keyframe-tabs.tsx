@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeftRight, ChevronDown } from "lucide-react";
+import { ArrowLeftRight, ChevronDown, FileVideo, Image as ImageIcon, Layers, type LucideIcon } from "lucide-react";
 import { DropdownRoot, DropdownTrigger, DropdownContent, DropdownItem } from "@/components/ui/dropdown";
 import { ReferenceUploadTile } from "./reference-row";
 import { cn } from "@/lib/utils";
@@ -18,6 +18,12 @@ const MODE_LABEL: Record<ReferenceMode, string> = {
   reference: "Reference",
   keyframe: "Keyframe",
   video: "Reference video",
+};
+
+const MODE_ICON: Record<ReferenceMode, LucideIcon> = {
+  reference: ImageIcon,
+  keyframe: Layers,
+  video: FileVideo,
 };
 
 /** Dropdown-driven switcher between a single "Reference" image slot, a
@@ -47,23 +53,32 @@ export function KeyframeReferenceControl({
    * 2.5's Cloudflare integration actually supports a reference video. */
   video?: UploadSlot;
 }) {
+  const ModeIcon = MODE_ICON[mode];
+
   return (
-    <div className="flex flex-col items-start gap-1.5">
+    <div className="flex flex-col items-start gap-2">
       <DropdownRoot>
         <DropdownTrigger asChild>
           <button
             type="button"
-            className="flex items-center gap-1 rounded-full px-1.5 py-0.5 text-caption font-medium text-muted transition-colors hover:text-ink-soft"
+            className={cn(
+              "inline-flex items-center gap-1.5 rounded-full border border-border-subtle bg-white/[0.03] px-3 py-1.5",
+              "text-label font-semibold text-ink-soft transition-colors duration-200",
+              "hover:border-border-strong hover:bg-white/[0.06]",
+              "data-[state=open]:border-brand/50 data-[state=open]:bg-brand/10 data-[state=open]:text-ink data-[state=open]:shadow-glow-sm",
+            )}
           >
+            <ModeIcon className="size-3.5 shrink-0 text-brand" aria-hidden="true" />
             {MODE_LABEL[mode]}
-            <ChevronDown className="size-3" aria-hidden="true" />
+            <ChevronDown className="size-3 shrink-0 text-muted" aria-hidden="true" />
           </button>
         </DropdownTrigger>
-        <DropdownContent align="start" className="w-48 rounded-xl border-line bg-surface-3 p-1.5 shadow-floating">
+        <DropdownContent align="start" className="w-52 rounded-xl border-line bg-surface-3 p-1.5 shadow-floating">
           <DropdownItem
             onSelect={() => onModeChange("reference")}
-            className={cn("rounded-lg px-3 py-2.5", mode === "reference" && "text-brand")}
+            className={cn("flex items-start gap-2.5 rounded-lg px-3 py-2.5", mode === "reference" && "text-brand")}
           >
+            <ImageIcon className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
             <div>
               <p className="text-label font-medium">Reference image</p>
               <p className="text-caption text-muted">Guide the whole generation</p>
@@ -71,8 +86,9 @@ export function KeyframeReferenceControl({
           </DropdownItem>
           <DropdownItem
             onSelect={() => onModeChange("keyframe")}
-            className={cn("rounded-lg px-3 py-2.5", mode === "keyframe" && "text-brand")}
+            className={cn("flex items-start gap-2.5 rounded-lg px-3 py-2.5", mode === "keyframe" && "text-brand")}
           >
+            <Layers className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
             <div>
               <p className="text-label font-medium">Keyframe</p>
               <p className="text-caption text-muted">Set a first and last frame</p>
@@ -81,8 +97,9 @@ export function KeyframeReferenceControl({
           {video && (
             <DropdownItem
               onSelect={() => onModeChange("video")}
-              className={cn("rounded-lg px-3 py-2.5", mode === "video" && "text-brand")}
+              className={cn("flex items-start gap-2.5 rounded-lg px-3 py-2.5", mode === "video" && "text-brand")}
             >
+              <FileVideo className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
               <div>
                 <p className="text-label font-medium">Reference video</p>
                 <p className="text-caption text-muted">Restyle an existing clip</p>
@@ -93,7 +110,7 @@ export function KeyframeReferenceControl({
       </DropdownRoot>
 
       {mode === "keyframe" && (
-        <div className="flex items-center">
+        <div className="flex items-center gap-1">
           <ReferenceUploadTile
             kind="image"
             label="First frame"
@@ -104,15 +121,26 @@ export function KeyframeReferenceControl({
             onFile={first.onFile}
             onRemove={first.onRemove}
           />
-          <button
-            type="button"
-            onClick={onSwap}
-            aria-label="Swap first and last frame"
-            title="Swap first and last frame"
-            className="z-10 -mx-3 flex size-6 shrink-0 items-center justify-center rounded-full border border-line bg-surface-3 text-muted shadow-raised transition-colors hover:text-ink-soft"
-          >
-            <ArrowLeftRight className="size-3" aria-hidden="true" />
-          </button>
+          {/* A short gradient thread between the two frames reads as a tiny
+              timeline — first frame interpolating into last frame — rather
+              than two unrelated upload slots that happen to sit side by
+              side. The swap button rotates on hover as a small, playful
+              confirmation that it's a real (and reversible) action. */}
+          <div className="relative flex h-20 w-8 shrink-0 items-center justify-center">
+            <div
+              className="pointer-events-none absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-gradient-to-r from-transparent via-border-strong to-transparent"
+              aria-hidden="true"
+            />
+            <button
+              type="button"
+              onClick={onSwap}
+              aria-label="Swap first and last frame"
+              title="Swap first and last frame"
+              className="relative z-10 flex size-6 shrink-0 items-center justify-center rounded-full border border-line bg-surface-3 text-muted shadow-raised transition-all duration-200 hover:rotate-180 hover:border-border-strong hover:text-ink-soft"
+            >
+              <ArrowLeftRight className="size-3" aria-hidden="true" />
+            </button>
+          </div>
           <ReferenceUploadTile
             kind="image"
             label="Last frame"
@@ -145,7 +173,7 @@ export function KeyframeReferenceControl({
         <ReferenceUploadTile
           kind="video"
           label="Reference video"
-          shortLabel="Reference video"
+          shortLabel="Video"
           size="lg"
           previewUrl={video.previewUrl}
           uploading={video.uploading}
