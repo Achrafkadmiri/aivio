@@ -65,8 +65,14 @@ export function ReferenceUploadTile({
       <div
         className={cn(
           "group relative flex size-20 shrink-0 flex-col items-center justify-center gap-2 overflow-hidden rounded-2xl border-2 transition-[background-color,border-color,box-shadow,transform] duration-200 ease-out",
-          hasFile ? "border-solid border-line bg-surface-2 shadow-glow-sm" : "border-dashed border-line bg-surface-2/40",
-          clickable && "cursor-pointer hover:border-border-strong hover:bg-white/[0.04] hover:scale-[1.03] active:scale-[0.97]",
+          // Empty state gets a soft brand tint (not just neutral gray) so it
+          // reads as "this is an accent control", matching the icon badge
+          // below and tying it visually to the mode pill above it.
+          hasFile
+            ? "border-solid border-line bg-surface-2 shadow-glow-sm"
+            : "border-dashed border-brand/25 bg-surface-2/40",
+          clickable &&
+            "cursor-pointer hover:border-brand/50 hover:bg-brand/5 hover:shadow-glow-sm hover:scale-[1.03] active:scale-[0.97]",
           disabled && "cursor-not-allowed opacity-35",
         )}
         onClick={() => {
@@ -101,9 +107,12 @@ export function ReferenceUploadTile({
           </>
         ) : (
           <>
-            <span className="flex size-8 items-center justify-center rounded-full bg-white/8 text-ink-soft transition-colors group-hover:bg-white/12 group-hover:text-brand">
+            {/* A tinted ring rather than a solid fill — enough color to read
+                as "brand, tap here" without being mistaken for the solid
+                gradient fill the "Added" state uses once a file lands. */}
+            <span className="flex size-8 items-center justify-center rounded-full border border-brand/30 bg-brand/10 text-brand transition-colors duration-200 group-hover:border-brand/60 group-hover:bg-brand/20">
               {uploading ? (
-                <span className="size-3 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                <span className="size-3 animate-spin rounded-full border-2 border-brand/30 border-t-brand" />
               ) : (
                 <Plus className="size-4" aria-hidden="true" strokeWidth={2.5} />
               )}

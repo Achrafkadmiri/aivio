@@ -70,7 +70,7 @@ export function KeyframeReferenceControl({
               "data-[state=open]:border-brand/50 data-[state=open]:text-brand",
             )}
           >
-            <ModeIcon className="size-3.5 shrink-0 text-muted" aria-hidden="true" />
+            <ModeIcon className="size-3.5 shrink-0 text-brand" aria-hidden="true" />
             <span className="font-medium">{MODE_LABEL[mode]}</span>
             <ChevronDown className="size-3 shrink-0 text-muted" aria-hidden="true" />
           </button>
@@ -130,7 +130,7 @@ export function KeyframeReferenceControl({
               confirmation that it's a real (and reversible) action. */}
           <div className="relative flex h-20 w-8 shrink-0 items-center justify-center">
             <div
-              className="pointer-events-none absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-gradient-to-r from-transparent via-border-strong to-transparent"
+              className="pointer-events-none absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-gradient-to-r from-transparent via-brand/40 to-transparent"
               aria-hidden="true"
             />
             <button
