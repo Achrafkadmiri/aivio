@@ -3,6 +3,7 @@
 import { ArrowLeftRight, ChevronDown, FileVideo, Image as ImageIcon, Layers, type LucideIcon } from "lucide-react";
 import { DropdownRoot, DropdownTrigger, DropdownContent, DropdownItem } from "@/components/ui/dropdown";
 import { ReferenceUploadTile } from "./reference-row";
+import { pillClass } from "./pill";
 import { cn } from "@/lib/utils";
 
 export type ReferenceMode = "reference" | "keyframe" | "video";
@@ -62,14 +63,15 @@ export function KeyframeReferenceControl({
           <button
             type="button"
             className={cn(
-              "inline-flex items-center gap-1.5 rounded-full border border-border-subtle bg-white/[0.03] px-3 py-1.5",
-              "text-label font-semibold text-ink-soft transition-colors duration-200",
-              "hover:border-border-strong hover:bg-white/[0.06]",
-              "data-[state=open]:border-brand/50 data-[state=open]:bg-brand/10 data-[state=open]:text-ink data-[state=open]:shadow-glow-sm",
+              pillClass,
+              // Same shared pill as every other composer control, plus a
+              // light brand accent while the menu is open — Radix sets this
+              // data-state itself, so it's a pure CSS hook, not extra state.
+              "data-[state=open]:border-brand/50 data-[state=open]:text-brand",
             )}
           >
-            <ModeIcon className="size-3.5 shrink-0 text-brand" aria-hidden="true" />
-            {MODE_LABEL[mode]}
+            <ModeIcon className="size-3.5 shrink-0 text-muted" aria-hidden="true" />
+            <span className="font-medium">{MODE_LABEL[mode]}</span>
             <ChevronDown className="size-3 shrink-0 text-muted" aria-hidden="true" />
           </button>
         </DropdownTrigger>

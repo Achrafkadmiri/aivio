@@ -8,12 +8,17 @@ import { Tooltip } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 /** Shared trigger style for every pill in the composer toolbar — boxy
- * rounded-md rather than a full pill, matching ArtCraft's own secondary
- * controls (their primary CTA stays full-pill, see CreditsSubmitPill). */
+ * rounded-lg rather than a full pill, matching ArtCraft's own secondary
+ * controls (their primary CTA stays full-pill, see CreditsSubmitPill). A
+ * small hover lift + press-down scale (same feel as CreditsSubmitPill's own
+ * hover:-translate-y-px) makes the whole row feel like one tactile system
+ * instead of static boxes. */
 export const pillClass = cn(
-  "inline-flex shrink-0 items-center gap-1.5 rounded-md border border-line bg-surface-2 px-3 py-1.5",
-  "text-label text-ink-soft transition-colors hover:border-border-strong hover:bg-surface-3",
-  "disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-line disabled:hover:bg-surface-2",
+  "inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-line bg-surface-2 px-3 py-1.5",
+  "text-label text-ink-soft transition-[background-color,border-color,box-shadow,transform] duration-200 ease-out",
+  "hover:border-border-strong hover:bg-surface-3 hover:-translate-y-px hover:shadow-raised",
+  "active:translate-y-0 active:scale-[0.98]",
+  "disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0 disabled:hover:border-line disabled:hover:bg-surface-2 disabled:hover:shadow-none",
 );
 
 /** Wraps a disabled pill with a tooltip explaining why — used instead of a

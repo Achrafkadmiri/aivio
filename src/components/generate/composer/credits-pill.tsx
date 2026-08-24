@@ -23,8 +23,8 @@ export function CreditsSubmitPill({
       aria-label="Generate"
       className={cn(
         "inline-flex shrink-0 items-center gap-2 rounded-full bg-[image:var(--gradient-primary)] px-3.5 py-2 text-label font-semibold text-white shadow-glow-sm",
-        "transition-[transform,box-shadow] hover:-translate-y-px hover:shadow-glow-md active:translate-y-0",
-        "disabled:pointer-events-none disabled:opacity-50 disabled:shadow-none",
+        "transition-[transform,box-shadow] duration-200 ease-out hover:-translate-y-px hover:scale-[1.02] hover:shadow-glow-md active:translate-y-0 active:scale-[0.98]",
+        "disabled:pointer-events-none disabled:opacity-50 disabled:shadow-none disabled:hover:scale-100",
         className,
       )}
     >
