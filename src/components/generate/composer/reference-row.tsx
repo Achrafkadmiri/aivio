@@ -64,7 +64,7 @@ export function ReferenceUploadTile({
     return (
       <div
         className={cn(
-          "group relative flex size-20 shrink-0 flex-col items-center justify-center gap-2 overflow-hidden rounded-2xl border-2 transition-[background-color,border-color,box-shadow,transform] duration-200 ease-out",
+          "group relative flex size-16 shrink-0 flex-col items-center justify-center gap-1.5 overflow-hidden rounded-xl border-2 transition-[background-color,border-color,box-shadow,transform] duration-200 ease-out",
           // Empty state gets a soft brand tint (not just neutral gray) so it
           // reads as "this is an accent control", matching the icon badge
           // below and tying it visually to the mode pill above it.
@@ -100,24 +100,24 @@ export function ReferenceUploadTile({
           // but the tile still needs to visibly confirm "attached" instead
           // of sitting on the same Plus glyph as the empty state.
           <>
-            <span className="flex size-8 items-center justify-center rounded-full bg-[image:var(--gradient-primary)] text-white shadow-glow-sm">
-              <Icon className="size-4" aria-hidden="true" />
+            <span className="flex size-6 items-center justify-center rounded-full bg-[image:var(--gradient-primary)] text-white shadow-glow-sm">
+              <Icon className="size-3" aria-hidden="true" />
             </span>
-            <span className="px-1 text-center text-caption font-medium text-ink-soft">Added</span>
+            <span className="px-1 text-center text-[11px] leading-tight font-medium text-ink-soft">Added</span>
           </>
         ) : (
           <>
             {/* A tinted ring rather than a solid fill — enough color to read
                 as "brand, tap here" without being mistaken for the solid
                 gradient fill the "Added" state uses once a file lands. */}
-            <span className="flex size-8 items-center justify-center rounded-full border border-brand/30 bg-brand/10 text-brand transition-colors duration-200 group-hover:border-brand/60 group-hover:bg-brand/20">
+            <span className="flex size-6 items-center justify-center rounded-full border border-brand/30 bg-brand/10 text-brand transition-colors duration-200 group-hover:border-brand/60 group-hover:bg-brand/20">
               {uploading ? (
-                <span className="size-3 animate-spin rounded-full border-2 border-brand/30 border-t-brand" />
+                <span className="size-2.5 animate-spin rounded-full border-2 border-brand/30 border-t-brand" />
               ) : (
-                <Plus className="size-4" aria-hidden="true" strokeWidth={2.5} />
+                <Plus className="size-3.5" aria-hidden="true" strokeWidth={2.5} />
               )}
             </span>
-            <span className="px-1 text-center text-caption font-medium text-muted transition-colors group-hover:text-ink-soft">
+            <span className="px-1 text-center text-[11px] leading-tight font-medium text-muted transition-colors group-hover:text-ink-soft">
               {shortLabel}
             </span>
           </>
@@ -130,9 +130,9 @@ export function ReferenceUploadTile({
               onRemove?.();
             }}
             aria-label={`Remove ${label.toLowerCase()}`}
-            className="absolute top-1 right-1 flex size-5 items-center justify-center rounded-full bg-black/70 text-white opacity-0 backdrop-blur-sm transition-opacity group-hover:opacity-100"
+            className="absolute top-0.5 right-0.5 flex size-4 items-center justify-center rounded-full bg-black/70 text-white opacity-0 backdrop-blur-sm transition-opacity group-hover:opacity-100"
           >
-            <X className="size-3" />
+            <X className="size-2.5" />
           </button>
         )}
       </div>

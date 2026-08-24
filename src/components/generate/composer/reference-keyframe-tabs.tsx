@@ -57,22 +57,26 @@ export function KeyframeReferenceControl({
   const ModeIcon = MODE_ICON[mode];
 
   return (
-    <div className="flex flex-col items-start gap-2">
+    <div className="flex flex-col items-start gap-1.5">
       <DropdownRoot>
         <DropdownTrigger asChild>
           <button
             type="button"
             className={cn(
               pillClass,
+              // A notch smaller than the rest of the toolbar's pills — this
+              // one sits above a compact box rather than inline in the main
+              // row, so it reads better matched to what's under it.
+              "px-2.5 py-1 text-caption",
               // Same shared pill as every other composer control, plus a
               // light brand accent while the menu is open — Radix sets this
               // data-state itself, so it's a pure CSS hook, not extra state.
               "data-[state=open]:border-brand/50 data-[state=open]:text-brand",
             )}
           >
-            <ModeIcon className="size-3.5 shrink-0 text-brand" aria-hidden="true" />
+            <ModeIcon className="size-3 shrink-0 text-brand" aria-hidden="true" />
             <span className="font-medium">{MODE_LABEL[mode]}</span>
-            <ChevronDown className="size-3 shrink-0 text-muted" aria-hidden="true" />
+            <ChevronDown className="size-2.5 shrink-0 text-muted" aria-hidden="true" />
           </button>
         </DropdownTrigger>
         <DropdownContent align="start" className="w-52 rounded-xl border-line bg-surface-3 p-1.5 shadow-floating">
@@ -112,11 +116,11 @@ export function KeyframeReferenceControl({
       </DropdownRoot>
 
       {mode === "keyframe" && (
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-0.5">
           <ReferenceUploadTile
             kind="image"
             label="First frame"
-            shortLabel="First frame"
+            shortLabel="First"
             size="lg"
             previewUrl={first.previewUrl}
             uploading={first.uploading}
@@ -128,7 +132,7 @@ export function KeyframeReferenceControl({
               than two unrelated upload slots that happen to sit side by
               side. The swap button rotates on hover as a small, playful
               confirmation that it's a real (and reversible) action. */}
-          <div className="relative flex h-20 w-8 shrink-0 items-center justify-center">
+          <div className="relative flex h-16 w-6 shrink-0 items-center justify-center">
             <div
               className="pointer-events-none absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-gradient-to-r from-transparent via-brand/40 to-transparent"
               aria-hidden="true"
@@ -138,15 +142,15 @@ export function KeyframeReferenceControl({
               onClick={onSwap}
               aria-label="Swap first and last frame"
               title="Swap first and last frame"
-              className="relative z-10 flex size-6 shrink-0 items-center justify-center rounded-full border border-line bg-surface-3 text-muted shadow-raised transition-all duration-200 hover:rotate-180 hover:border-border-strong hover:text-ink-soft"
+              className="relative z-10 flex size-5 shrink-0 items-center justify-center rounded-full border border-line bg-surface-3 text-muted shadow-raised transition-all duration-200 hover:rotate-180 hover:border-border-strong hover:text-ink-soft"
             >
-              <ArrowLeftRight className="size-3" aria-hidden="true" />
+              <ArrowLeftRight className="size-2.5" aria-hidden="true" />
             </button>
           </div>
           <ReferenceUploadTile
             kind="image"
             label="Last frame"
-            shortLabel="Last frame"
+            shortLabel="Last"
             size="lg"
             previewUrl={last.previewUrl}
             uploading={last.uploading}
