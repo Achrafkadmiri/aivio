@@ -173,25 +173,29 @@ export function GenerateStudio({ type }: { type: GenerationType }) {
               />
             </div>
           ) : (
-            <div className="relative flex h-full min-h-[50vh] flex-col items-center justify-center overflow-hidden text-center">
-              {/* Two offset floating glow orbs (violet + pink) instead of a
-                  single static blob — echoes the body's own layered radial
-                  wash in globals.css and gives the idle canvas a bit of
-                  ArtCraft/Higgsfield-style ambient motion via the existing
-                  glow-float keyframe. */}
+            // The empty state is framed as a "canvas" — a large dashed,
+            // brand-tinted card — rather than text floating in open space.
+            // Same accent language as the composer's reference/keyframe
+            // boxes (dashed border-brand, tinted icon ring), so "this is
+            // where your creation will appear" reads consistently the very
+            // first time someone lands here and every time after.
+            <div className="relative flex h-full min-h-[50vh] flex-col items-center justify-center overflow-hidden rounded-3xl border-2 border-dashed border-brand/15 bg-surface-2/20 p-10 text-center">
               <div
-                className="pointer-events-none absolute -top-16 left-1/2 size-[34rem] -translate-x-[60%] rounded-full opacity-30 blur-3xl animate-glow-float"
+                className="pointer-events-none absolute -top-24 left-1/2 size-[34rem] -translate-x-1/2 rounded-full opacity-25 blur-3xl animate-glow-float"
                 style={{ background: "var(--gradient-primary-radial)" }}
                 aria-hidden="true"
               />
-              <div
-                className="pointer-events-none absolute -bottom-24 left-1/2 size-[26rem] -translate-x-[30%] rounded-full opacity-20 blur-3xl animate-glow-float"
-                style={{ background: "var(--gradient-primary-radial)", animationDelay: "-3s" }}
-                aria-hidden="true"
-              />
 
-              <span className="relative mb-5 flex size-16 items-center justify-center rounded-2xl bg-[image:var(--gradient-primary)] shadow-glow-md">
-                <Sparkles className="size-7 text-white" aria-hidden="true" />
+              <span className="relative mb-5 flex items-center justify-center">
+                {/* Soft pulsing halo behind the badge — a small sign of life
+                    on an otherwise static empty state. */}
+                <span
+                  className="absolute inset-0 -m-2 animate-pulse rounded-2xl bg-[image:var(--gradient-primary)] opacity-30 blur-lg"
+                  aria-hidden="true"
+                />
+                <span className="relative flex size-16 items-center justify-center rounded-2xl bg-[image:var(--gradient-primary)] shadow-glow-md">
+                  <Sparkles className="size-7 text-white" aria-hidden="true" />
+                </span>
               </span>
               <h2 className="relative text-display font-bold text-ink">{active.heroTitle}</h2>
               <p className="relative mt-3 text-body text-muted">{active.heroSubtitle}</p>
