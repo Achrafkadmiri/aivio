@@ -225,7 +225,7 @@ export function GenerateStudio({ type }: { type: GenerationType }) {
           when the sidebar collapsed. */}
       <div
         className={cn(
-          "pointer-events-none fixed inset-x-0 bottom-4 z-30 px-4",
+          "pointer-events-none fixed inset-x-0 bottom-4 z-30 px-4 transition-[padding-left] duration-300",
           sidebarCollapsed ? "lg:pl-24" : "lg:pl-64",
         )}
       >
