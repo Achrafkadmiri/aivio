@@ -5,6 +5,7 @@ import { ArrowUpRight } from "lucide-react";
 import { SHOWCASE_VIDEOS } from "@/lib/showcase-media";
 import { NANO_BANANA_IMAGES } from "@/lib/nano-banana-showcase";
 import { VIDEO_MODELS, IMAGE_MODELS, SEEDANCE2_MODEL_ID } from "@/lib/constants";
+import { useLazyVideo } from "@/hooks/use-lazy-video";
 
 const SEEDANCE_2 = VIDEO_MODELS.find((m) => m.id === SEEDANCE2_MODEL_ID);
 const NANO_BANANA = IMAGE_MODELS.find((m) => m.label === "Nano Banana 2 Lite");
@@ -69,6 +70,32 @@ const MODEL_CARDS: ModelCard[] = [
   },
 ].filter((c): c is ModelCard => Boolean(c));
 
+// Cards below the hero are off-screen on first paint (some horizontally,
+// past the carousel's visible width; the rest vertically, until scrolled
+// to) — autoplaying every one of them unconditionally on mount meant every
+// landing pageload was fetching/decoding this many video streams at once
+// regardless of whether they were ever seen. Deferred to useLazyVideo so
+// each only starts once it's actually about to be on screen.
+function CarouselVideo({ src }: { src: string }) {
+  const { containerRef, videoRef, hasLoadedOnce } = useLazyVideo<HTMLDivElement>();
+  return (
+    <div ref={containerRef} className="absolute inset-0">
+      {hasLoadedOnce && (
+        <video
+          ref={videoRef}
+          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+          muted
+          loop
+          playsInline
+          preload="none"
+        >
+          <source src={src} type="video/mp4" />
+        </video>
+      )}
+    </div>
+  );
+}
+
 // Large feature-card carousel, one per live model with curated examples —
 // mirrors higgsfield.ai's horizontal model-carousel pattern: big media
 // preview, title/description scrim, single "Open" CTA per card.
@@ -84,16 +111,7 @@ export function ModelCarousel() {
           className="group relative flex h-[320px] w-[85vw] max-w-sm flex-none snap-center overflow-hidden rounded-2xl border border-line bg-surface-2 sm:h-[380px] sm:w-[480px] sm:max-w-none"
         >
           {card.kind === "video" ? (
-            <video
-              className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-              autoPlay
-              muted
-              loop
-              playsInline
-              preload="metadata"
-            >
-              <source src={card.mediaUrl} type="video/mp4" />
-            </video>
+            <CarouselVideo src={card.mediaUrl} />
           ) : (
             // eslint-disable-next-line @next/next/no-img-element -- remote fal.ai CDN thumbnail, no next/image domain config for this host
             <img

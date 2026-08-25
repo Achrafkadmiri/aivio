@@ -2,6 +2,7 @@
 
 import { useInView } from "@/hooks/use-in-view";
 import { useCountUp } from "@/hooks/use-count-up";
+import { useLazyVideo } from "@/hooks/use-lazy-video";
 import { SHOWCASE_VIDEOS } from "@/lib/showcase-media";
 import { cn } from "@/lib/utils";
 
@@ -37,27 +38,38 @@ function StatItem({ stat }: { stat: (typeof STATS)[number] }) {
   );
 }
 
+// This section sits well below the fold (after the hero, showcase, and
+// how-it-works sections) — these were autoplaying immediately on every
+// pageload regardless, before most visitors had scrolled anywhere near
+// them. useLazyVideo defers each until it's actually about to be visible.
+function FloatingClip({ clip }: { clip: (typeof FLOATING_CLIPS)[number] }) {
+  const video = SHOWCASE_VIDEOS.find((v) => v.id === clip.id)!;
+  const { containerRef, videoRef, hasLoadedOnce } = useLazyVideo<HTMLDivElement>();
+  return (
+    <div
+      ref={containerRef}
+      className={cn(
+        "pointer-events-none absolute hidden aspect-[3/4] w-32 overflow-hidden rounded-2xl border border-line shadow-glow-sm lg:block",
+        clip.rotate,
+        clip.position,
+      )}
+      aria-hidden="true"
+    >
+      {hasLoadedOnce && (
+        <video ref={videoRef} className="h-full w-full object-cover opacity-60" muted loop playsInline preload="none">
+          <source src={video.url} type="video/mp4" />
+        </video>
+      )}
+    </div>
+  );
+}
+
 export function StatsStrip() {
   return (
     <section className="container-page relative py-16">
-      {FLOATING_CLIPS.map((clip) => {
-        const video = SHOWCASE_VIDEOS.find((v) => v.id === clip.id)!;
-        return (
-          <div
-            key={clip.id}
-            className={cn(
-              "pointer-events-none absolute hidden aspect-[3/4] w-32 overflow-hidden rounded-2xl border border-line shadow-glow-sm lg:block",
-              clip.rotate,
-              clip.position,
-            )}
-            aria-hidden="true"
-          >
-            <video className="h-full w-full object-cover opacity-60" muted loop playsInline preload="metadata" autoPlay>
-              <source src={video.url} type="video/mp4" />
-            </video>
-          </div>
-        );
-      })}
+      {FLOATING_CLIPS.map((clip) => (
+        <FloatingClip key={clip.id} clip={clip} />
+      ))}
 
       <div className="relative grid grid-cols-2 gap-8 border-y border-line py-12 sm:grid-cols-4">
         {STATS.map((stat) => (
