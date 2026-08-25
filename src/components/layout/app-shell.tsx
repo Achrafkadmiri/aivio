@@ -4,6 +4,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import * as Dialog from "@radix-ui/react-dialog";
 import { apiFetch } from "@/lib/api-client";
 import { useMe } from "@/hooks/use-me";
 import { Spinner } from "@/components/ui/spinner";
@@ -193,8 +194,8 @@ export function AppShell({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="flex min-h-screen bg-surface-app">
-      <aside className="hidden w-60 shrink-0 flex-col border-r border-line bg-surface-sidebar lg:sticky lg:top-0 lg:flex lg:h-screen">
+    <div className="flex min-h-screen bg-surface-app lg:gap-3">
+      <aside className="hidden w-60 shrink-0 flex-col rounded-2xl border border-line bg-surface-sidebar shadow-floating lg:sticky lg:top-3 lg:my-3 lg:ml-3 lg:flex lg:h-[calc(100vh-1.5rem)]">
         <div className="flex h-16 items-center border-b border-line px-4">
           <Logo />
         </div>
@@ -273,22 +274,29 @@ export function AppShell({ children }: { children: ReactNode }) {
         <main className="flex-1 p-4 lg:p-8">{children}</main>
       </div>
 
-      {drawerOpen && (
-        <div className="fixed inset-0 z-50 flex flex-col bg-surface-app lg:hidden">
-          <div className="flex h-16 items-center justify-between border-b border-line px-4">
-            <Logo />
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setDrawerOpen(false)}
-              aria-label="Close menu"
-            >
-              <X className="size-5" />
-            </Button>
-          </div>
-          <NavLinks onNavigate={() => setDrawerOpen(false)} />
-        </div>
-      )}
+      <Dialog.Root open={drawerOpen} onOpenChange={setDrawerOpen}>
+        <Dialog.Portal>
+          <Dialog.Overlay className="fixed inset-0 z-50 bg-overlay/80 backdrop-blur-sm lg:hidden" />
+          <Dialog.Content
+            className={cn(
+              "animate-sheet-left fixed inset-y-3 left-3 z-[60] flex w-64 max-w-[calc(100%-1.5rem)]",
+              "flex-col overflow-y-auto rounded-2xl border border-line bg-surface-sidebar shadow-modal",
+              "focus:outline-none lg:hidden",
+            )}
+          >
+            <Dialog.Title className="sr-only">Navigation</Dialog.Title>
+            <div className="flex h-16 shrink-0 items-center justify-between border-b border-line px-4">
+              <Logo />
+              <Dialog.Close asChild>
+                <Button variant="ghost" size="icon" aria-label="Close menu">
+                  <X className="size-5" />
+                </Button>
+              </Dialog.Close>
+            </div>
+            <NavLinks onNavigate={() => setDrawerOpen(false)} />
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
     </div>
   );
 }

@@ -191,6 +191,10 @@
      site: a 200ms translate is well under the threshold that triggers
      vestibular discomfort, unlike the looping/parallax effects above. */
   --animate-sheet-up: sheet-up 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  /* AppShell's floating mobile nav panel (see layout/app-shell.tsx) — same
+     reasoning/timing as sheet-up above, just sliding in from the edge the
+     panel is anchored to instead of the bottom. */
+  --animate-sheet-left: sheet-left 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 @keyframes blob-float {
@@ -235,6 +239,15 @@
   }
   to {
     transform: translateY(0);
+  }
+}
+
+@keyframes sheet-left {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
   }
 }
 
