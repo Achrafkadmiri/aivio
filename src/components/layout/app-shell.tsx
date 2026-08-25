@@ -184,6 +184,18 @@ export function AppShell({ children }: { children: ReactNode }) {
     }
   }, [isError, router]);
 
+  // Same reasoning as the marketing Header: a hairline border sitting under
+  // the bar on every single app page (including ones shorter than the
+  // viewport, with nothing to scroll) reads as static boilerplate. Only draw
+  // it once there's actually scrolled content underneath to separate from.
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 12);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
   if (isLoading || isError) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-surface-app">
@@ -212,7 +224,14 @@ export function AppShell({ children }: { children: ReactNode }) {
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-10 flex h-16 shrink-0 items-center justify-between border-b border-line bg-surface-app/80 px-4 backdrop-blur-md lg:px-8">
+        <header
+          className={cn(
+            "sticky top-0 z-10 flex h-16 shrink-0 items-center justify-between border-b px-4 transition-colors duration-300 lg:px-8",
+            scrolled
+              ? "border-line bg-surface-app/80 backdrop-blur-md"
+              : "border-transparent bg-surface-app",
+          )}
+        >
           <div className="flex items-center gap-3 lg:hidden">
             <Button
               variant="ghost"
@@ -233,9 +252,9 @@ export function AppShell({ children }: { children: ReactNode }) {
               <DropdownTrigger asChild>
                 <button
                   type="button"
-                  className="flex items-center gap-3 rounded-full px-2 py-1.5 transition-colors hover:bg-white/5"
+                  className="flex items-center gap-2.5 rounded-full border border-line bg-surface-2 py-1.5 pr-3 pl-1.5 transition-colors hover:border-border-strong hover:bg-surface-3"
                 >
-                  <span className="flex size-8 items-center justify-center rounded-full bg-brand text-caption font-semibold text-white">
+                  <span className="flex size-7 items-center justify-center rounded-full bg-brand text-caption font-semibold text-white">
                     {initial}
                   </span>
                   <span className="hidden text-label text-ink-soft sm:inline">{user?.name}</span>
