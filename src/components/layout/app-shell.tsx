@@ -125,11 +125,16 @@ function NavItem({
       onClick={onNavigate}
       className={cn(
         "font-display relative flex items-center gap-3 rounded-xl py-2 text-label font-medium transition-colors",
-        // Collapsed: size the pill to its content (icon only) and center it
-        // in the rail, instead of a block-level Link stretching to the full
-        // rail width — a full-width active wash behind a lone centered icon
-        // rendered as an oversized blob.
-        collapsed ? "mx-auto w-fit px-2" : "pr-4 pl-3",
+        // Collapsed: pin every item (active or not) to the exact same
+        // fixed width as the icon chip below (size-8) and center that in
+        // the rail, instead of a block-level Link stretching to the full
+        // rail width. w-fit seemed like the fix here, but the active
+        // item's extra px-2 padding made ITS box wider than an inactive
+        // item's — inactive items align because their invisible-at-rest
+        // Link box just happens to match the icon chip's width, so the
+        // active item alone drifted out of that column. Same fixed width
+        // for both keeps the whole rail in one column regardless of state.
+        collapsed ? "mx-auto w-8 justify-center px-0" : "pr-4 pl-3",
         active
           ? // The accent bar's color MUST stay under the before: variant —
             // a bare `bg-brand` here (no `before:` prefix) would paint the
