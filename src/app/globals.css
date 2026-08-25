@@ -59,6 +59,7 @@
   --color-brand-hover: #ff7a4d;
   --color-brand-active: #e23e14;
 
+<<<<<<< HEAD
   /* Ember family — two solid tonal siblings of --color-brand (same hue
      family, shifted lighter/warmer and darker/deeper) used for categorical
      coding — e.g. the sidebar/dashboard's per-section icon colors — as an
@@ -76,6 +77,15 @@
   --color-accent-teal: #2fe8d0;
   --color-accent-teal-soft: #7ff3e3;
 
+=======
+  /* Secondary accent — electric teal. Paired with --color-brand in
+     gradients and dual-tone moments (hero glow, gradient CTA, composer
+     edge, promo spotlight) so bold surfaces read as a warm/cool pair
+     (film-grade "orange & teal") instead of one hue fading into another. */
+  --color-accent-teal: #2fe8d0;
+  --color-accent-teal-soft: #7ff3e3;
+
+>>>>>>> 0cb4923940e9d5952e48d679af257a2c0802e21d
   /* Status — kept clearly separate in hue from brand-ember so alerts never
      get mistaken for accent decoration. */
   --color-success: #22c55e;
@@ -120,6 +130,7 @@
   --shadow-glow-teal-md: 0 0 40px rgb(47 232 208 / 0.22);
   --shadow-glow-white: 0 0 30px rgb(255 255 255 / 0.05);
 
+<<<<<<< HEAD
   /* No blended two-hue gradient fills anywhere in this system by design —
      that ember→teal blend used to fill buttons/badges/icon chips/decor
      blobs app-wide, and a smooth two-color blend on every accent surface
@@ -131,6 +142,15 @@
      --gradient-hero-glow is the one gradient kept: a single hue (ember)
      fading to transparent is just how a soft glow is expressed in CSS, not
      a blend between two colors. */
+=======
+  /* Gradients — ember → teal, used for the bold gradient CTA variant, the
+     generate-workspace canvas accent, and glow surfaces. .text-gradient
+     stays solid ember (accent text reads as one confident hue, not a
+     gradient-clipped word) — the gradient itself is reserved for larger
+     surfaces/buttons/edges instead. */
+  --gradient-primary: linear-gradient(135deg, #ff4d23 0%, #2fe8d0 100%);
+  --gradient-primary-radial: radial-gradient(circle at 30% 30%, #ff4d23 0%, #2fe8d0 100%);
+>>>>>>> 0cb4923940e9d5952e48d679af257a2c0802e21d
   --gradient-hero-glow: radial-gradient(ellipse 80% 50% at 50% -20%, rgb(255 77 35 / 0.18) 0%, transparent 100%);
 
   /* Type scale: each pairs font-size with its line-height (and, where

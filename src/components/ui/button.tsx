@@ -18,12 +18,19 @@ const base =
 // button, it's reserved for text/badge/link accents (see globals.css) so
 // it stays legible as emphasis rather than becoming the default chrome.
 // secondary = ghost pill: transparent + translucent white border.
+<<<<<<< HEAD
 // accent = the one deliberate exception to "brand never fills a button":
 // reserved for the single highest-emphasis CTA on a screen (hero, generate
 // submit, upgrade/recharge) so it doesn't compete with the white primary
 // pill. Solid ember, not a gradient blend — was a two-hue gradient fill
 // (ember→teal) until that got retired app-wide as the generic-AI-SaaS tell
 // it is; a confident flat color reads more deliberate than a blend anyway.
+=======
+// gradient = the one deliberate exception to "brand never fills a button":
+// reserved for the single highest-emphasis CTA on a screen (hero, generate
+// submit, upgrade/recharge) so it doesn't compete with the white primary
+// pill.
+>>>>>>> 0cb4923940e9d5952e48d679af257a2c0802e21d
 const variants: Record<ButtonVariant, string> = {
   primary:
     "border-0 bg-white text-black shadow-[0_0_20px_rgb(255_255_255_/_0.1)] hover:bg-white/90 hover:shadow-[0_0_30px_rgb(255_255_255_/_0.15)] hover:scale-[1.02] active:scale-[0.98] disabled:bg-line disabled:text-muted disabled:shadow-none disabled:hover:scale-100",
