@@ -19,10 +19,12 @@ import {
   X,
   User,
   Zap,
+  ChevronLeft,
 } from "lucide-react";
 import { cn, formatCredits } from "@/lib/utils";
 import { Logo } from "./logo";
 import { Button } from "@/components/ui/button";
+import { Tooltip } from "@/components/ui/tooltip";
 import {
   DropdownRoot,
   DropdownTrigger,
@@ -30,6 +32,8 @@ import {
   DropdownItem,
   DropdownSeparator,
 } from "@/components/ui/dropdown";
+
+const SIDEBAR_COLLAPSED_KEY = "sidebar-collapsed";
 
 type UsageResponse = { credit_balance: number };
 
@@ -120,44 +124,75 @@ function useLogout() {
   });
 }
 
-function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
+function NavItem({
+  item,
+  active,
+  onNavigate,
+  collapsed,
+}: {
+  item: (typeof NAV_SECTIONS)[number]["items"][number];
+  active: boolean;
+  onNavigate?: () => void;
+  collapsed: boolean;
+}) {
+  const styles = NAV_COLOR_STYLES[item.color];
+  const link = (
+    <Link
+      href={item.href}
+      onClick={onNavigate}
+      className={cn(
+        "font-display relative flex items-center gap-3 rounded-xl py-2 text-label font-medium transition-colors",
+        collapsed ? "justify-center px-0" : "pr-4 pl-3",
+        active
+          ? cn(styles.wash, "text-ink before:absolute before:top-1/2 before:left-0 before:h-5 before:w-1 before:-translate-y-1/2 before:rounded-full", styles.bar)
+          : "text-muted hover:bg-white/5 hover:text-ink-soft",
+      )}
+    >
+      <span
+        className={cn(
+          "flex size-8 shrink-0 items-center justify-center rounded-lg transition-colors",
+          active ? styles.chip : "bg-white/5",
+        )}
+      >
+        <item.icon className={cn("size-4", active ? styles.icon : "text-muted")} aria-hidden="true" />
+      </span>
+      {!collapsed && item.label}
+    </Link>
+  );
+
+  // Icon-only rail needs the label back somewhere — a tooltip on hover.
+  // Skipped when expanded since the label is already right there as text.
+  return collapsed ? (
+    <Tooltip content={item.label} side="right">
+      {link}
+    </Tooltip>
+  ) : (
+    link
+  );
+}
+
+function NavLinks({ onNavigate, collapsed = false }: { onNavigate?: () => void; collapsed?: boolean }) {
   const pathname = usePathname();
   return (
     <nav className="flex-1 space-y-6 p-4">
       {NAV_SECTIONS.map((section) => (
         <div key={section.label}>
-          <p className="px-4 pb-2 text-caption font-medium tracking-wide text-text-tertiary uppercase">
-            {section.label}
-          </p>
+          {!collapsed && (
+            <p className="px-4 pb-2 text-caption font-medium tracking-wide text-text-tertiary uppercase">
+              {section.label}
+            </p>
+          )}
           <div className="space-y-1">
             {section.items.map((item) => {
               const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
-              const styles = NAV_COLOR_STYLES[item.color];
               return (
-                <Link
+                <NavItem
                   key={item.href}
-                  href={item.href}
-                  onClick={onNavigate}
-                  className={cn(
-                    "font-display relative flex items-center gap-3 rounded-xl py-2 pr-4 pl-3 text-label font-medium transition-colors",
-                    active
-                      ? cn(styles.wash, "text-ink before:absolute before:top-1/2 before:left-0 before:h-5 before:w-1 before:-translate-y-1/2 before:rounded-full", styles.bar)
-                      : "text-muted hover:bg-white/5 hover:text-ink-soft",
-                  )}
-                >
-                  <span
-                    className={cn(
-                      "flex size-8 shrink-0 items-center justify-center rounded-lg transition-colors",
-                      active ? styles.chip : "bg-white/5",
-                    )}
-                  >
-                    <item.icon
-                      className={cn("size-4", active ? styles.icon : "text-muted")}
-                      aria-hidden="true"
-                    />
-                  </span>
-                  {item.label}
-                </Link>
+                  item={item}
+                  active={active}
+                  onNavigate={onNavigate}
+                  collapsed={collapsed}
+                />
               );
             })}
           </div>
@@ -196,6 +231,30 @@ export function AppShell({ children }: { children: ReactNode }) {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  // Desktop-only icon rail toggle — mobile already collapses the whole nav
+  // behind the hamburger drawer, so a second "shrink to icons" mode there
+  // wouldn't do anything useful. Starts expanded (matching the server-
+  // rendered markup, so there's no hydration mismatch) and reads the saved
+  // preference on mount; that one-frame flash from expanded to the stored
+  // collapsed state is the standard, accepted trade-off for a client-only
+  // preference like this with no server-side signal (e.g. a cookie) to read
+  // it from up front. Also listens for the "storage" event so toggling the
+  // sidebar in one tab keeps other open tabs of the app in sync.
+  const [collapsed, setCollapsed] = useState(false);
+  useEffect(() => {
+    const sync = () => setCollapsed(localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === "true");
+    sync();
+    window.addEventListener("storage", sync);
+    return () => window.removeEventListener("storage", sync);
+  }, []);
+  const toggleCollapsed = () => {
+    setCollapsed((prev) => {
+      const next = !prev;
+      localStorage.setItem(SIDEBAR_COLLAPSED_KEY, String(next));
+      return next;
+    });
+  };
+
   if (isLoading || isError) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-surface-app">
@@ -206,20 +265,47 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex min-h-screen bg-surface-app lg:gap-3">
-      <aside className="hidden w-60 shrink-0 flex-col rounded-2xl border border-line bg-surface-sidebar shadow-floating lg:sticky lg:top-3 lg:my-3 lg:ml-3 lg:flex lg:h-[calc(100vh-1.5rem)]">
-        <div className="flex h-16 items-center border-b border-line px-4">
-          <Logo />
+      <aside
+        className={cn(
+          "relative hidden shrink-0 flex-col rounded-2xl border border-line bg-surface-sidebar shadow-floating transition-[width] duration-300 lg:sticky lg:top-3 lg:my-3 lg:ml-3 lg:flex lg:h-[calc(100vh-1.5rem)]",
+          collapsed ? "lg:w-16" : "lg:w-60",
+        )}
+      >
+        <button
+          type="button"
+          onClick={toggleCollapsed}
+          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          className="absolute top-1/2 -right-3 z-10 flex size-6 -translate-y-1/2 items-center justify-center rounded-full border border-line bg-surface-3 text-muted shadow-card transition-colors hover:border-border-strong hover:text-ink-soft"
+        >
+          <ChevronLeft className={cn("size-3.5 transition-transform duration-300", collapsed && "rotate-180")} aria-hidden="true" />
+        </button>
+
+        <div className={cn("flex h-16 items-center border-b border-line", collapsed ? "justify-center px-2" : "px-4")}>
+          <Logo iconOnly={collapsed} />
         </div>
-        <NavLinks />
+        <NavLinks collapsed={collapsed} />
         <div className="border-t border-line p-4">
-          <button
-            type="button"
-            onClick={() => logout.mutate()}
-            className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-label text-muted transition-colors hover:bg-white/5 hover:text-ink-soft"
-          >
-            <LogOut className="size-4.5" aria-hidden="true" />
-            Log out
-          </button>
+          {collapsed ? (
+            <Tooltip content="Log out" side="right">
+              <button
+                type="button"
+                onClick={() => logout.mutate()}
+                aria-label="Log out"
+                className="flex w-full items-center justify-center rounded-xl py-3 text-label text-muted transition-colors hover:bg-white/5 hover:text-ink-soft"
+              >
+                <LogOut className="size-4.5" aria-hidden="true" />
+              </button>
+            </Tooltip>
+          ) : (
+            <button
+              type="button"
+              onClick={() => logout.mutate()}
+              className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-label text-muted transition-colors hover:bg-white/5 hover:text-ink-soft"
+            >
+              <LogOut className="size-4.5" aria-hidden="true" />
+              Log out
+            </button>
+          )}
         </div>
       </aside>
 
