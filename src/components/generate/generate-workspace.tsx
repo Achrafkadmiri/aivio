@@ -39,7 +39,10 @@ export function GenerateStudio({ type }: { type: GenerationType }) {
   const generation = useGeneration(activeJobId);
   const active = MODALITIES.find((m) => m.type === type) ?? MODALITIES[0];
   const sidebarCollapsed = useSidebarCollapsed();
-  const spotlight = useSpotlight<HTMLDivElement>();
+  // The empty-state canvas this drives lives inside the [zoom:0.7] wrapper
+  // below, so the cursor offset needs the same zoom correction as
+  // composerHeight's padding math — see use-spotlight.ts.
+  const spotlight = useSpotlight<HTMLDivElement>(HERO_ZOOM);
 
   // The composer's pill row (model, duration, resolution, aspect ratio,
   // format, settings, submit) wraps onto more lines the narrower the
