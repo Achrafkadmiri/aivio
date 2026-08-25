@@ -46,11 +46,7 @@ export function Hero() {
         <source src={bgVideo.url} type="video/mp4" />
       </motion.video>
       <div
-        className="pointer-events-none absolute inset-0"
-        style={{
-          background:
-            "radial-gradient(ellipse 80% 50% at 50% -20%, rgb(255 77 35 / 0.25) 0%, transparent 100%)",
-        }}
+        className="pointer-events-none absolute left-1/2 top-0 h-[36rem] w-[70%] -translate-x-1/2 -translate-y-1/3 rounded-full bg-brand/25 blur-[120px]"
         aria-hidden="true"
       />
       <div

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowUpRight, Sparkles, TrendingUp, Video, Zap } from "lucide-react";
+import { ArrowUpRight, CreditCard, Sparkles, TrendingUp, Video, Zap } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api-client";
 import { useMe } from "@/hooks/use-me";
@@ -80,8 +80,7 @@ export function DashboardClient() {
           className="relative overflow-hidden p-6 sm:p-8 lg:col-span-2 hover:translate-y-0 hover:shadow-card"
         >
           <div
-            className="pointer-events-none absolute -top-24 -right-24 size-64 rounded-full opacity-40 blur-3xl"
-            style={{ background: "var(--gradient-primary-radial)" }}
+            className="pointer-events-none absolute -top-24 -right-24 size-64 rounded-full bg-brand opacity-40 blur-3xl"
             aria-hidden="true"
           />
           <div className="relative flex items-center gap-2 text-caption text-muted">
@@ -109,20 +108,23 @@ export function DashboardClient() {
 
         <div className="flex flex-col gap-4">
           <Card variant="compact" className="flex-1">
-            <div className="flex items-center gap-2 text-caption text-muted">
-              <TrendingUp className="size-3.5" aria-hidden="true" />
-              Generations this month
-            </div>
-            <p className="mt-2 text-subheading font-bold text-ink">{usage.generationsCount}</p>
+            <span className="flex size-9 items-center justify-center rounded-lg bg-accent-teal/15">
+              <TrendingUp className="size-4 text-accent-teal" aria-hidden="true" />
+            </span>
+            <p className="mt-3 text-caption text-muted">Generations this month</p>
+            <p className="mt-1 text-subheading font-bold text-ink">{usage.generationsCount}</p>
             <p className="mt-1 text-caption text-muted">On the {tierInfo.label} plan</p>
           </Card>
           <Link
             href="/settings/billing"
-            className="group flex flex-1 items-center justify-between rounded-2xl border border-border-subtle bg-surface-2 p-6 transition-colors hover:border-border-strong hover:bg-surface-3"
+            className="group flex flex-1 items-center gap-3 rounded-2xl border border-border-subtle bg-surface-2 p-6 transition-colors hover:border-border-strong hover:bg-surface-3"
           >
-            <span className="text-label text-ink-soft">Manage plan &amp; billing</span>
+            <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-brand-soft/15">
+              <CreditCard className="size-4 text-brand-soft" aria-hidden="true" />
+            </span>
+            <span className="flex-1 text-label text-ink-soft">Manage plan &amp; billing</span>
             <ArrowUpRight
-              className="size-4 text-muted transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-ink-soft"
+              className="size-4 shrink-0 text-muted transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-ink-soft"
               aria-hidden="true"
             />
           </Link>

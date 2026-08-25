@@ -58,8 +58,7 @@ export function BillingClient() {
 
       <Card variant="standard" className="relative overflow-hidden hover:translate-y-0 hover:shadow-card">
         <div
-          className="pointer-events-none absolute -top-20 -right-20 size-56 rounded-full opacity-30 blur-3xl"
-          style={{ background: "var(--gradient-primary-radial)" }}
+          className="pointer-events-none absolute -top-20 -right-20 size-56 rounded-full bg-brand opacity-30 blur-3xl"
           aria-hidden="true"
         />
         <div className="relative flex items-center justify-between">
