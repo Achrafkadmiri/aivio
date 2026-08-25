@@ -128,7 +128,7 @@ export function GenerateStudio({ type }: { type: GenerationType }) {
                 className={cn(
                   "shrink-0 rounded-full px-4 py-2 text-label font-medium whitespace-nowrap transition-colors",
                   m.type === type
-                    ? "bg-[image:var(--gradient-primary)] text-white shadow-glow-sm"
+                    ? "bg-brand text-white shadow-glow-sm"
                     : "text-muted hover:text-ink-soft",
                 )}
               >
@@ -182,8 +182,7 @@ export function GenerateStudio({ type }: { type: GenerationType }) {
             // first time someone lands here and every time after.
             <div className="relative flex h-full min-h-[50vh] flex-col items-center justify-center overflow-hidden rounded-3xl border-2 border-dashed border-brand/15 bg-surface-2/20 p-10 text-center">
               <div
-                className="pointer-events-none absolute -top-24 left-1/2 size-[34rem] -translate-x-1/2 rounded-full opacity-25 blur-3xl animate-glow-float"
-                style={{ background: "var(--gradient-primary-radial)" }}
+                className="pointer-events-none absolute -top-24 left-1/2 size-[34rem] -translate-x-1/2 bg-brand opacity-25 blur-3xl animate-blob-float"
                 aria-hidden="true"
               />
 
@@ -191,10 +190,10 @@ export function GenerateStudio({ type }: { type: GenerationType }) {
                 {/* Soft pulsing halo behind the badge — a small sign of life
                     on an otherwise static empty state. */}
                 <span
-                  className="absolute inset-0 -m-2 animate-pulse rounded-2xl bg-[image:var(--gradient-primary)] opacity-30 blur-lg"
+                  className="absolute inset-0 -m-2 animate-pulse rounded-2xl bg-brand opacity-30 blur-lg"
                   aria-hidden="true"
                 />
-                <span className="relative flex size-16 items-center justify-center rounded-2xl bg-[image:var(--gradient-primary)] shadow-glow-md">
+                <span className="relative flex size-16 items-center justify-center rounded-2xl bg-brand shadow-glow-md">
                   <Sparkles className="size-7 text-white" aria-hidden="true" />
                 </span>
               </span>

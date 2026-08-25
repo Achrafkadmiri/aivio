@@ -120,7 +120,7 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
                   href={item.href}
                   onClick={onNavigate}
                   className={cn(
-                    "relative flex items-center gap-3 rounded-xl px-4 py-3 text-label transition-colors",
+                    "font-display relative flex items-center gap-3 rounded-xl px-4 py-3 text-label font-medium transition-colors",
                     active
                       ? "bg-brand/10 text-ink before:absolute before:top-1/2 before:left-0 before:h-5 before:w-1 before:-translate-y-1/2 before:rounded-full before:bg-[image:var(--gradient-primary)]"
                       : "text-muted hover:bg-white/5 hover:text-ink-soft",
@@ -165,7 +165,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex min-h-screen bg-surface-app">
-      <aside className="hidden w-60 shrink-0 flex-col border-r border-line bg-surface-3 lg:sticky lg:top-0 lg:flex lg:h-screen">
+      <aside className="hidden w-60 shrink-0 flex-col border-r border-line bg-surface-sidebar lg:sticky lg:top-0 lg:flex lg:h-screen">
         <div className="flex h-16 items-center border-b border-line px-4">
           <Logo />
         </div>

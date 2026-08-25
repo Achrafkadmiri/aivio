@@ -1,83 +1,103 @@
 @import "tailwindcss";
 
 /*
- * Design tokens matched to leonardo.ai's real, live design system (measured
- * via computed styles, not an authored doc) — pure black background, solid
- * white pill CTAs, and a single violet (#6E60EE) accent used for text/
- * badges/links only, never as a button fill. Single
- * source of truth for color/type/radius/shadow values — components should
- * always reach for a Tailwind utility generated from one of these tokens
+ * Design tokens for Vixerra's own identity — deliberately moved off the
+ * violet→pink "AI SaaS" gradient (what this file used to be, modeled on
+ * leonardo.ai) toward a palette that actually means something for a video
+ * tool: ember (warm) × teal (cool) is the classic film color-grading duo,
+ * on true near-black rather than a colored-tinted black. Single source of
+ * truth for color/type/radius/shadow values — components should always
+ * reach for a Tailwind utility generated from one of these tokens
  * (bg-surface, text-muted, rounded-2xl, shadow-glow-md, text-body, ...)
  * rather than hardcoding a hex value or pixel size.
  *
  * Tailwind v4 is CSS-first: every key below auto-generates a matching
  * utility class (no tailwind.config.ts needed). The default numeric
- * spacing scale (p-1..p-32 at a 4px step) already matches the doc's 4px
- * grid exactly, so it isn't redeclared here. Breakpoints likewise use
- * Tailwind's stock sm(640)/md(768)/lg(1024), matching the doc's tiers.
+ * spacing scale (p-1..p-32 at a 4px step) already matches a 4px grid
+ * exactly, so it isn't redeclared here. Breakpoints use Tailwind's stock
+ * sm(640)/md(768)/lg(1024).
  */
 @theme {
-  /* Surfaces — near-black rather than a literally flat #000000. Pure black
-     with zero warmth reads as an unstyled/"AI-template" void at a glance;
-     a faint violet undertone (still dark enough to look black in normal
-     viewing conditions) keeps depth and brand identity even where no
-     gradient/media is layered on top. */
-  --color-surface: #050308; /* Background Primary — near-black, faint violet undertone */
-  --color-surface-2: #120f1a; /* Background Secondary (cards) */
-  --color-surface-3: #1c1728; /* Background Tertiary (elevated / card hover) */
-  --color-surface-dark: #17121f; /* Input fields */
-  --color-overlay: #050308;
-  --color-dropdown-hover: #241d33; /* Hover states, dropdowns */
+  /* Surfaces — true near-black, no violet/blue undertone. Higgsfield/
+     ArtCraft/most serious creative tools land here rather than on a
+     colored-tinted "void" — the color budget is spent on the ember/teal
+     accents instead, not on the background itself. */
+  --color-surface: #0a0a0b; /* Background Primary */
+  --color-surface-2: #141416; /* Background Secondary (cards) */
+  --color-surface-3: #1d1d20; /* Background Tertiary (elevated / card hover) */
+  --color-surface-dark: #101012; /* Input fields */
+  --color-overlay: #0a0a0b;
+  --color-dropdown-hover: #232326; /* Hover states, dropdowns */
 
   /* App-shell background — the authenticated app (dashboard/generate/
-     gallery/settings, see AppShell) uses a slightly softer near-black than
-     the marketing site's pure --color-surface, closer to ArtCraft's own
-     studio UI (#121212 body / #1a1a1a sidebar, measured live). Kept as its
-     own token rather than changing --color-surface globally so the
-     marketing pages stay pure black, unaffected. */
-  --color-surface-app: #121212;
+     gallery/settings, see AppShell) uses a hair softer near-black than the
+     marketing site's pure --color-surface, and the sidebar sits one step
+     above that again — closer to ArtCraft's own studio UI (distinct body/
+     sidebar/canvas planes) than a single flat tone everywhere. */
+  --color-surface-app: #101011;
+  --color-surface-sidebar: #161618;
 
   /* Text */
-  --color-ink: #fafafa; /* Text Primary — off-white */
-  --color-ink-soft: #fafafa;
-  --color-ink-softer: #fafafa;
-  --color-muted: #a1a1aa; /* Text Secondary */
-  --color-text-tertiary: #71717a; /* Labels, captions */
+  --color-ink: #fafaf9; /* Text Primary — off-white, warm not blue-white */
+  --color-ink-soft: #fafaf9;
+  --color-ink-softer: #fafaf9;
+  --color-muted: #9c9ca3; /* Text Secondary */
+  --color-text-tertiary: #6c6c74; /* Labels, captions */
 
   /* Borders — translucent white, not opaque gray */
   --color-line: rgb(255 255 255 / 0.1); /* Default border */
   --color-border-subtle: rgb(255 255 255 / 0.06); /* Subtle dividers */
-  --color-border-strong: rgb(255 255 255 / 0.15); /* Focus rings, active borders */
+  --color-border-strong: rgb(255 255 255 / 0.16); /* Focus rings, active borders */
 
-  /* Brand — AI-studio violet (was inconsistently lime-green while hover/
-     active stayed violet; unified back to one violet family, closer to
-     higgsfield.ai/leonardo.ai's real accent). Used for text accents,
-     badges, links, focus/active states, and gradient CTAs — the primary
-     button itself stays a solid white pill (see button.tsx). */
-  --color-brand: #7c5cfc;
-  --color-brand-hover: #9c87ff;
-  --color-brand-active: #6247d6;
+  /* Brand — Ember. Warm, high-energy, unclaimed by the other big AI-video
+     tools (Leonardo/Midjourney-adjacent = violet, ArtCraft = blue,
+     Higgsfield = lime). Used for text accents, badges, links, focus/active
+     states, icon fills, and gradient CTAs — the primary button itself
+     stays a solid white pill (see button.tsx), never a brand-filled one,
+     so the accent reads as deliberate emphasis rather than default chrome. */
+  --color-brand: #ff4d23;
+  --color-brand-hover: #ff7a4d;
+  --color-brand-active: #e23e14;
 
-  /* Secondary AI-generation accent — paired with --color-brand in gradients
-     (hero glow, gradient CTA button, generate-workspace accents) so bold
-     surfaces read as violet→pink rather than a flat single hue. */
-  --color-accent-pink: #ec4899;
+  /* Ember family — two solid tonal siblings of --color-brand (same hue
+     family, shifted lighter/warmer and darker/deeper) used for categorical
+     coding — e.g. the sidebar/dashboard's per-section icon colors — as an
+     alternative to inventing unrelated new hues. Solid fills only, never
+     blended together: see the note on gradients below. */
+  --color-brand-soft: #ffab2e; /* lighter, more yellow — Gallery/Library */
+  --color-brand-deep: #c73e1d; /* deeper, more muted rust — Collections */
 
-  /* Status */
+  /* Secondary accent — electric teal. Paired with --color-brand as a
+     warm/cool duo (film-grade "orange & teal") for dual-tone moments, but
+     each surface gets ONE flat, solid hue from this family — never a
+     blended gradient fill between them (that reads as the exact generic-
+     AI-SaaS look this palette was built to move away from; see
+     buttonVariants' retired "gradient" variant, now "accent"). */
+  --color-accent-teal: #2fe8d0;
+  --color-accent-teal-soft: #7ff3e3;
+
+  /* Status — kept clearly separate in hue from brand-ember so alerts never
+     get mistaken for accent decoration. */
   --color-success: #22c55e;
-  --color-warning: #f59e0b;
-  --color-accent: #ef4444; /* error/destructive */
-  --color-info: #3b82f6;
+  --color-warning: #f2b705;
+  --color-accent: #fb3a5c; /* error/destructive */
+  --color-info: #3fa9f5;
 
-  /* Fonts (next/font variables set on <html> in layout.tsx) */
-  --font-sans: var(--font-geist-sans), -apple-system, BlinkMacSystemFont,
-    "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --font-mono: var(--font-geist-mono), "SF Mono", Monaco, "Cascadia Code",
+  /* Fonts (next/font variables set on <html> in layout.tsx). Three roles
+     instead of one: a geometric grotesk carries display/heading weight
+     (character, not another Inter headline), an italic serif is reserved
+     for editorial accent phrases (see .text-accent-script), and Inter
+     stays for body/UI copy where plain legibility wins over personality. */
+  --font-sans: var(--font-body), -apple-system, BlinkMacSystemFont, "Segoe UI",
+    Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-display: var(--font-display-face), var(--font-sans);
+  --font-accent: var(--font-accent-face), "Times New Roman", Georgia, serif;
+  --font-mono: var(--font-mono-face), "SF Mono", Monaco, "Cascadia Code",
     "Roboto Mono", Consolas, "Courier New", monospace;
 
-  /* Radius scale — mapped by role from the doc's §2.3 table (buttons/badges
-     stay fully pill via radius-full; inputs and gallery tiles at 24px;
-     cards at 32px). */
+  /* Radius scale — buttons/badges stay fully pill via radius-full; inputs
+     and gallery tiles at 24px; cards at 32px (dialed down slightly at
+     specific call sites where a softer, less "bubble" feel reads better). */
   --radius-xs: 4px;
   --radius-sm: 6px;
   --radius-md: 12px;
@@ -86,35 +106,39 @@
   --radius-2xl: 32px;
   --radius-full: 9999px;
 
-  /* Shadows — plain black depth shadows + soft localized gold/white glows,
-     per doc §2.2 (no more purple-tinted glow). */
+  /* Shadows — plain black depth shadows + a soft localized ember glow
+     (was violet). */
   --shadow-raised: 0 1px 2px 0 rgb(0 0 0 / 0.3);
   --shadow-floating: 0 8px 30px -4px rgb(0 0 0 / 0.5);
   --shadow-modal: 0 20px 60px -12px rgb(0 0 0 / 0.6);
   --shadow-inset: inset 0 1px 0 0 rgb(255 255 255 / 0.05);
   --shadow-card: 0 4px 12px rgb(0 0 0 / 0.4), inset 0 1px 0 0 rgb(255 255 255 / 0.05);
-  --shadow-glow-sm: 0 0 20px rgb(124 92 252 / 0.18);
-  --shadow-glow-md: 0 0 40px rgb(124 92 252 / 0.22);
-  --shadow-glow-lg: 0 0 80px rgb(124 92 252 / 0.18);
+  --shadow-glow-sm: 0 0 20px rgb(255 77 35 / 0.18);
+  --shadow-glow-md: 0 0 40px rgb(255 77 35 / 0.22);
+  --shadow-glow-lg: 0 0 80px rgb(255 77 35 / 0.18);
+  --shadow-glow-teal-sm: 0 0 20px rgb(47 232 208 / 0.18);
+  --shadow-glow-teal-md: 0 0 40px rgb(47 232 208 / 0.22);
   --shadow-glow-white: 0 0 30px rgb(255 255 255 / 0.05);
 
-  /* Gradients — violet → pink, used for the bold gradient CTA variant, the
-     generate-workspace canvas accent, and glow surfaces. .text-gradient
-     stays solid violet (leonardo.ai's own accent text is solid, not
-     gradient-clipped) — these are for larger surfaces/buttons instead. */
-  --gradient-primary: linear-gradient(135deg, #7c5cfc 0%, #ec4899 100%);
-  --gradient-primary-radial: radial-gradient(circle at 30% 30%, #7c5cfc 0%, #ec4899 100%);
-  --gradient-hero-glow: radial-gradient(ellipse 80% 50% at 50% -20%, rgb(124 92 252 / 0.18) 0%, transparent 100%);
+  /* No blended two-hue gradient fills anywhere in this system by design —
+     that ember→teal blend used to fill buttons/badges/icon chips/decor
+     blobs app-wide, and a smooth two-color blend on every accent surface
+     is exactly the generic-AI-SaaS tell this palette was rebuilt to move
+     away from. Every surface below picks ONE flat, solid color from the
+     palette instead (--color-brand / -brand-soft / -brand-deep /
+     -accent-teal) — see buttonVariants' "accent" variant (was "gradient"),
+     app-shell's per-section nav colors, and the dashboard's icon chips.
+     --gradient-hero-glow is the one gradient kept: a single hue (ember)
+     fading to transparent is just how a soft glow is expressed in CSS, not
+     a blend between two colors. */
+  --gradient-hero-glow: radial-gradient(ellipse 80% 50% at 50% -20%, rgb(255 77 35 / 0.18) 0%, transparent 100%);
 
-  /* Type scale: each pairs font-size with its documented line-height (and,
-     where the doc specifies one, letter-spacing) in a single utility.
-     Font-weight is intentionally NOT bundled here — apply it explicitly via
-     font-normal/medium/semibold/bold alongside these.
-     Sizes are the doc's §3.2 scale, mapped onto existing token *names* so
-     call sites don't need touching: display=display-1 (hero only),
-     heading=h2 "Section title" (every current text-heading call site is a
-     section heading), subheading=h3 "Card title" (also used for app-page
-     headers), feature-title=h4 "Subsection" (card/step titles). */
+  /* Type scale: each pairs font-size with its line-height (and, where
+     useful, letter-spacing) in a single utility. Font-family is NOT
+     bundled here (apply font-display/font-accent/font-sans explicitly per
+     call site) and neither is font-weight — apply font-normal/medium/
+     semibold/bold alongside these. display=hero only. heading=section
+     title. subheading=card/app-page header. feature-title=card/step title. */
   --text-display: 72px;
   --text-display--line-height: 1;
   --text-display--letter-spacing: -0.03em;
@@ -154,8 +178,12 @@
      the call site, never bare, so prefers-reduced-motion always wins.
      Scroll/viewport/spring animation lives in Framer Motion components
      instead (see src/lib/animations.ts) — these keyframes are only for
-     effects that don't need JS (float, marquee, fade-up fallback). */
-  --animate-glow-float: glow-float 6s ease-in-out infinite;
+     effects that don't need JS. blob-float/blob-morph replace the old
+     plain-circle glow-float: same GPU-cheap transform-only technique, but
+     the shape's border-radius corners drift too, so ambient glows read as
+     organic/liquid instead of a static blurred disc — the literal "more
+     fluid" ask, not just a figure of speech. */
+  --animate-blob-float: blob-float 14s ease-in-out infinite;
   --animate-marquee: marquee 32s linear infinite;
   --animate-fade-up: fade-up 600ms cubic-bezier(0.16, 1, 0.3, 1) both;
   /* Mobile bottom-sheet entrance (see ui/bottom-sheet.tsx) — unlike the
@@ -166,13 +194,19 @@
   --animate-sheet-up: sheet-up 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
-@keyframes glow-float {
+@keyframes blob-float {
   0%,
   100% {
-    transform: translateY(-10px) rotate(-2deg);
+    transform: translateY(-10px) rotate(-2deg) scale(1);
+    border-radius: 42% 58% 65% 35% / 45% 40% 60% 55%;
   }
-  50% {
-    transform: translateY(10px) rotate(2deg);
+  33% {
+    transform: translateY(8px) rotate(1.5deg) scale(1.04);
+    border-radius: 60% 40% 45% 55% / 35% 60% 40% 65%;
+  }
+  66% {
+    transform: translateY(4px) rotate(-1deg) scale(0.97);
+    border-radius: 50% 50% 38% 62% / 60% 45% 55% 40%;
   }
 }
 
@@ -218,25 +252,37 @@
     background: var(--color-surface);
   }
 
-  /* Layered, fixed color washes instead of a flat single-color body —
-     large, very low-opacity violet/pink glows anchored to the viewport
-     corners so the whole page reads as one continuous colored space
-     (rather than a stack of identical black sections), without ever
-     getting bright enough to hurt legibility or look like a colored
-     theme. background-attachment: fixed keeps the wash static while
-     content scrolls past it, like ambient lighting rather than a
-     decoration tied to any one section. */
+  /* Two restrained washes instead of four aggressive corner blobs — a warm
+     ember glow anchored high-center (roughly where the hero headline
+     sits) and a whisper of cool teal low-right for balance, so the page
+     reads as one continuous lit space without looking like a colored
+     theme. Layered on top: a fixed film-grain texture (see .film-grain
+     below is inlined here instead, so it's on by default everywhere, not
+     opt-in per section) — the kind of tactile, slightly-imperfect detail
+     generic AI-template gradients never bother with, and a deliberate nod
+     to this being a *video* tool. background-attachment: fixed keeps both
+     static while content scrolls past, like ambient lighting rather than
+     a decoration tied to one section. */
   body {
     background:
-      radial-gradient(ellipse 55% 45% at 12% 0%, rgb(124 92 252 / 0.16) 0%, transparent 60%),
-      radial-gradient(ellipse 50% 40% at 88% 28%, rgb(236 72 153 / 0.12) 0%, transparent 60%),
-      radial-gradient(ellipse 60% 50% at 20% 75%, rgb(124 92 252 / 0.1) 0%, transparent 65%),
-      radial-gradient(ellipse 55% 45% at 95% 100%, rgb(236 72 153 / 0.09) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 40% at 50% 0%, rgb(255 77 35 / 0.1) 0%, transparent 60%),
+      radial-gradient(ellipse 50% 40% at 100% 100%, rgb(47 232 208 / 0.07) 0%, transparent 60%),
       var(--color-surface);
     background-attachment: fixed;
     color: var(--color-ink);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
+  }
+
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    pointer-events: none;
+    opacity: 0.035;
+    mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='90' height='90'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   }
 
   ::selection {
@@ -286,9 +332,20 @@
   }
 
   /* Accent text — used for hero accent words, stat numbers, wordmarks.
-     leonardo.ai's own accent text is solid violet, not gradient-clipped. */
+     Solid ember, not gradient-clipped — reserve the gradient for larger
+     surfaces/buttons/edges (see --gradient-primary above). */
   .text-gradient {
     color: var(--color-brand);
+  }
+
+  /* Editorial italic accent — the "for artists." trick: one phrase per
+     hero/section set in a serif italic against the surrounding grotesk,
+     purely typographic emphasis (no color/weight change needed). Used
+     sparingly — one phrase per screen, never body copy. */
+  .text-accent-script {
+    font-family: var(--font-accent);
+    font-style: italic;
+    font-weight: 400;
   }
 
   /* Glassmorphism surface — floating toolbars, demo widgets, overlays. */
@@ -299,17 +356,29 @@
     border: 1px solid rgb(255 255 255 / 0.06);
   }
 
-  /* Marketing-only heading treatment — leonardo.ai's own real app UI (not
-     just its marketing site) stays normal-case, so this is scoped to a
-     wrapper class applied in (marketing)/layout.tsx rather than a global
-     h1..h4 base rule that would also hit the dashboard/generate/settings
-     shell. */
+  /* Faint diagonal hairline grid — an ArtCraft-style texture for hero/
+     section backgrounds that want more surface interest than flat black
+     without reaching for another gradient blob. Opt-in per section. */
+  .grid-texture {
+    background-image:
+      linear-gradient(135deg, rgb(255 255 255 / 0.05) 1px, transparent 1px),
+      linear-gradient(45deg, rgb(255 255 255 / 0.05) 1px, transparent 1px);
+    background-size: 64px 64px;
+    mask-image: radial-gradient(ellipse 70% 60% at 50% 0%, black, transparent);
+  }
+
+  /* Marketing-only heading treatment — set in the display grotesk, still
+     uppercase/heavy for punch. Scoped to a wrapper class applied in
+     (marketing)/layout.tsx rather than a global h1..h4 base rule that
+     would also hit the dashboard/generate/settings shell (which stays
+     normal-case, smaller, functional type). */
   .marketing-headings h1,
   .marketing-headings h2,
   .marketing-headings h3,
   .marketing-headings h4 {
+    font-family: var(--font-display);
     text-transform: uppercase;
-    font-weight: 900;
+    font-weight: 700;
     letter-spacing: -0.02em;
   }
 }

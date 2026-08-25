@@ -145,7 +145,7 @@ function PromptCard({ template, index }: { template: PromptTemplate; index: numb
 
             <Link
               href={buildGenerateUrl(template)}
-              className="ml-auto inline-flex items-center gap-1.5 rounded-full bg-[image:var(--gradient-primary)] px-3 py-1.5 text-caption font-semibold text-surface shadow-glow-sm transition-[transform,box-shadow] hover:-translate-y-px hover:shadow-glow-md"
+              className="ml-auto inline-flex items-center gap-1.5 rounded-full bg-brand px-3 py-1.5 text-caption font-semibold text-white shadow-glow-sm transition-[transform,box-shadow] hover:-translate-y-px hover:shadow-glow-md"
             >
               <Sparkles className="size-3.5" aria-hidden="true" />
               Use this template

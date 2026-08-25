@@ -2,6 +2,14 @@ import { Video, Image as ImageIcon, Wand2, Layers, Zap, FolderKanban } from "luc
 import { Card } from "@/components/ui/card";
 import { Reveal } from "@/components/marketing/reveal";
 import { TiltCard } from "@/components/marketing/tilt-card";
+import { cn } from "@/lib/utils";
+
+// Each card's icon chip cycles through the palette's four solid hues
+// (ember → teal → amber → rust, see globals.css) instead of every chip
+// being the same fill — same trick ArtCraft uses to tell its tool cards
+// apart at a glance, done with flat colors from one family rather than a
+// gradient per card.
+const CHIP_COLORS = ["bg-brand", "bg-accent-teal", "bg-brand-soft", "bg-brand-deep"];
 
 const FEATURES = [
   {
@@ -49,8 +57,13 @@ export function FeaturesGrid() {
           <Reveal key={feature.title} delayMs={(index % 3) * 100} className={feature.span}>
             <TiltCard className="h-full">
               <Card variant="feature" className="h-full transition-colors duration-300 hover:border-brand/40">
-                <span className="flex size-12 items-center justify-center rounded-xl bg-[image:var(--gradient-primary)] shadow-glow-sm">
-                  <feature.icon className="size-6 text-surface" aria-hidden="true" />
+                <span
+                  className={cn(
+                    "flex size-12 items-center justify-center rounded-xl shadow-glow-sm",
+                    CHIP_COLORS[index % CHIP_COLORS.length],
+                  )}
+                >
+                  <feature.icon className="size-6 text-white" aria-hidden="true" />
                 </span>
                 <h3 className="mt-5 text-feature-title font-semibold text-ink">
                   {feature.title}

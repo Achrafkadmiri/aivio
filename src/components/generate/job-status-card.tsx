@@ -125,7 +125,7 @@ export function JobStatusCard({
         style={{ background: "var(--gradient-hero-glow)" }}
         aria-hidden="true"
       />
-      <span className="relative flex size-14 items-center justify-center rounded-2xl bg-[image:var(--gradient-primary)] shadow-glow-md">
+      <span className="relative flex size-14 items-center justify-center rounded-2xl bg-brand shadow-glow-md">
         <Loader2 className="size-6 animate-spin text-white" aria-hidden="true" />
       </span>
       <div className="relative w-full max-w-xs">

@@ -9,6 +9,10 @@ import { SHOWCASE_VIDEOS } from "@/lib/showcase-media";
 import { NANO_BANANA_IMAGES } from "@/lib/nano-banana-showcase";
 import { cn } from "@/lib/utils";
 
+// Same four-hue solid rotation as features-grid.tsx (ember/teal/amber/rust)
+// instead of every icon badge sharing one gradient fill.
+const CHIP_COLORS = ["bg-brand", "bg-accent-teal", "bg-brand-soft", "bg-brand-deep"];
+
 // "Why creatives choose Vixerra" — each reason is backed by one real sample
 // (a muted autoplay video or a Nano Banana image) instead of a bare icon
 // card, so the claim is shown, not just stated. Distinct entries from the
@@ -111,7 +115,7 @@ export function CapabilitiesGrid() {
         viewport={{ once: true, margin: "-100px" }}
         className="mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-4"
       >
-        {REASONS.map((reason) => (
+        {REASONS.map((reason, index) => (
           <motion.div key={reason.title} variants={gridItemVariants}>
             <TiltCard className="h-full">
               <div className="relative flex h-full min-h-[22rem] flex-col justify-end overflow-hidden rounded-2xl border border-line bg-surface-2 shadow-card transition-colors duration-300 hover:border-brand/40">

@@ -27,7 +27,7 @@ export default function AuthError({
         <p className="text-body text-ink-soft">Something went wrong</p>
         <p className="mt-1 text-body-sm text-muted">Try again, or reload if it keeps happening.</p>
       </div>
-      <Button variant="gradient" onClick={reset}>
+      <Button variant="accent" onClick={reset}>
         Try again
       </Button>
     </Card>

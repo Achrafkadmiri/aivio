@@ -35,7 +35,7 @@ export default function AppError({
             This page hit an unexpected error. Try again, or reload if it keeps happening.
           </p>
         </div>
-        <Button variant="gradient" onClick={reset}>
+        <Button variant="accent" onClick={reset}>
           Try again
         </Button>
       </Card>

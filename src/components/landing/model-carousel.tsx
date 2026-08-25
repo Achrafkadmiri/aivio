@@ -118,7 +118,7 @@ export function ModelCarousel() {
             </span>
             <h3 className="text-heading font-bold text-white">{card.label}</h3>
             <p className="line-clamp-2 text-body-sm text-white/70">{card.description}</p>
-            <span className="mt-2 inline-flex w-fit items-center gap-1.5 rounded-full bg-[image:var(--gradient-primary)] px-4 py-2 text-label font-semibold text-white shadow-glow-sm transition-transform duration-200 group-hover:translate-x-0.5">
+            <span className="mt-2 inline-flex w-fit items-center gap-1.5 rounded-full bg-brand px-4 py-2 text-label font-semibold text-white shadow-glow-sm transition-transform duration-200 group-hover:translate-x-0.5">
               Open workspace
               <ArrowUpRight className="size-4" aria-hidden="true" />
             </span>

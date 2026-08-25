@@ -13,8 +13,8 @@ export function ComposerShell({ children, className }: { children: ReactNode; cl
         // brand-tinted glow underneath — same restrained "one accent touch"
         // rule, just felt as depth instead of drawn as a shape.
         "relative isolate overflow-hidden rounded-2xl border border-line bg-surface-2 p-3 sm:p-4",
-        "shadow-[0_8px_30px_-4px_rgb(0_0_0_/_0.5),0_0_60px_-24px_rgb(124_92_252_/_0.35)]",
-        "before:absolute before:inset-x-0 before:top-0 before:h-px before:bg-[image:var(--gradient-primary)] before:content-['']",
+        "shadow-[0_8px_30px_-4px_rgb(0_0_0_/_0.5),0_0_60px_-24px_rgb(255_77_35_/_0.35)]",
+        "before:absolute before:inset-x-0 before:top-0 before:h-px before:bg-brand before:content-['']",
         className,
       )}
     >

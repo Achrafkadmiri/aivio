@@ -56,13 +56,13 @@ export function RechargePacks() {
             variant="compact"
             className="flex flex-col items-center text-center transition-[border-color,transform] hover:-translate-y-1 hover:border-border-strong"
           >
-            <span className="flex size-10 items-center justify-center rounded-full bg-[image:var(--gradient-primary)] shadow-glow-sm">
+            <span className="flex size-10 items-center justify-center rounded-full bg-brand shadow-glow-sm">
               <Zap className="size-4.5 text-white" aria-hidden="true" />
             </span>
             <p className="mt-3 text-subheading font-bold text-ink">{formatCredits(pack.credits)}</p>
             <p className="text-caption text-muted">credits</p>
             <Button
-              variant="gradient"
+              variant="accent"
               loading={loadingPack === pack.id}
               onClick={() => buy(pack.id, pack.credits)}
               className="mt-4 w-full"

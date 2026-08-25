@@ -20,7 +20,7 @@ export function Progress({
     >
       <div
         className={cn(
-          "h-full rounded-full bg-[image:var(--gradient-primary)] transition-[width] duration-300",
+          "h-full rounded-full bg-brand transition-[width] duration-300",
           barClassName,
         )}
         style={{ width: `${pct}%` }}

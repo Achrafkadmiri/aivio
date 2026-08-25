@@ -100,7 +100,7 @@ export function ReferenceUploadTile({
           // but the tile still needs to visibly confirm "attached" instead
           // of sitting on the same Plus glyph as the empty state.
           <>
-            <span className="flex size-6 items-center justify-center rounded-full bg-[image:var(--gradient-primary)] text-white shadow-glow-sm">
+            <span className="flex size-6 items-center justify-center rounded-full bg-brand text-white shadow-glow-sm">
               <Icon className="size-3" aria-hidden="true" />
             </span>
             <span className="px-1 text-center text-[11px] leading-tight font-medium text-ink-soft">Added</span>
@@ -192,7 +192,7 @@ export function ReferenceUploadTile({
         </button>
       ) : (
         clickable && (
-          <span className="absolute -right-0.5 -bottom-0.5 flex size-4 items-center justify-center rounded-full bg-[image:var(--gradient-primary)] text-white shadow-glow-sm">
+          <span className="absolute -right-0.5 -bottom-0.5 flex size-4 items-center justify-center rounded-full bg-brand text-white shadow-glow-sm">
             <Plus className="size-2.5" aria-hidden="true" strokeWidth={3} />
           </span>
         )
