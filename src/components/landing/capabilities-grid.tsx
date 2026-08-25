@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
 import { Rocket, Palette, Fingerprint, ShieldCheck } from "lucide-react";
 import { motion } from "framer-motion";
 import { gridContainerVariants, gridItemVariants } from "@/lib/animations";
 import { TiltCard } from "@/components/marketing/tilt-card";
 import { SHOWCASE_VIDEOS } from "@/lib/showcase-media";
 import { NANO_BANANA_IMAGES } from "@/lib/nano-banana-showcase";
+import { useLazyVideo } from "@/hooks/use-lazy-video";
 import { cn } from "@/lib/utils";
 
 // Same four-hue solid rotation as features-grid.tsx (ember/teal/amber/rust)
@@ -46,31 +46,7 @@ const REASONS = [
 ] as const;
 
 function CardVideo({ src }: { src: string }) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const [inView, setInView] = useState(false);
-  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
-
-  useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        setInView(entry.isIntersecting);
-        if (entry.isIntersecting) setHasLoadedOnce(true);
-      },
-      { rootMargin: "200px" },
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
-
-  useEffect(() => {
-    const videoEl = videoRef.current;
-    if (!videoEl) return;
-    if (inView) videoEl.play().catch(() => {});
-    else videoEl.pause();
-  }, [inView, hasLoadedOnce]);
+  const { containerRef, videoRef, hasLoadedOnce } = useLazyVideo<HTMLDivElement>();
 
   return (
     <div ref={containerRef} className="absolute inset-0">

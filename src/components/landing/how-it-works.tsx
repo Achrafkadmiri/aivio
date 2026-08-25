@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { Type, Sparkles, Wand2, Download } from "lucide-react";
 import { Reveal } from "@/components/marketing/reveal";
 import { useInView } from "@/hooks/use-in-view";
+import { useLazyVideo } from "@/hooks/use-lazy-video";
 import { cn } from "@/lib/utils";
 import { SHOWCASE_VIDEOS } from "@/lib/showcase-media";
 
@@ -41,31 +41,7 @@ const STEPS = [
 ];
 
 function ResultPreview() {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const [inView, setInView] = useState(false);
-  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
-
-  useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        setInView(entry.isIntersecting);
-        if (entry.isIntersecting) setHasLoadedOnce(true);
-      },
-      { rootMargin: "200px" },
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
-
-  useEffect(() => {
-    const videoEl = videoRef.current;
-    if (!videoEl) return;
-    if (inView) videoEl.play().catch(() => {});
-    else videoEl.pause();
-  }, [inView, hasLoadedOnce]);
+  const { containerRef, videoRef, hasLoadedOnce } = useLazyVideo<HTMLDivElement>();
 
   return (
     <div

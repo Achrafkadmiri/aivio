@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { Video, Image as ImageIcon, Sparkles, Wand2, Layers, Users, Zap } from "lucide-react";
 import { Reveal } from "@/components/marketing/reveal";
 import { gridContainerVariants, gridItemVariants } from "@/lib/animations";
 import { SHOWCASE_VIDEOS } from "@/lib/showcase-media";
 import { NANO_BANANA_IMAGES } from "@/lib/nano-banana-showcase";
+import { useLazyVideo } from "@/hooks/use-lazy-video";
 import { cn } from "@/lib/utils";
 
 // "AI [video] generator features that go beyond the basics" — leonardo.ai's
@@ -51,33 +51,9 @@ const GROUPS = [
 ] as const;
 
 function GroupMedia({ media, className }: { media: (typeof GROUPS)[number]["media"]; className?: string }) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const [inView, setInView] = useState(false);
-  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
-
-  useEffect(() => {
-    if (media.kind !== "video") return;
-    const el = containerRef.current;
-    if (!el) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        setInView(entry.isIntersecting);
-        if (entry.isIntersecting) setHasLoadedOnce(true);
-      },
-      { rootMargin: "200px" },
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [media.kind]);
-
-  useEffect(() => {
-    if (media.kind !== "video") return;
-    const videoEl = videoRef.current;
-    if (!videoEl) return;
-    if (inView) videoEl.play().catch(() => {});
-    else videoEl.pause();
-  }, [inView, hasLoadedOnce, media.kind]);
+  // Runs unconditionally (image groups just never read hasLoadedOnce) so the
+  // hook order stays stable across renders regardless of media.kind.
+  const { containerRef, videoRef, hasLoadedOnce } = useLazyVideo<HTMLDivElement>();
 
   return (
     <div

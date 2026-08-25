@@ -52,17 +52,24 @@ export function ReleaseAnnouncementModal() {
     if (sessionStorage.getItem(DISMISSED_KEY)) return;
 
     let cancelled = false;
+    let openTimer: ReturnType<typeof setTimeout> | undefined;
     apiFetch("/api/auth/me")
       .then((res) => {
         if (!cancelled) setConnected(res.ok);
       })
       .catch(() => {})
       .finally(() => {
-        if (!cancelled) setOpen(true);
+        // Opening this immediately would start 4 more autoplaying video
+        // fetches (the hero clip + 3 thumbs below) right on top of the
+        // landing page's own hero video and any above-the-fold showcase
+        // clips — exactly when bandwidth is most contended. A short delay
+        // lets the page's own critical media win that race first.
+        if (!cancelled) openTimer = setTimeout(() => setOpen(true), 1500);
       });
 
     return () => {
       cancelled = true;
+      if (openTimer) clearTimeout(openTimer);
     };
     // Intentionally runs once on mount — this is a one-shot launch prompt,
     // not something that should re-evaluate on every route change.

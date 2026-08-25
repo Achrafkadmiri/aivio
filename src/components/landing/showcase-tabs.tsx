@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import Link from "next/link";
 import { Play } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -8,6 +8,7 @@ import { TiltCard } from "@/components/marketing/tilt-card";
 import { SHOWCASE_VIDEOS, type ShowcaseVideo } from "@/lib/showcase-media";
 import { NANO_BANANA_IMAGES, type NanoBananaImage } from "@/lib/nano-banana-showcase";
 import { IMAGE_MODELS, VIDEO_MODELS, SEEDANCE2_MODEL_ID } from "@/lib/constants";
+import { useLazyVideo } from "@/hooks/use-lazy-video";
 
 // Every curated video sample comes from the same live model (Seedance 2.0);
 // every curated image sample comes from the same live model (Nano Banana 2
@@ -34,36 +35,9 @@ const VIDEO_ASPECT: Record<ShowcaseVideo["tile"], string> = {
 // poster-wall look; the model identity is already stated once in the
 // section header above, and the aria-label carries the prompt for a11y.
 function VideoTile({ video }: { video: ShowcaseVideo }) {
-  const containerRef = useRef<HTMLAnchorElement>(null);
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const [inView, setInView] = useState(false);
-  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
+  const { containerRef, videoRef, hasLoadedOnce } = useLazyVideo<HTMLAnchorElement>();
   const [loaded, setLoaded] = useState(false);
   const [errored, setErrored] = useState(false);
-
-  useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        setInView(entry.isIntersecting);
-        if (entry.isIntersecting) setHasLoadedOnce(true);
-      },
-      { rootMargin: "200px" },
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
-
-  useEffect(() => {
-    const videoEl = videoRef.current;
-    if (!videoEl) return;
-    if (inView) {
-      videoEl.play().catch(() => {});
-    } else {
-      videoEl.pause();
-    }
-  }, [inView, hasLoadedOnce]);
 
   const tryHref = `/generate?model=${encodeURIComponent(SEEDANCE2_MODEL_ID)}&prompt=${encodeURIComponent(video.prompt)}`;
 
