@@ -1,4 +1,5 @@
-// DUPLIQUÉ dans aiVideo-backend/src/lib/constants.ts — garder synchronisé.
+// DUPLIQUÉ dans aiVideo-backend/src/lib/constants.ts (et son miroir Deno
+// supabase/functions/api/lib/constants.ts) — garder synchronisé.
 import { CLOUDFLARE_MODELS } from "@/lib/cloudflare-models";
 
 // Real-money value backing each credit ($0.01 = 1 credit), for display (e.g.
@@ -29,14 +30,24 @@ export const TIER_INFO: Record<
     commercialLicense: boolean;
     seats: number;
     priorityQueue: boolean;
+    apiAccess: boolean;
     features: string[];
   }
 > = {
+  // Credits/prices recalibrated 2026-08-25 ("Plan Tarifaire Créateur v2") so
+  // every paid tier clears a 40% NET margin (credits at CREDIT_VALUE_USD +
+  // ~2.9%+$0.30 Stripe fee + ~5% overhead for storage/support/hosting), not
+  // just a 40%+ margin on raw credit cost. maxResolution/maxDurationSeconds/
+  // concurrentGenerations/videoWatermark/priorityQueue/apiAccess are enforced
+  // server-side (see aiVideo-backend's generations.ts).
   free: {
     label: "Découverte",
     priceMonthly: 0,
     monthlyCredits: 50,
-    maxResolution: "720p",
+    // Capped at 480p (not 720p): a 5s 720p clip costs 75-115 credits,
+    // more than the entire free budget — 480p is the only resolution a
+    // free user can actually afford one real clip in.
+    maxResolution: "480p",
     maxDurationSeconds: 5,
     concurrentGenerations: 1,
     rolloverMonths: 0,
@@ -44,9 +55,11 @@ export const TIER_INFO: Record<
     commercialLicense: false,
     seats: 1,
     priorityQueue: false,
+    apiAccess: false,
     features: [
       "50 credits / month",
-      "720p image · 480p video",
+      "~50 Nano Banana images",
+      "~5s Seedance 2.5 video (480p)",
       "Video watermark",
       "Standard queue",
     ],
@@ -54,46 +67,55 @@ export const TIER_INFO: Record<
   starter: {
     label: "Starter",
     priceMonthly: 9.99,
-    monthlyCredits: 525,
+    monthlyCredits: 480,
     maxResolution: "1080p",
     maxDurationSeconds: 20,
     concurrentGenerations: 2,
     rolloverMonths: 0,
     videoWatermark: false,
-    commercialLicense: false,
+    commercialLicense: true,
     seats: 1,
     priorityQueue: false,
+    apiAccess: false,
     features: [
-      "525 credits / month",
+      "480 credits / month",
+      "~480 Nano Banana images",
+      "~21s Seedance 2.5 video (720p)",
+      "Up to 1080p",
       "No watermark",
+      "Commercial license",
       "Standard queue",
-      "1 seat",
     ],
   },
   creator: {
     label: "Créateur",
     priceMonthly: 24,
-    monthlyCredits: 1340,
+    monthlyCredits: 1200,
     maxResolution: "1080p",
     maxDurationSeconds: 30,
     concurrentGenerations: 3,
     rolloverMonths: 1,
     videoWatermark: false,
-    commercialLicense: false,
+    commercialLicense: true,
     seats: 1,
     priorityQueue: true,
+    apiAccess: false,
     features: [
-      "1,340 credits / month",
+      "1,200 credits / month",
+      "~1,200 Nano Banana images",
+      "~52s Seedance 2.5 video (720p)",
+      "Up to 1080p",
       "Priority queue",
+      "Commercial license",
       "Unused credits roll over 1 month",
-      "1080p & video-to-video (higher credit cost)",
     ],
   },
   studio: {
     label: "Studio",
     priceMonthly: 49,
-    monthlyCredits: 2740,
-    maxResolution: "1080p",
+    monthlyCredits: 2450,
+    // Only tier allowed to spend credits on 4K (Seedance 2.0) generations.
+    maxResolution: "4k",
     maxDurationSeconds: 30,
     concurrentGenerations: 5,
     rolloverMonths: 1,
@@ -101,21 +123,30 @@ export const TIER_INFO: Record<
     commercialLicense: true,
     seats: 3,
     priorityQueue: true,
+    apiAccess: true,
     features: [
-      "2,740 credits / month",
+      "2,450 credits / month",
+      "~2,450 Nano Banana images",
+      "~106s Seedance 2.5 video (720p)",
+      "~31s Seedance 2.0 video (4K, exclusive)",
       "Commercial license",
-      "3 team seats + API access",
+      "API access",
+      "3 team seats",
       "Max priority queue",
     ],
   },
 };
 
-// Display-only annual-billing prices (~16-20% off monthly) — payments are
-// simulated in this build, so this isn't wired to any real billing cycle.
+// Display-only annual-billing prices ("1 month free" ≈ 8.3% off monthly,
+// pay 11 months for 12) — payments are simulated in this build, so this
+// isn't wired to any real billing cycle. Kept intentionally more modest than
+// a typical 17-20% annual discount: at the recalibrated monthlyCredits
+// above, a deeper discount would push net margin below 40% (see "Plan
+// Tarifaire Créateur v2").
 export const ANNUAL_PRICE_MONTHLY: Partial<Record<Tier, number>> = {
-  starter: 8.33,
-  creator: 20,
-  studio: 41,
+  starter: 9.16,
+  creator: 22,
+  studio: 44.92,
 };
 
 // Pay-per-use top-ups — credits never expire (see grantRecharge in
