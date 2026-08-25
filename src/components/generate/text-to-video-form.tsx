@@ -13,6 +13,7 @@ import {
   SEEDANCE2_RESOLUTIONS,
   SEEDANCE2_ASPECT_RATIOS,
   type VideoModelId,
+  type TierInfo,
 } from "@/lib/constants";
 
 type Seedance2InitialParams = {
@@ -27,6 +28,7 @@ export function TextToVideoForm({
   initialModel,
   initialPrompt: initialPromptProp,
   initialParams,
+  tierInfo,
 }: {
   onCreated: (jobId: string) => void;
   busy: boolean;
@@ -35,6 +37,8 @@ export function TextToVideoForm({
   initialPrompt?: string;
   /** Only applied to Seedance 2.0 — the only model the prompt gallery targets. */
   initialParams?: Seedance2InitialParams;
+  /** Current plan's limits — undefined while still loading. */
+  tierInfo?: TierInfo;
 }) {
   const [model, setModel] = useState<VideoModelId>(
     initialModel && VIDEO_MODELS.some((m) => m.id === initialModel) ? initialModel : VIDEO_MODELS[0].id,
@@ -55,6 +59,7 @@ export function TextToVideoForm({
         onPromptChange={setPrompt}
         onCreated={onCreated}
         busy={busy}
+        tierInfo={tierInfo}
       />
     );
   }
@@ -71,6 +76,7 @@ export function TextToVideoForm({
         initialParams={initialParams}
         onCreated={onCreated}
         busy={busy}
+        tierInfo={tierInfo}
       />
     );
   }
@@ -88,6 +94,7 @@ export function TextToVideoForm({
         onPromptChange={setPrompt}
         onCreated={onCreated}
         busy={busy}
+        tierInfo={tierInfo}
       />
     );
   }
@@ -108,6 +115,7 @@ export function TextToVideoForm({
         onPromptChange={setPrompt}
         onCreated={onCreated}
         busy={busy}
+        tierInfo={tierInfo}
       />
     );
   }

@@ -19,6 +19,14 @@ import { estimateVideoCredits } from "@/lib/credit-estimate";
 import { seedanceVideoSchema, type SeedanceVideoInput } from "@/lib/validation";
 import { apiFetch } from "@/lib/api-client";
 import {
+  isResolutionLocked,
+  isDurationLocked,
+  minTierForResolution,
+  minTierForDuration,
+  minTierWithoutForcedWatermark,
+  upgradeHint,
+} from "@/lib/tier-limits";
+import {
   SEEDANCE_MODEL_ID,
   SEEDANCE_DURATION_MIN,
   SEEDANCE_DURATION_MAX,
@@ -27,6 +35,7 @@ import {
   SEEDANCE_ASPECT_RATIOS,
   SEEDANCE_OUTPUT_FORMATS,
   type VideoModelId,
+  type TierInfo,
 } from "@/lib/constants";
 import {
   ComposerShell,
@@ -52,6 +61,7 @@ export function SeedanceVideoForm({
   onPromptChange,
   onCreated,
   busy,
+  tierInfo,
 }: {
   models: readonly PickerModel<VideoModelId>[];
   model: VideoModelId;
@@ -60,6 +70,11 @@ export function SeedanceVideoForm({
   onPromptChange: (value: string) => void;
   onCreated: (jobId: string) => void;
   busy: boolean;
+  /** Current plan's limits — undefined while still loading. Gates
+   * resolution/duration/watermark controls client-side so a locked pick is
+   * discoverable before hitting the server's 403 (see aiVideo-backend's
+   * generations.ts, the actual source of truth for these limits). */
+  tierInfo?: TierInfo;
 }) {
   const { toast } = useToast();
   const invalidateCredits = useInvalidateCredits();
@@ -103,6 +118,13 @@ export function SeedanceVideoForm({
   const estimatedCredits = estimateVideoCredits(SEEDANCE_MODEL_ID, duration, resolution, {
     hasReferenceVideo: Boolean(referenceVideoUrl),
   });
+
+  // "Auto" duration lands around ~8s (see LIVE_VIDEO_AUTO_DURATION_ESTIMATE
+  // in credit-estimate.ts) — locked on plans capped below that.
+  const autoLocked = isDurationLocked(8, tierInfo);
+  const durationCap = tierInfo ? Math.min(SEEDANCE_DURATION_MAX, tierInfo.maxDurationSeconds) : SEEDANCE_DURATION_MAX;
+  const durationCapped = durationCap < SEEDANCE_DURATION_MAX;
+  const watermarkForced = tierInfo?.videoWatermark ?? false;
 
   async function handleFile(file: File) {
     setUploading(true);
@@ -318,12 +340,20 @@ export function SeedanceVideoForm({
               </DropdownTrigger>
               <DropdownContent align="end" className="w-64 space-y-3 p-4">
                 <SettingRow title="Automatic duration" description="Let the model pick a natural length (~8s).">
-                  <Switch
-                    checked={isAuto}
-                    onCheckedChange={(checked) =>
-                      setValue("duration", checked ? SEEDANCE_DURATION_AUTO : 5, { shouldValidate: true })
-                    }
-                  />
+                  {autoLocked ? (
+                    <Tooltip content={upgradeHint(minTierForDuration(8), "automatic duration")}>
+                      <span className="inline-flex" tabIndex={0}>
+                        <Switch checked={false} disabled />
+                      </span>
+                    </Tooltip>
+                  ) : (
+                    <Switch
+                      checked={isAuto}
+                      onCheckedChange={(checked) =>
+                        setValue("duration", checked ? SEEDANCE_DURATION_AUTO : 5, { shouldValidate: true })
+                      }
+                    />
+                  )}
                 </SettingRow>
                 <div>
                   <div className="mb-2 flex items-center justify-between text-caption text-muted">
@@ -331,16 +361,21 @@ export function SeedanceVideoForm({
                     <span className={cn("text-label text-ink-soft", isAuto && "opacity-40")}>
                       {isAuto ? "—" : `${duration}s`}
                     </span>
-                    <span>{SEEDANCE_DURATION_MAX}s</span>
+                    <span>{durationCap}s</span>
                   </div>
                   <Slider
                     min={SEEDANCE_DURATION_MIN}
-                    max={SEEDANCE_DURATION_MAX}
+                    max={durationCap}
                     step={1}
                     disabled={isAuto}
-                    value={[isAuto ? SEEDANCE_DURATION_MIN : duration]}
+                    value={[isAuto ? SEEDANCE_DURATION_MIN : Math.min(duration, durationCap)]}
                     onValueChange={([v]) => setValue("duration", v, { shouldValidate: true })}
                   />
+                  {durationCapped && (
+                    <p className="mt-1.5 text-caption text-muted">
+                      {upgradeHint(minTierForDuration(SEEDANCE_DURATION_MAX), `up to ${SEEDANCE_DURATION_MAX}s`)}
+                    </p>
+                  )}
                 </div>
                 <FieldError>{errors.duration?.message}</FieldError>
               </DropdownContent>
@@ -352,6 +387,8 @@ export function SeedanceVideoForm({
               value={resolution}
               options={SEEDANCE_RESOLUTIONS}
               onChange={(r) => setValue("resolution", r, { shouldValidate: true })}
+              isOptionLocked={(r) => isResolutionLocked(r, tierInfo)}
+              lockedHint={(r) => upgradeHint(minTierForResolution(r), r)}
             />
           </MobileFieldRow>
           <MobileFieldRow label="Aspect ratio">
@@ -379,12 +416,23 @@ export function SeedanceVideoForm({
               render={({ field }) => <Switch checked={field.value ?? false} onCheckedChange={field.onChange} />}
             />
           </MobileFieldRow>
-          <MobileFieldRow label="Watermark" description="Add a visible watermark to the output.">
-            <Controller
-              control={control}
-              name="watermark"
-              render={({ field }) => <Switch checked={field.value} onCheckedChange={field.onChange} />}
-            />
+          <MobileFieldRow
+            label="Watermark"
+            description={watermarkForced ? "Included on your plan — upgrade to remove it." : "Add a visible watermark to the output."}
+          >
+            {watermarkForced ? (
+              <Tooltip content={upgradeHint(minTierWithoutForcedWatermark(), "watermark-free video")}>
+                <span className="inline-flex" tabIndex={0}>
+                  <Switch checked disabled />
+                </span>
+              </Tooltip>
+            ) : (
+              <Controller
+                control={control}
+                name="watermark"
+                render={({ field }) => <Switch checked={field.value} onCheckedChange={field.onChange} />}
+              />
+            )}
           </MobileFieldRow>
           <MobileFieldRow
             label="Virtual avatar mode"
@@ -436,12 +484,20 @@ export function SeedanceVideoForm({
             </DropdownTrigger>
             <DropdownContent align="start" className="w-64 space-y-3 p-4">
               <SettingRow title="Automatic duration" description="Let the model pick a natural length (~8s).">
-                <Switch
-                  checked={isAuto}
-                  onCheckedChange={(checked) =>
-                    setValue("duration", checked ? SEEDANCE_DURATION_AUTO : 5, { shouldValidate: true })
-                  }
-                />
+                {autoLocked ? (
+                  <Tooltip content={upgradeHint(minTierForDuration(8), "automatic duration")}>
+                    <span className="inline-flex" tabIndex={0}>
+                      <Switch checked={false} disabled />
+                    </span>
+                  </Tooltip>
+                ) : (
+                  <Switch
+                    checked={isAuto}
+                    onCheckedChange={(checked) =>
+                      setValue("duration", checked ? SEEDANCE_DURATION_AUTO : 5, { shouldValidate: true })
+                    }
+                  />
+                )}
               </SettingRow>
               <div>
                 <div className="mb-2 flex items-center justify-between text-caption text-muted">
@@ -449,16 +505,21 @@ export function SeedanceVideoForm({
                   <span className={cn("text-label text-ink-soft", isAuto && "opacity-40")}>
                     {isAuto ? "—" : `${duration}s`}
                   </span>
-                  <span>{SEEDANCE_DURATION_MAX}s</span>
+                  <span>{durationCap}s</span>
                 </div>
                 <Slider
                   min={SEEDANCE_DURATION_MIN}
-                  max={SEEDANCE_DURATION_MAX}
+                  max={durationCap}
                   step={1}
                   disabled={isAuto}
-                  value={[isAuto ? SEEDANCE_DURATION_MIN : duration]}
+                  value={[isAuto ? SEEDANCE_DURATION_MIN : Math.min(duration, durationCap)]}
                   onValueChange={([v]) => setValue("duration", v, { shouldValidate: true })}
                 />
+                {durationCapped && (
+                  <p className="mt-1.5 text-caption text-muted">
+                    {upgradeHint(minTierForDuration(SEEDANCE_DURATION_MAX), `up to ${SEEDANCE_DURATION_MAX}s`)}
+                  </p>
+                )}
               </div>
               <FieldError>{errors.duration?.message}</FieldError>
             </DropdownContent>
@@ -469,6 +530,8 @@ export function SeedanceVideoForm({
             value={resolution}
             options={SEEDANCE_RESOLUTIONS}
             onChange={(r) => setValue("resolution", r, { shouldValidate: true })}
+            isOptionLocked={(r) => isResolutionLocked(r, tierInfo)}
+            lockedHint={(r) => upgradeHint(minTierForResolution(r), r)}
           />
 
           <PillSelect
@@ -497,12 +560,23 @@ export function SeedanceVideoForm({
                 )}
               />
             </SettingRow>
-            <SettingRow title="Watermark" description="Add a visible watermark to the output.">
-              <Controller
-                control={control}
-                name="watermark"
-                render={({ field }) => <Switch checked={field.value} onCheckedChange={field.onChange} />}
-              />
+            <SettingRow
+              title="Watermark"
+              description={watermarkForced ? "Included on your plan — upgrade to remove it." : "Add a visible watermark to the output."}
+            >
+              {watermarkForced ? (
+                <Tooltip content={upgradeHint(minTierWithoutForcedWatermark(), "watermark-free video")}>
+                  <span className="inline-flex" tabIndex={0}>
+                    <Switch checked disabled />
+                  </span>
+                </Tooltip>
+              ) : (
+                <Controller
+                  control={control}
+                  name="watermark"
+                  render={({ field }) => <Switch checked={field.value} onCheckedChange={field.onChange} />}
+                />
+              )}
             </SettingRow>
             <SettingRow
               title="Virtual avatar mode"

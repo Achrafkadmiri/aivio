@@ -20,9 +20,10 @@ import {
   type VideoModelId,
   type ImageModelId,
   type GenerationType,
+  type TierInfo,
 } from "@/lib/constants";
 
-type UsageResponse = { credit_balance: number };
+type UsageResponse = { credit_balance: number; tier_info?: TierInfo };
 
 // Keep in sync with the literal "[zoom:0.7]" class on the hero/result column
 // below — Tailwind arbitrary-value classes have to stay string literals for
@@ -221,6 +222,7 @@ export function GenerateStudio({ type }: { type: GenerationType }) {
               initialModel={initialModel}
               initialPrompt={initialPrompt}
               initialParams={initialParams}
+              tierInfo={usageQuery.data?.tier_info}
             />
           )}
           {type === "text-to-image" && (

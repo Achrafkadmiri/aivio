@@ -16,6 +16,8 @@ import { estimateVideoCredits, estimateImageCredits } from "@/lib/credit-estimat
 import { buildDynamicSchema } from "@/lib/validation";
 import type { CloudflareModelConfig } from "@/lib/cloudflare-models";
 import { apiFetch } from "@/lib/api-client";
+import { isResolutionLocked, minTierForResolution, minTierForDuration, upgradeHint } from "@/lib/tier-limits";
+import type { TierInfo } from "@/lib/constants";
 import {
   ComposerShell,
   ReferenceUploadRow,
@@ -66,6 +68,7 @@ export function DynamicModelForm<T extends string>({
   onPromptChange,
   onCreated,
   busy,
+  tierInfo,
 }: {
   config: CloudflareModelConfig;
   mode: keyof typeof ENDPOINTS;
@@ -76,6 +79,10 @@ export function DynamicModelForm<T extends string>({
   onPromptChange: (value: string) => void;
   onCreated: (jobId: string) => void;
   busy: boolean;
+  /** Current plan's limits — undefined while still loading, and irrelevant
+   * for text-to-image models (only video resolution is tier-gated server
+   * side, see aiVideo-backend's generations.ts). */
+  tierInfo?: TierInfo;
 }) {
   const { toast } = useToast();
   const invalidateCredits = useInvalidateCredits();
@@ -165,6 +172,12 @@ export function DynamicModelForm<T extends string>({
   );
   const panelFields = config.fields.filter((f) => !pillFields.includes(f));
 
+  // Clamps the duration slider to the current plan's limit (undefined
+  // tierInfo — still loading — leaves the model's own max in place).
+  const durationModelMax = durationField?.max ?? 0;
+  const durationCap = tierInfo ? Math.min(durationModelMax, tierInfo.maxDurationSeconds) : durationModelMax;
+  const durationCapped = tierInfo ? durationCap < durationModelMax : false;
+
   return (
     <form onSubmit={submit} noValidate>
       <ComposerShell>
@@ -252,11 +265,19 @@ export function DynamicModelForm<T extends string>({
                 <PillSlider
                   icon={Clock}
                   label={field.label}
-                  value={typeof duration === "number" ? duration : (field.defaultValue as number) ?? field.min!}
+                  value={Math.min(
+                    typeof duration === "number" ? duration : (field.defaultValue as number) ?? field.min!,
+                    durationCap,
+                  )}
                   min={field.min!}
-                  max={field.max!}
+                  max={durationCap}
                   formatValue={(v) => `${v}s`}
                   onChange={(v) => setValue(field.key, v, { shouldValidate: true })}
+                  helperText={
+                    durationCapped
+                      ? upgradeHint(minTierForDuration(durationModelMax), `up to ${durationModelMax}s`)
+                      : undefined
+                  }
                 />
               </MobileFieldRow>
             ) : (
@@ -266,6 +287,14 @@ export function DynamicModelForm<T extends string>({
                   value={(watch(field.key) as string) ?? field.options?.[0] ?? ""}
                   options={field.options ?? []}
                   onChange={(v) => setValue(field.key, v, { shouldValidate: true })}
+                  isOptionLocked={
+                    field.key === "resolution" && isVideoModel ? (v) => isResolutionLocked(v, tierInfo) : undefined
+                  }
+                  lockedHint={
+                    field.key === "resolution" && isVideoModel
+                      ? (v) => upgradeHint(minTierForResolution(v), v)
+                      : undefined
+                  }
                 />
               </MobileFieldRow>
             ),
@@ -335,11 +364,19 @@ export function DynamicModelForm<T extends string>({
                 key={field.key}
                 icon={Clock}
                 label={field.label}
-                value={typeof duration === "number" ? duration : (field.defaultValue as number) ?? field.min!}
+                value={Math.min(
+                  typeof duration === "number" ? duration : (field.defaultValue as number) ?? field.min!,
+                  durationCap,
+                )}
                 min={field.min!}
-                max={field.max!}
+                max={durationCap}
                 formatValue={(v) => `${v}s`}
                 onChange={(v) => setValue(field.key, v, { shouldValidate: true })}
+                helperText={
+                  durationCapped
+                    ? upgradeHint(minTierForDuration(durationModelMax), `up to ${durationModelMax}s`)
+                    : undefined
+                }
               />
             ) : (
               <PillSelect
@@ -348,6 +385,14 @@ export function DynamicModelForm<T extends string>({
                 value={(watch(field.key) as string) ?? field.options?.[0] ?? ""}
                 options={field.options ?? []}
                 onChange={(v) => setValue(field.key, v, { shouldValidate: true })}
+                isOptionLocked={
+                  field.key === "resolution" && isVideoModel ? (v) => isResolutionLocked(v, tierInfo) : undefined
+                }
+                lockedHint={
+                  field.key === "resolution" && isVideoModel
+                    ? (v) => upgradeHint(minTierForResolution(v), v)
+                    : undefined
+                }
               />
             ),
           )}

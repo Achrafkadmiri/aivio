@@ -97,6 +97,12 @@ export default function PricingPage() {
         })}
       </div>
 
+      <p className="mx-auto mt-6 max-w-2xl text-center text-caption text-muted">
+        Model quantities are estimates assuming 100% of that month&apos;s credits are spent on a
+        single format — mix and match images and video freely, and the exact cost is always shown
+        before you generate.
+      </p>
+
       <div className="mx-auto mt-24 max-w-2xl">
         <h2 className="text-center text-heading font-bold text-ink">
           Frequently asked questions

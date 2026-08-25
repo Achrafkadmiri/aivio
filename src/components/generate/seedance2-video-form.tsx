@@ -16,12 +16,21 @@ import { estimateVideoCredits } from "@/lib/credit-estimate";
 import { seedance2VideoSchema, type Seedance2VideoInput } from "@/lib/validation";
 import { apiFetch } from "@/lib/api-client";
 import {
+  isResolutionLocked,
+  isDurationLocked,
+  minTierForResolution,
+  minTierForDuration,
+  minTierWithoutForcedWatermark,
+  upgradeHint,
+} from "@/lib/tier-limits";
+import {
   SEEDANCE2_MODEL_ID,
   SEEDANCE2_DURATION_MIN,
   SEEDANCE2_DURATION_MAX,
   SEEDANCE2_RESOLUTIONS,
   SEEDANCE2_ASPECT_RATIOS,
   type VideoModelId,
+  type TierInfo,
 } from "@/lib/constants";
 import {
   ComposerShell,
@@ -58,6 +67,7 @@ export function Seedance2VideoForm({
   initialParams,
   onCreated,
   busy,
+  tierInfo,
 }: {
   models: readonly PickerModel<VideoModelId>[];
   model: VideoModelId;
@@ -72,6 +82,9 @@ export function Seedance2VideoForm({
   };
   onCreated: (jobId: string) => void;
   busy: boolean;
+  /** Current plan's limits — undefined while still loading. See
+   * seedance-video-form.tsx's tierInfo prop for the full rationale. */
+  tierInfo?: TierInfo;
 }) {
   const { toast } = useToast();
   const invalidateCredits = useInvalidateCredits();
@@ -109,6 +122,7 @@ export function Seedance2VideoForm({
   const image = watch("image");
   const hasReference = Boolean(image);
   const estimatedCredits = estimateVideoCredits(SEEDANCE2_MODEL_ID, duration, resolution);
+  const watermarkForced = tierInfo?.videoWatermark ?? false;
 
   async function handleFile(file: File) {
     setUploading(true);
@@ -276,6 +290,8 @@ export function Seedance2VideoForm({
               options={DURATIONS}
               renderLabel={(d) => `${d}s`}
               onChange={(d) => setValue("duration", d, { shouldValidate: true })}
+              isOptionLocked={(d) => isDurationLocked(d, tierInfo)}
+              lockedHint={(d) => upgradeHint(minTierForDuration(d), `${d}s clips`)}
             />
           </MobileFieldRow>
           <MobileFieldRow label="Resolution">
@@ -285,6 +301,8 @@ export function Seedance2VideoForm({
               options={SEEDANCE2_RESOLUTIONS}
               renderLabel={(r) => (r === "4k" ? "4K" : r)}
               onChange={(r) => setValue("resolution", r, { shouldValidate: true })}
+              isOptionLocked={(r) => isResolutionLocked(r, tierInfo)}
+              lockedHint={(r) => upgradeHint(minTierForResolution(r), r === "4k" ? "4K" : r)}
             />
           </MobileFieldRow>
           <MobileFieldRow
@@ -314,12 +332,23 @@ export function Seedance2VideoForm({
               render={({ field }) => <Switch checked={field.value ?? false} onCheckedChange={field.onChange} />}
             />
           </MobileFieldRow>
-          <MobileFieldRow label="Watermark" description="Add a visible watermark to the output.">
-            <Controller
-              control={control}
-              name="watermark"
-              render={({ field }) => <Switch checked={field.value} onCheckedChange={field.onChange} />}
-            />
+          <MobileFieldRow
+            label="Watermark"
+            description={watermarkForced ? "Included on your plan — upgrade to remove it." : "Add a visible watermark to the output."}
+          >
+            {watermarkForced ? (
+              <Tooltip content={upgradeHint(minTierWithoutForcedWatermark(), "watermark-free video")}>
+                <span className="inline-flex" tabIndex={0}>
+                  <Switch checked disabled />
+                </span>
+              </Tooltip>
+            ) : (
+              <Controller
+                control={control}
+                name="watermark"
+                render={({ field }) => <Switch checked={field.value} onCheckedChange={field.onChange} />}
+              />
+            )}
           </MobileFieldRow>
           <MobileFieldRow
             label="Virtual avatar mode"
@@ -367,6 +396,8 @@ export function Seedance2VideoForm({
             options={DURATIONS}
             renderLabel={(d) => `${d}s`}
             onChange={(d) => setValue("duration", d, { shouldValidate: true })}
+            isOptionLocked={(d) => isDurationLocked(d, tierInfo)}
+            lockedHint={(d) => upgradeHint(minTierForDuration(d), `${d}s clips`)}
           />
 
           <PillSelect
@@ -375,6 +406,8 @@ export function Seedance2VideoForm({
             options={SEEDANCE2_RESOLUTIONS}
             renderLabel={(r) => (r === "4k" ? "4K" : r)}
             onChange={(r) => setValue("resolution", r, { shouldValidate: true })}
+            isOptionLocked={(r) => isResolutionLocked(r, tierInfo)}
+            lockedHint={(r) => upgradeHint(minTierForResolution(r), r === "4k" ? "4K" : r)}
           />
 
           <PillSelect
@@ -403,12 +436,23 @@ export function Seedance2VideoForm({
                 )}
               />
             </SettingRow>
-            <SettingRow title="Watermark" description="Add a visible watermark to the output.">
-              <Controller
-                control={control}
-                name="watermark"
-                render={({ field }) => <Switch checked={field.value} onCheckedChange={field.onChange} />}
-              />
+            <SettingRow
+              title="Watermark"
+              description={watermarkForced ? "Included on your plan — upgrade to remove it." : "Add a visible watermark to the output."}
+            >
+              {watermarkForced ? (
+                <Tooltip content={upgradeHint(minTierWithoutForcedWatermark(), "watermark-free video")}>
+                  <span className="inline-flex" tabIndex={0}>
+                    <Switch checked disabled />
+                  </span>
+                </Tooltip>
+              ) : (
+                <Controller
+                  control={control}
+                  name="watermark"
+                  render={({ field }) => <Switch checked={field.value} onCheckedChange={field.onChange} />}
+                />
+              )}
             </SettingRow>
             <SettingRow
               title="Virtual avatar mode"

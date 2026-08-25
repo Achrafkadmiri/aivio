@@ -1,7 +1,7 @@
 "use client";
 
 import { type ReactNode } from "react";
-import { Check, ChevronDown, SlidersHorizontal, type LucideIcon } from "lucide-react";
+import { Check, ChevronDown, Lock, SlidersHorizontal, type LucideIcon } from "lucide-react";
 import { DropdownRoot, DropdownTrigger, DropdownContent, DropdownItem } from "@/components/ui/dropdown";
 import { Slider } from "@/components/ui/slider";
 import { Tooltip } from "@/components/ui/tooltip";
@@ -45,6 +45,8 @@ export function PillSelect<T extends string | number>({
   onChange,
   disabled,
   disabledHint,
+  isOptionLocked,
+  lockedHint,
 }: {
   icon: LucideIcon;
   value: T;
@@ -53,6 +55,12 @@ export function PillSelect<T extends string | number>({
   onChange: (v: T) => void;
   disabled?: boolean;
   disabledHint?: string;
+  /** Per-option gate (e.g. a resolution above the current plan's limit) —
+   * unlike `disabled` (which locks the whole pill), a locked option still
+   * shows up in the list with a lock icon so upgrading is discoverable. */
+  isOptionLocked?: (v: T) => boolean;
+  /** Tooltip text for a locked option, e.g. "Upgrade to Starter to unlock 720p." */
+  lockedHint?: (v: T) => string;
 }) {
   const label = renderLabel ? renderLabel(value) : String(value);
   const trigger = (
@@ -72,19 +80,40 @@ export function PillSelect<T extends string | number>({
         trigger
       )}
       <DropdownContent align="start" className="max-h-72 w-44 overflow-y-auto">
-        {options.map((opt) => (
-          <DropdownItem
-            key={String(opt)}
-            onSelect={() => onChange(opt)}
-            className="flex items-center gap-2"
-          >
-            <Check
-              className={cn("size-3.5 shrink-0", opt === value ? "text-brand" : "text-transparent")}
-              aria-hidden="true"
-            />
-            {renderLabel ? renderLabel(opt) : String(opt)}
-          </DropdownItem>
-        ))}
+        {options.map((opt) => {
+          const locked = isOptionLocked?.(opt) ?? false;
+          const item = (
+            <DropdownItem
+              key={String(opt)}
+              disabled={locked}
+              onSelect={(e) => {
+                if (locked) {
+                  e.preventDefault();
+                  return;
+                }
+                onChange(opt);
+              }}
+              className={cn(
+                "flex items-center gap-2",
+                locked && "cursor-not-allowed opacity-50 data-[highlighted]:bg-transparent data-[highlighted]:text-ink-soft",
+              )}
+            >
+              <Check
+                className={cn("size-3.5 shrink-0", opt === value ? "text-brand" : "text-transparent")}
+                aria-hidden="true"
+              />
+              <span className="flex-1">{renderLabel ? renderLabel(opt) : String(opt)}</span>
+              {locked && <Lock className="size-3.5 shrink-0 text-muted" aria-hidden="true" />}
+            </DropdownItem>
+          );
+          return locked && lockedHint ? (
+            <Tooltip key={String(opt)} content={lockedHint(opt)}>
+              <span className="block">{item}</span>
+            </Tooltip>
+          ) : (
+            item
+          );
+        })}
       </DropdownContent>
     </DropdownRoot>
   );
