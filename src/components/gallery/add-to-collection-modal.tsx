@@ -22,8 +22,17 @@ export function AddToCollectionModal({
   const queryClient = useQueryClient();
   const [newName, setNewName] = useState("");
 
+  // Scoped sub-key, NOT the bare ["collections"] key collections-client.tsx's
+  // useCollections() also uses — that hook's queryFn unwraps the response to
+  // a plain array (`return data.items`), while this one caches the raw
+  // `{items: [...]}` object. Same key + different cached shapes meant
+  // visiting /collections while this modal (always mounted on the gallery
+  // page, whether open or not) was subscribed to ["collections"] would hand
+  // it back an array with no `.items`, throwing on the very next render —
+  // reproducible without ever opening the modal. invalidateQueries(["collections"])
+  // below still invalidates this too: TanStack Query matches by key prefix.
   const collectionsQuery = useQuery({
-    queryKey: ["collections"],
+    queryKey: ["collections", "picker"],
     queryFn: async (): Promise<{ items: Collection[] }> => {
       const res = await apiFetch("/api/collections");
       if (!res.ok) throw new Error("Failed to load collections");
@@ -68,10 +77,10 @@ export function AddToCollectionModal({
   return (
     <Modal open={Boolean(generationId)} onOpenChange={(open) => !open && onClose()} title="Add to collection">
       <div className="space-y-2">
-        {collectionsQuery.data?.items.length === 0 && (
+        {collectionsQuery.data?.items?.length === 0 && (
           <p className="text-body-sm text-muted">You don&apos;t have any collections yet.</p>
         )}
-        {collectionsQuery.data?.items.map((collection) => (
+        {collectionsQuery.data?.items?.map((collection) => (
           <button
             key={collection.id}
             type="button"
