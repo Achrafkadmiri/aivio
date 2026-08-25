@@ -64,45 +64,29 @@ function CreditsBadge() {
 
 // Grouped into labeled sections (rather than one flat list) so the sidebar
 // reads more like a real workspace nav — echoes ArtCraft's Create/Studio/
-// Assets grouping, sized down to what this app actually has. Each item also
-// carries a category `color`, one of the four solid hues from the palette
-// (ember/teal/amber/rust — see globals.css) — an ArtCraft-style colored
-// icon chip per section instead of one uniform gradient/brand tint on
-// every row, so the sidebar itself helps with wayfinding. Settings stays
-// neutral on purpose: a utility/account section, not "content," so it
-// doesn't compete for attention with the four content-bearing colors.
-type NavColor = "brand" | "teal" | "brandSoft" | "brandDeep" | "neutral";
-const NAV_SECTIONS: { label: string; items: { href: string; label: string; icon: typeof LayoutDashboard; color: NavColor }[] }[] = [
+// Assets grouping, sized down to what this app actually has. The active
+// item always uses the one brand color (see NavItem below) — no per-section
+// wayfinding colors anymore.
+const NAV_SECTIONS: { label: string; items: { href: string; label: string; icon: typeof LayoutDashboard }[] }[] = [
   {
     label: "Workspace",
     items: [
-      { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, color: "teal" },
-      { href: "/generate", label: "Generate", icon: Sparkles, color: "brand" },
+      { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+      { href: "/generate", label: "Generate", icon: Sparkles },
     ],
   },
   {
     label: "Library",
     items: [
-      { href: "/my-gallery", label: "Gallery", icon: Images, color: "brandSoft" },
-      { href: "/collections", label: "Collections", icon: FolderKanban, color: "brandDeep" },
+      { href: "/my-gallery", label: "Gallery", icon: Images },
+      { href: "/collections", label: "Collections", icon: FolderKanban },
     ],
   },
   {
     label: "Account",
-    items: [{ href: "/settings", label: "Settings", icon: Settings, color: "neutral" }],
+    items: [{ href: "/settings", label: "Settings", icon: Settings }],
   },
 ];
-
-// Tailwind can't construct class names from a template string at runtime —
-// its scanner needs every full class name to appear literally somewhere in
-// source — so this is a static lookup rather than `bg-${color}/15`.
-const NAV_COLOR_STYLES: Record<NavColor, { chip: string; icon: string; bar: string; wash: string }> = {
-  brand: { chip: "bg-brand/15", icon: "text-brand", bar: "bg-brand", wash: "bg-brand/10" },
-  teal: { chip: "bg-accent-teal/15", icon: "text-accent-teal", bar: "bg-accent-teal", wash: "bg-accent-teal/10" },
-  brandSoft: { chip: "bg-brand-soft/15", icon: "text-brand-soft", bar: "bg-brand-soft", wash: "bg-brand-soft/10" },
-  brandDeep: { chip: "bg-brand-deep/15", icon: "text-brand-deep", bar: "bg-brand-deep", wash: "bg-brand-deep/10" },
-  neutral: { chip: "bg-white/8", icon: "text-muted", bar: "bg-ink", wash: "bg-white/6" },
-};
 
 function useLogout() {
   const router = useRouter();
@@ -135,26 +119,33 @@ function NavItem({
   onNavigate?: () => void;
   collapsed: boolean;
 }) {
-  const styles = NAV_COLOR_STYLES[item.color];
   const link = (
     <Link
       href={item.href}
       onClick={onNavigate}
       className={cn(
         "font-display relative flex items-center gap-3 rounded-xl py-2 text-label font-medium transition-colors",
-        collapsed ? "justify-center px-0" : "pr-4 pl-3",
+        // Collapsed: size the pill to its content (icon only) and center it
+        // in the rail, instead of a block-level Link stretching to the full
+        // rail width — a full-width active wash behind a lone centered icon
+        // rendered as an oversized blob.
+        collapsed ? "mx-auto w-fit px-2" : "pr-4 pl-3",
         active
-          ? cn(styles.wash, "text-ink before:absolute before:top-1/2 before:left-0 before:h-5 before:w-1 before:-translate-y-1/2 before:rounded-full", styles.bar)
+          ? // The accent bar's color MUST stay under the before: variant —
+            // a bare `bg-brand` here (no `before:` prefix) would paint the
+            // whole link solid instead of just the 4px bar, which is
+            // exactly the bug that made the active icon disappear.
+            "bg-brand/10 text-ink before:absolute before:top-1/2 before:left-0 before:h-5 before:w-1 before:-translate-y-1/2 before:rounded-full before:bg-brand"
           : "text-muted hover:bg-white/5 hover:text-ink-soft",
       )}
     >
       <span
         className={cn(
           "flex size-8 shrink-0 items-center justify-center rounded-lg transition-colors",
-          active ? styles.chip : "bg-white/5",
+          active ? "bg-brand/15" : "bg-white/5",
         )}
       >
-        <item.icon className={cn("size-4", active ? styles.icon : "text-muted")} aria-hidden="true" />
+        <item.icon className={cn("size-4", active ? "text-brand" : "text-muted")} aria-hidden="true" />
       </span>
       {!collapsed && item.label}
     </Link>
