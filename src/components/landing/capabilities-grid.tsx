@@ -144,7 +144,12 @@ export function CapabilitiesGrid() {
                 />
 
                 <div className="relative flex flex-1 flex-col justify-between p-6">
-                  <span className="flex size-12 items-center justify-center rounded-xl bg-[image:var(--gradient-primary)] shadow-glow-sm">
+                  <span
+                    className={cn(
+                      "flex size-12 items-center justify-center rounded-xl shadow-glow-sm",
+                      CHIP_COLORS[index % CHIP_COLORS.length],
+                    )}
+                  >
                     <reason.icon className="size-6 text-white" aria-hidden="true" />
                   </span>
 
