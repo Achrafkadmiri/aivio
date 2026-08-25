@@ -25,6 +25,7 @@ import { cn, formatCredits } from "@/lib/utils";
 import { Logo } from "./logo";
 import { Button } from "@/components/ui/button";
 import { Tooltip } from "@/components/ui/tooltip";
+import { useSidebarCollapsed, setSidebarCollapsed } from "@/components/providers/sidebar-provider";
 import {
   DropdownRoot,
   DropdownTrigger,
@@ -32,8 +33,6 @@ import {
   DropdownItem,
   DropdownSeparator,
 } from "@/components/ui/dropdown";
-
-const SIDEBAR_COLLAPSED_KEY = "sidebar-collapsed";
 
 type UsageResponse = { credit_balance: number };
 
@@ -229,27 +228,13 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   // Desktop-only icon rail toggle — mobile already collapses the whole nav
   // behind the hamburger drawer, so a second "shrink to icons" mode there
-  // wouldn't do anything useful. Starts expanded (matching the server-
-  // rendered markup, so there's no hydration mismatch) and reads the saved
-  // preference on mount; that one-frame flash from expanded to the stored
-  // collapsed state is the standard, accepted trade-off for a client-only
-  // preference like this with no server-side signal (e.g. a cookie) to read
-  // it from up front. Also listens for the "storage" event so toggling the
-  // sidebar in one tab keeps other open tabs of the app in sync.
-  const [collapsed, setCollapsed] = useState(false);
-  useEffect(() => {
-    const sync = () => setCollapsed(localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === "true");
-    sync();
-    window.addEventListener("storage", sync);
-    return () => window.removeEventListener("storage", sync);
-  }, []);
-  const toggleCollapsed = () => {
-    setCollapsed((prev) => {
-      const next = !prev;
-      localStorage.setItem(SIDEBAR_COLLAPSED_KEY, String(next));
-      return next;
-    });
-  };
+  // wouldn't do anything useful. State lives in sidebar-provider (not local
+  // state) so other pages — e.g. generate-workspace.tsx's fixed composer
+  // bar, which has to manually clear the sidebar's width since fixed
+  // positioning ignores the normal flex layout — can read the live value
+  // too, without prop-drilling through every layout in between.
+  const collapsed = useSidebarCollapsed();
+  const toggleCollapsed = () => setSidebarCollapsed(!collapsed);
 
   if (isLoading || isError) {
     return (

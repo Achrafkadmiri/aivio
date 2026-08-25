@@ -10,6 +10,7 @@ import { TextToImageForm } from "./text-to-image-form";
 import { JobStatusCard } from "./job-status-card";
 import { MODALITIES } from "./modality-switcher";
 import { useGeneration } from "@/hooks/use-generation";
+import { useSidebarCollapsed } from "@/components/providers/sidebar-provider";
 import { cn, formatCredits } from "@/lib/utils";
 import { apiFetch } from "@/lib/api-client";
 import {
@@ -36,6 +37,7 @@ export function GenerateStudio({ type }: { type: GenerationType }) {
   const [activeIsVideo, setActiveIsVideo] = useState(true);
   const generation = useGeneration(activeJobId);
   const active = MODALITIES.find((m) => m.type === type) ?? MODALITIES[0];
+  const sidebarCollapsed = useSidebarCollapsed();
 
   // The composer's pill row (model, duration, resolution, aspect ratio,
   // format, settings, submit) wraps onto more lines the narrower the
@@ -207,12 +209,26 @@ export function GenerateStudio({ type }: { type: GenerationType }) {
       {/* Docked to the bottom of the viewport rather than sitting inline in
           a two-column layout — matches ArtCraft's floating prompt bar, but
           full-width rather than a centered column: it spans the whole
-          bottom edge (minus px-4 breathing room). lg:pl-64 clears the
-          persistent w-60 sidebar plus a bit of extra breathing room.
-          Deliberately
-          a sibling of the [zoom:0.7] div above, not a child — see the comment
-          on the return's opening fragment. */}
-      <div className="pointer-events-none fixed inset-x-0 bottom-4 z-30 px-4 lg:pl-64">
+          bottom edge (minus px-4 breathing room). Deliberately a sibling of
+          the [zoom:0.7] div above, not a child — see the comment on the
+          return's opening fragment.
+
+          Being `fixed` means it's positioned against the viewport, not the
+          flex layout AppShell's <main> sits in, so it can't just inherit
+          the sidebar's width the way <main> does automatically — it has to
+          clear the sidebar with its own left padding, kept in sync with
+          the live collapsed state via sidebar-provider (w-60 expanded / w-16
+          collapsed, each plus that column's ml-3 + the flex gap-3 to
+          <main>, rounded up to the nearest spacing step, plus a bit of
+          extra breathing room). Forgetting this is exactly why the bar
+          used to stay pinned to the expanded width and not visibly grow
+          when the sidebar collapsed. */}
+      <div
+        className={cn(
+          "pointer-events-none fixed inset-x-0 bottom-4 z-30 px-4",
+          sidebarCollapsed ? "lg:pl-24" : "lg:pl-64",
+        )}
+      >
         <div ref={composerRef} className="pointer-events-auto w-full">
           {type === "text-to-video" && (
             <TextToVideoForm
