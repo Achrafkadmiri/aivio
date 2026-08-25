@@ -21,7 +21,6 @@ import {
   Zap,
 } from "lucide-react";
 import { cn, formatCredits } from "@/lib/utils";
-import { CurrencySelector } from "@/components/currency-selector";
 import { Logo } from "./logo";
 import { Button } from "@/components/ui/button";
 import {
@@ -228,7 +227,6 @@ export function AppShell({ children }: { children: ReactNode }) {
           <div className="hidden lg:block" />
 
           <div className="flex items-center gap-3">
-            <CurrencySelector className="hidden sm:inline-flex" />
             <CreditsBadge />
 
             <DropdownRoot>
