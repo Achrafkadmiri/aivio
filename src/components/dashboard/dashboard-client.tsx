@@ -77,10 +77,27 @@ export function DashboardClient() {
       <div className="grid gap-4 lg:grid-cols-3">
         <Card
           variant="standard"
-          className="relative overflow-hidden p-6 sm:p-8 lg:col-span-2 hover:translate-y-0 hover:shadow-card"
+          onMouseMove={(e) => {
+            const rect = e.currentTarget.getBoundingClientRect();
+            e.currentTarget.style.setProperty("--spot-x", `${e.clientX - rect.left}px`);
+            e.currentTarget.style.setProperty("--spot-y", `${e.clientY - rect.top}px`);
+          }}
+          className="group relative overflow-hidden p-6 sm:p-8 lg:col-span-2 hover:translate-y-0 hover:shadow-card"
         >
+          {/* Ambient corner glow at rest — crossfades out for the cursor
+              spotlight below once hovered. */}
           <div
-            className="pointer-events-none absolute -top-24 -right-24 size-64 rounded-full bg-brand opacity-40 blur-3xl"
+            className="pointer-events-none absolute -top-24 -right-24 size-64 rounded-full bg-brand opacity-40 blur-3xl transition-opacity duration-300 group-hover:opacity-0"
+            aria-hidden="true"
+          />
+          {/* Cursor spotlight — same blurred-solid technique as the glow
+              above (see globals.css: no gradient() anywhere in this system),
+              just repositioned live from onMouseMove instead of pinned to a
+              corner, so it reads as the same glow "picked up" and following
+              the pointer rather than a second, different effect. */}
+          <div
+            className="pointer-events-none absolute size-72 -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand opacity-0 blur-3xl transition-opacity duration-300 group-hover:opacity-40"
+            style={{ left: "var(--spot-x, 50%)", top: "var(--spot-y, 0%)" }}
             aria-hidden="true"
           />
           <div className="relative flex items-center gap-2 text-caption text-muted">
