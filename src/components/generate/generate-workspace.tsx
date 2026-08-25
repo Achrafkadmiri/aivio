@@ -10,6 +10,7 @@ import { TextToImageForm } from "./text-to-image-form";
 import { JobStatusCard } from "./job-status-card";
 import { MODALITIES } from "./modality-switcher";
 import { useGeneration } from "@/hooks/use-generation";
+import { useSpotlight } from "@/hooks/use-spotlight";
 import { useSidebarCollapsed } from "@/components/providers/sidebar-provider";
 import { cn, formatCredits } from "@/lib/utils";
 import { apiFetch } from "@/lib/api-client";
@@ -38,6 +39,7 @@ export function GenerateStudio({ type }: { type: GenerationType }) {
   const generation = useGeneration(activeJobId);
   const active = MODALITIES.find((m) => m.type === type) ?? MODALITIES[0];
   const sidebarCollapsed = useSidebarCollapsed();
+  const spotlight = useSpotlight<HTMLDivElement>();
 
   // The composer's pill row (model, duration, resolution, aspect ratio,
   // format, settings, submit) wraps onto more lines the narrower the
@@ -182,9 +184,20 @@ export function GenerateStudio({ type }: { type: GenerationType }) {
             // boxes (dashed border-brand, tinted icon ring), so "this is
             // where your creation will appear" reads consistently the very
             // first time someone lands here and every time after.
-            <div className="relative flex h-full min-h-[50vh] flex-col items-center justify-center overflow-hidden rounded-3xl border-2 border-dashed border-brand/15 bg-surface-2/20 p-10 text-center">
+            <div
+              {...spotlight}
+              className="group relative flex h-full min-h-[50vh] flex-col items-center justify-center overflow-hidden rounded-3xl border-2 border-dashed border-brand/15 bg-surface-2/20 p-10 text-center"
+            >
+              {/* Ambient drifting glow at rest — crossfades out for the
+                  cursor spotlight below once hovered. */}
               <div
-                className="pointer-events-none absolute -top-24 left-1/2 size-[34rem] -translate-x-1/2 bg-brand opacity-25 blur-3xl animate-blob-float"
+                className="pointer-events-none absolute -top-24 left-1/2 size-[34rem] -translate-x-1/2 bg-brand opacity-25 blur-3xl transition-opacity duration-300 animate-blob-float group-hover:opacity-0"
+                aria-hidden="true"
+              />
+              {/* Cursor spotlight — see use-spotlight.ts. */}
+              <div
+                className="pointer-events-none absolute size-[34rem] -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand opacity-0 blur-3xl transition-opacity duration-300 group-hover:opacity-25"
+                style={{ left: "var(--spot-x, 50%)", top: "var(--spot-y, 0%)" }}
                 aria-hidden="true"
               />
 

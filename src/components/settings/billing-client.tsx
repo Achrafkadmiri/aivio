@@ -12,6 +12,7 @@ import { RechargePacks } from "@/components/settings/recharge-packs";
 import { PlanPrice } from "@/components/pricing/plan-price";
 import { CreditValue } from "@/components/credit-value";
 import { CurrencySelector } from "@/components/currency-selector";
+import { useSpotlight } from "@/hooks/use-spotlight";
 
 type SubscriptionResponse = {
   tier: string;
@@ -35,6 +36,7 @@ function useSubscription() {
 
 export function BillingClient() {
   const { data, isLoading } = useSubscription();
+  const spotlight = useSpotlight<HTMLDivElement>();
 
   if (isLoading || !data) {
     return (
@@ -56,9 +58,21 @@ export function BillingClient() {
         <CurrencySelector />
       </div>
 
-      <Card variant="standard" className="relative overflow-hidden hover:translate-y-0 hover:shadow-card">
+      <Card
+        variant="standard"
+        {...spotlight}
+        className="group relative overflow-hidden hover:translate-y-0 hover:shadow-card"
+      >
+        {/* Ambient corner glow at rest — crossfades out for the cursor
+            spotlight below once hovered. */}
         <div
-          className="pointer-events-none absolute -top-20 -right-20 size-56 rounded-full bg-brand opacity-30 blur-3xl"
+          className="pointer-events-none absolute -top-20 -right-20 size-56 rounded-full bg-brand opacity-30 blur-3xl transition-opacity duration-300 group-hover:opacity-0"
+          aria-hidden="true"
+        />
+        {/* Cursor spotlight — see use-spotlight.ts. */}
+        <div
+          className="pointer-events-none absolute size-56 -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand opacity-0 blur-3xl transition-opacity duration-300 group-hover:opacity-30"
+          style={{ left: "var(--spot-x, 100%)", top: "var(--spot-y, 0%)" }}
           aria-hidden="true"
         />
         <div className="relative flex items-center justify-between">
