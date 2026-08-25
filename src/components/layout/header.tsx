@@ -50,7 +50,7 @@ export function Header() {
                 key={link.href}
                 href={link.href}
                 className={cn(
-                  "relative py-2 text-body-sm font-medium transition-colors",
+                  "font-display relative py-2 text-body-sm font-medium transition-colors",
                   active ? "text-ink" : "text-muted hover:text-ink",
                 )}
               >

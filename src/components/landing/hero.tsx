@@ -8,11 +8,14 @@ import { HeroDemoWidget } from "./hero-demo-widget";
 import { SHOWCASE_VIDEOS } from "@/lib/showcase-media";
 import { heroContainerVariants, heroWordVariants } from "@/lib/animations";
 
-// Two-tone split mirroring leonardo.ai's own hero headline structure
-// ("THE AI IMAGE GENERATOR FOR AMBITIOUS CREATIVES") — adapted to what
-// Vixerra actually does (video-first, not image-first).
-const TITLE_WORDS_WHITE = ["THE", "AI", "VIDEO"];
-const TITLE_WORDS_ACCENT = ["GENERATOR", "FOR", "AMBITIOUS", "CREATORS"];
+// Bold grotesk statement + a short italic-serif line underneath — the same
+// two-beat structure ArtCraft uses for "Controllable AI / for artists.":
+// one all-caps declarative line the eye reads first, then a quieter,
+// lowercase editorial line that reads more like a considered subhead than
+// another shouted headline.
+const TITLE_WORDS = ["THE", "AI", "VIDEO"];
+const TITLE_ACCENT_WORD = "GENERATOR";
+const TITLE_SCRIPT_LINE = "for ambitious creators.";
 
 export function Hero() {
   const bgVideo = SHOWCASE_VIDEOS.find((v) => v.id === "cinematic-scene") ?? SHOWCASE_VIDEOS[0];
@@ -46,7 +49,7 @@ export function Hero() {
         className="pointer-events-none absolute inset-0"
         style={{
           background:
-            "radial-gradient(ellipse 80% 50% at 50% -20%, rgb(124 92 252 / 0.25) 0%, transparent 100%)",
+            "radial-gradient(ellipse 80% 50% at 50% -20%, rgb(255 77 35 / 0.25) 0%, transparent 100%)",
         }}
         aria-hidden="true"
       />
@@ -74,9 +77,9 @@ export function Hero() {
             variants={shouldReduceMotion ? undefined : heroContainerVariants}
             initial="hidden"
             animate="visible"
-            className="mt-6 text-4xl leading-[0.95] font-black tracking-tight text-white uppercase sm:text-5xl md:text-6xl lg:text-display"
+            className="font-display mt-6 text-4xl leading-[0.95] font-bold tracking-tight text-white uppercase sm:text-5xl md:text-6xl lg:text-display"
           >
-            {TITLE_WORDS_WHITE.map((word, i) => (
+            {TITLE_WORDS.map((word, i) => (
               <motion.span
                 key={`w-${i}`}
                 variants={shouldReduceMotion ? undefined : heroWordVariants}
@@ -85,16 +88,22 @@ export function Hero() {
                 {word}
               </motion.span>
             ))}
-            {TITLE_WORDS_ACCENT.map((word, i) => (
-              <motion.span
-                key={`a-${i}`}
-                variants={shouldReduceMotion ? undefined : heroWordVariants}
-                className="mr-[0.25em] inline-block text-brand"
-              >
-                {word}
-              </motion.span>
-            ))}
+            <motion.span
+              variants={shouldReduceMotion ? undefined : heroWordVariants}
+              className="inline-block text-brand"
+            >
+              {TITLE_ACCENT_WORD}
+            </motion.span>
           </motion.h1>
+
+          <motion.p
+            initial={shouldReduceMotion ? undefined : { opacity: 0, y: 20, filter: "blur(6px)" }}
+            animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1], delay: 0.5 }}
+            className="text-accent-script mt-2 text-3xl text-white/90 sm:text-4xl md:text-5xl"
+          >
+            {TITLE_SCRIPT_LINE}
+          </motion.p>
 
           <motion.p
             initial={shouldReduceMotion ? undefined : { opacity: 0, y: 30 }}
@@ -115,7 +124,7 @@ export function Hero() {
           >
             <Link
               href="/signup"
-              className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-white px-7 py-3.5 text-label font-semibold text-black transition-transform duration-300 hover:scale-[1.02] active:scale-[0.98] sm:w-auto sm:px-6 sm:py-3"
+              className="font-display inline-flex w-full items-center justify-center gap-2 rounded-full bg-white px-7 py-3.5 text-label font-semibold text-black transition-transform duration-300 hover:scale-[1.02] active:scale-[0.98] sm:w-auto sm:px-6 sm:py-3"
             >
               Start creating free
               <ArrowRight className="size-4" aria-hidden="true" />

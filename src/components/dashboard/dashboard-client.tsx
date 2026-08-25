@@ -56,7 +56,7 @@ export function DashboardClient() {
     <div className="space-y-8">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-heading font-bold text-ink">
+          <h1 className="font-display text-heading font-bold tracking-tight text-ink">
             Welcome back, {user.name.split(" ")[0]}
           </h1>
           <p className="mt-2 text-body-sm text-muted">
@@ -88,7 +88,7 @@ export function DashboardClient() {
             <Zap className="size-3.5 text-brand" aria-hidden="true" />
             Credits remaining
           </div>
-          <p className="relative mt-2 text-heading font-bold text-ink sm:text-display">
+          <p className="font-display relative mt-2 text-heading font-bold tracking-tight text-ink sm:text-display">
             {formatCredits(creditBalance)}
           </p>
           <p className="relative mt-1 text-body-sm text-muted">

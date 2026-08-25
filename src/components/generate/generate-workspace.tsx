@@ -182,7 +182,7 @@ export function GenerateStudio({ type }: { type: GenerationType }) {
             // first time someone lands here and every time after.
             <div className="relative flex h-full min-h-[50vh] flex-col items-center justify-center overflow-hidden rounded-3xl border-2 border-dashed border-brand/15 bg-surface-2/20 p-10 text-center">
               <div
-                className="pointer-events-none absolute -top-24 left-1/2 size-[34rem] -translate-x-1/2 rounded-full opacity-25 blur-3xl animate-glow-float"
+                className="pointer-events-none absolute -top-24 left-1/2 size-[34rem] -translate-x-1/2 opacity-25 blur-3xl animate-blob-float"
                 style={{ background: "var(--gradient-primary-radial)" }}
                 aria-hidden="true"
               />
