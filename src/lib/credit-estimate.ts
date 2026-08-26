@@ -95,6 +95,11 @@ const QUALITY_IMAGE_MODELS = new Set([
   " /recraft/recraftv4-1-pro",
   "  leonardo/phoenix-1.0",
   "  xai/grok-imagine-image-quality",
+  // Added frontend-only (see cloudflare-models.ts) — same judgment call as
+  // the three ids above (own label says "pro"/flagship), not yet a real
+  // priced rate since the backend integration isn't wired up.
+  "google/nano-banana-pro",
+  "openai/gpt-image-2",
 ]);
 const FAST_IMAGE_CREDITS = 1;
 const QUALITY_IMAGE_CREDITS = 5;

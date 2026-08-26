@@ -5,19 +5,19 @@ import Link from "next/link";
 import { Play } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { TiltCard } from "@/components/marketing/tilt-card";
-import { SHOWCASE_VIDEOS, type ShowcaseVideo } from "@/lib/showcase-media";
-import { NANO_BANANA_IMAGES, type NanoBananaImage } from "@/lib/nano-banana-showcase";
-import { IMAGE_MODELS, VIDEO_MODELS, SEEDANCE2_MODEL_ID } from "@/lib/constants";
+import { SEEDANCE25_SHOWCASE_VIDEOS, type ShowcaseVideo } from "@/lib/showcase-media";
+import { GPT_IMAGE_2_IMAGES, type GptImage2Image } from "@/lib/gpt-image-2-showcase";
+import { IMAGE_MODELS, VIDEO_MODELS, SEEDANCE_MODEL_ID } from "@/lib/constants";
 import { useLazyVideo } from "@/hooks/use-lazy-video";
 
-// Every curated video sample comes from the same live model (Seedance 2.0);
-// every curated image sample comes from the same live model (Nano Banana 2
-// Lite). Reading the id from the registry (not retyping it) means it stays
-// correct even though some Cloudflare catalog ids carry leading-whitespace
+// Every curated video sample comes from the same live model (Seedance 2.5);
+// every curated image sample comes from the same live model (GPT Image 2).
+// Reading the id from the registry (not retyping it) means it stays correct
+// even though some Cloudflare catalog ids carry leading-whitespace
 // corruption (see cloudflare-models.ts) — round-tripping the id verbatim
 // through the URL still lands back on the same registry entry.
-const SEEDANCE_2 = VIDEO_MODELS.find((m) => m.id === SEEDANCE2_MODEL_ID);
-const NANO_BANANA_MODEL = IMAGE_MODELS.find((m) => m.label === "Nano Banana 2 Lite");
+const SEEDANCE_25 = VIDEO_MODELS.find((m) => m.id === SEEDANCE_MODEL_ID);
+const GPT_IMAGE_2 = IMAGE_MODELS.find((m) => m.label === "GPT Image 2");
 
 // CSS-column masonry (higgsfield-style preset gallery) rather than a fixed
 // grid-flow-dense bento — item height drives the offset layout naturally,
@@ -39,14 +39,15 @@ function VideoTile({ video }: { video: ShowcaseVideo }) {
   const [loaded, setLoaded] = useState(false);
   const [errored, setErrored] = useState(false);
 
-  const tryHref = `/generate?model=${encodeURIComponent(SEEDANCE2_MODEL_ID)}&prompt=${encodeURIComponent(video.prompt)}`;
+  const targetModelId = SEEDANCE_25?.id ?? SEEDANCE_MODEL_ID;
+  const tryHref = `/generate?model=${encodeURIComponent(targetModelId)}&prompt=${encodeURIComponent(video.prompt)}`;
 
   return (
     <TiltCard className="mb-2 block break-inside-avoid overflow-hidden rounded-lg sm:mb-3">
       <Link
         href={tryHref}
         ref={containerRef}
-        aria-label={`Try Seedance 2.0 with prompt: ${video.prompt}`}
+        aria-label={`Try Seedance 2.5 with prompt: ${video.prompt}`}
         className={cn("group relative block w-full bg-surface-2", VIDEO_ASPECT[video.tile])}
       >
         {!loaded && !errored && (
@@ -87,11 +88,11 @@ function VideoTile({ video }: { video: ShowcaseVideo }) {
 // badge/caption chrome (the model identity is carried once by the section
 // header above the grid, not repeated on every tile). The whole tile is
 // still the tap target for "Try this model", just without a visible label.
-function ImageTile({ image }: { image: NanoBananaImage }) {
+function ImageTile({ image }: { image: GptImage2Image }) {
   const [loaded, setLoaded] = useState(false);
   const [errored, setErrored] = useState(false);
-  const tryHref = NANO_BANANA_MODEL
-    ? `/generate/image?model=${encodeURIComponent(NANO_BANANA_MODEL.id)}&prompt=${encodeURIComponent(image.prompt)}`
+  const tryHref = GPT_IMAGE_2
+    ? `/generate/image?model=${encodeURIComponent(GPT_IMAGE_2.id)}&prompt=${encodeURIComponent(image.prompt)}`
     : "/generate/image";
 
   return (
@@ -111,7 +112,7 @@ function ImageTile({ image }: { image: NanoBananaImage }) {
           // load-distance calculation misfires and the image never crosses the
           // threshold, especially combined with a zero-height skeleton state
           // like this tile's — the image gets stuck forever. Eager-loading a
-          // gallery of ~11 images is not a real perf concern.
+          // gallery of ~8 images is not a real perf concern.
           // eslint-disable-next-line @next/next/no-img-element -- remote fal.ai/ghost CDN thumbnails, no next/image domain config for these hosts
           <img
             src={image.url}
@@ -154,17 +155,17 @@ function ShowcaseSection({
 export function ShowcaseTabs() {
   return (
     <div className="space-y-16">
-      {SEEDANCE_2 && (
-        <ShowcaseSection name={SEEDANCE_2.label} description={SEEDANCE_2.description}>
-          {SHOWCASE_VIDEOS.map((video) => (
+      {SEEDANCE_25 && (
+        <ShowcaseSection name={SEEDANCE_25.label} description={SEEDANCE_25.description}>
+          {SEEDANCE25_SHOWCASE_VIDEOS.map((video) => (
             <VideoTile key={video.id} video={video} />
           ))}
         </ShowcaseSection>
       )}
 
-      {NANO_BANANA_MODEL && (
-        <ShowcaseSection name={NANO_BANANA_MODEL.label} description={NANO_BANANA_MODEL.description}>
-          {NANO_BANANA_IMAGES.map((image) => (
+      {GPT_IMAGE_2 && (
+        <ShowcaseSection name={GPT_IMAGE_2.label} description={GPT_IMAGE_2.description}>
+          {GPT_IMAGE_2_IMAGES.map((image) => (
             <ImageTile key={image.id} image={image} />
           ))}
         </ShowcaseSection>

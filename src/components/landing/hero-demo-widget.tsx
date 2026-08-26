@@ -1,12 +1,25 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import { useReducedMotion } from "framer-motion";
 import { Sparkles, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 const MODEL_PILLS = ["Seedance 2.5", "Seedance 2.0", "Recraft"];
+
+// Rotates the empty-state placeholder through a few real prompt ideas
+// (pulled from the same curated set shown in the Showcase section below)
+// instead of sitting on one static line — stops as soon as the visitor
+// types anything, since the native placeholder is hidden once there's a
+// value. Static on prefers-reduced-motion.
+const PLACEHOLDER_PROMPTS = [
+  "A lone astronaut walking across a rust-colored Martian plain at dusk…",
+  "A flamenco dancer alone in a dark practice room, dust lifting off the boards…",
+  "A vaporwave poster with a Roman bust statue and a pink-and-cyan grid…",
+  "A night rally car drifting through a gravel corner in the pines…",
+];
 
 /**
  * Decorative-but-convincing "try it now" widget, echoing vivideo.ai's
@@ -16,8 +29,18 @@ const MODEL_PILLS = ["Seedance 2.5", "Seedance 2.0", "Recraft"];
  */
 export function HeroDemoWidget() {
   const router = useRouter();
+  const shouldReduceMotion = useReducedMotion();
   const [prompt, setPrompt] = useState("");
   const [model, setModel] = useState(MODEL_PILLS[0]);
+  const [placeholderIndex, setPlaceholderIndex] = useState(0);
+
+  useEffect(() => {
+    if (shouldReduceMotion) return;
+    const id = setInterval(() => {
+      setPlaceholderIndex((i) => (i + 1) % PLACEHOLDER_PROMPTS.length);
+    }, 3600);
+    return () => clearInterval(id);
+  }, [shouldReduceMotion]);
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -35,7 +58,7 @@ export function HeroDemoWidget() {
           <input
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
-            placeholder="A lone astronaut walking across a rust-colored Martian plain at dusk…"
+            placeholder={PLACEHOLDER_PROMPTS[placeholderIndex]}
             className="w-full bg-transparent text-body-sm text-ink-soft placeholder:text-muted focus:outline-none"
           />
         </div>

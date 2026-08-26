@@ -291,6 +291,48 @@
     color: var(--color-surface);
   }
 
+  /* Custom scrollbar — the default OS scrollbar (light gray, ~15-17px) reads
+     as unstyled chrome against this app's near-black surfaces. Thin,
+     translucent-white by default (echoes --color-line's translucent-white
+     border treatment rather than an opaque gray), brand-ember on hover —
+     the same "brand reserved for focus/active states" rule already used for
+     :focus-visible above. Applied to `*` (not just html/body) since
+     ::-webkit-scrollbar doesn't inherit — every internal scroll container
+     (dropdowns, modals, overflow panels) should look the same, not just the
+     page scrollbar. Firefox only supports the flat scrollbar-color pair (no
+     hover state); WebKit browsers get the full treatment below.
+     `background-clip: padding-box` on the thumb's transparent border insets
+     it slightly from the track edges instead of running flush; the track
+     itself stays transparent so it blends into whatever surface it sits on. */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(255 255 255 / 0.15) transparent;
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background-color: rgb(255 255 255 / 0.15);
+    border-radius: var(--radius-full);
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: rgb(255 77 35 / 0.45);
+  }
+
+  ::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+
   /* Belt-and-suspenders on top of the per-component motion-safe:/
      motion-reduce: variants used everywhere above: forces any animation or
      transition (ours or a future one) to be effectively instant when the
