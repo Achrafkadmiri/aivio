@@ -82,12 +82,13 @@ function VideoTile({ video }: { video: ShowcaseVideo }) {
   );
 }
 
-// Renders each image at its own natural aspect ratio (no forced crop) so
-// the column layout produces a genuinely uneven, poster-wall masonry —
-// matching higgsfield's Explore grid exactly: plain images, no per-tile
-// badge/caption chrome (the model identity is carried once by the section
-// header above the grid, not repeated on every tile). The whole tile is
-// still the tap target for "Try this model", just without a visible label.
+// Same fixed-aspect + object-cover crop the hero's film-reel frames use
+// (see hero.tsx's ReelFrame) instead of the natural-aspect/no-crop masonry
+// tiles the video section above still uses — every tile bottoms out at the
+// same edge row by row, a structured grid rather than a poster-wall of
+// uneven heights. No per-tile badge/caption chrome — the model identity is
+// carried once by the section header above the grid, not repeated on every
+// tile. The whole tile is still the tap target for "Try this model".
 function ImageTile({ image }: { image: GptImage2Image }) {
   const [loaded, setLoaded] = useState(false);
   const [errored, setErrored] = useState(false);
@@ -96,30 +97,34 @@ function ImageTile({ image }: { image: GptImage2Image }) {
     : "/generate/image";
 
   return (
-    <TiltCard className="mb-2 block break-inside-avoid overflow-hidden rounded-lg sm:mb-3">
-      <Link href={tryHref} title={image.prompt} className="group relative block w-full bg-surface-2">
+    <TiltCard className="block overflow-hidden rounded-lg">
+      <Link
+        href={tryHref}
+        title={image.prompt}
+        className="group relative block aspect-[3/4] w-full bg-surface-2"
+      >
         {!loaded && !errored && (
-          <div className="aspect-[3/4] w-full animate-pulse bg-gradient-to-br from-surface-3 to-surface-2" />
+          <div className="absolute inset-0 animate-pulse bg-gradient-to-br from-surface-3 to-surface-2" />
         )}
 
         {errored ? (
-          <div className="flex aspect-[3/4] w-full items-center justify-center bg-gradient-to-br from-surface-3 to-brand/10">
+          <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-surface-3 to-brand/10">
             <Play className="size-8 text-muted" aria-hidden="true" />
           </div>
         ) : (
-          // No loading="lazy" here: native lazy-loading inside a CSS multi-column
-          // (columns-*) masonry has a long-standing Chromium bug where the
-          // load-distance calculation misfires and the image never crosses the
-          // threshold, especially combined with a zero-height skeleton state
-          // like this tile's — the image gets stuck forever. Eager-loading a
-          // gallery of ~8 images is not a real perf concern.
-          // eslint-disable-next-line @next/next/no-img-element -- remote fal.ai/ghost CDN thumbnails, no next/image domain config for these hosts
+          // Eager (no loading="lazy"), matching the hero's ReelFrame images —
+          // lazy-loading this small ~8-image gallery meant a visible blank
+          // beat while scrolling in, instead of the image already being
+          // there. The fixed aspect-[3/4] height means eager-loading these
+          // is not the perf concern it would've been on the old zero-height
+          // masonry skeleton (that was the reason lazy was avoided there too).
+          // eslint-disable-next-line @next/next/no-img-element -- remote fal.ai/jxp CDN thumbnails, no next/image domain config for these hosts
           <img
             src={image.url}
             alt={image.prompt}
             className={cn(
-              "block w-full rounded-lg transition-transform duration-500 group-hover:scale-105",
-              loaded ? "h-auto opacity-100" : "h-0 opacity-0",
+              "absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105",
+              loaded ? "opacity-100" : "opacity-0",
             )}
             onLoad={() => setLoaded(true)}
             onError={() => setErrored(true)}
@@ -134,20 +139,35 @@ function ImageTile({ image }: { image: GptImage2Image }) {
 // header (name + tagline), rather than repeating it on every tile — and
 // every model's section is always on the page, not gated behind a tab
 // switch. With only two live models here, both sections render stacked.
+// `layout` picks the tile arrangement: "masonry" keeps the video section's
+// CSS-column poster wall (tile height varies on purpose, see VIDEO_ASPECT);
+// "grid" is a real CSS grid so every row of fixed-aspect image tiles lines
+// up on the same bottom edge instead of trailing off unevenly.
 function ShowcaseSection({
   name,
   description,
+  layout = "masonry",
   children,
 }: {
   name: string;
   description: string;
+  layout?: "masonry" | "grid";
   children: ReactNode;
 }) {
   return (
     <div>
       <h3 className="text-heading font-extrabold uppercase tracking-tight text-brand">{name}</h3>
       <p className="mt-1 text-body text-muted">{description}</p>
-      <div className="mt-6 columns-2 gap-2 sm:columns-3 sm:gap-3 lg:columns-4">{children}</div>
+      <div
+        className={cn(
+          "mt-6",
+          layout === "grid"
+            ? "grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 lg:grid-cols-4"
+            : "columns-2 gap-2 sm:columns-3 sm:gap-3 lg:columns-4",
+        )}
+      >
+        {children}
+      </div>
     </div>
   );
 }
@@ -164,7 +184,7 @@ export function ShowcaseTabs() {
       )}
 
       {GPT_IMAGE_2 && (
-        <ShowcaseSection name={GPT_IMAGE_2.label} description={GPT_IMAGE_2.description}>
+        <ShowcaseSection name={GPT_IMAGE_2.label} description={GPT_IMAGE_2.description} layout="grid">
           {GPT_IMAGE_2_IMAGES.map((image) => (
             <ImageTile key={image.id} image={image} />
           ))}

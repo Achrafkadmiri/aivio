@@ -15,9 +15,17 @@ import { heroContainerVariants, heroWordVariants } from "@/lib/animations";
 // one all-caps declarative line the eye reads first, then a quieter,
 // lowercase editorial line that reads more like a considered subhead than
 // another shouted headline.
-const TITLE_WORDS = ["THE", "AI", "VIDEO"];
-const TITLE_ACCENT_WORD = "GENERATOR";
+// "STUDIO" instead of the old "GENERATOR" — the previous headline (and its
+// "// ...video generation" kicker) named only the video half of the product,
+// when Vixerra is equally an image generator (Nano Banana, GPT Image 2,
+// Recraft) with plain-language editing and reference-guided control on top,
+// same "AI creative studio" framing already used in the page's own <meta>
+// description. The capability row below the body copy makes that range
+// concrete instead of just asserting it.
+const TITLE_WORDS = ["THE", "AI", "VIDEO", "& IMAGE"];
+const TITLE_ACCENT_WORD = "STUDIO";
 const TITLE_SCRIPT_LINE = "for ambitious creators.";
+const CAPABILITIES = ["Text to Video", "Image to Video", "Text to Image", "Plain-language editing"];
 
 // One deliberate exception to "media only in the Showcase section" (see
 // showcase-tabs.tsx): a film-reel strip of real output is the hero's whole
@@ -98,7 +106,7 @@ export function Hero() {
             transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
             className="font-mono text-caption tracking-widest text-brand uppercase"
           >
-            {"// Cinematic-grade AI video generation"}
+            {"// Cinematic-grade AI video & image generation"}
           </motion.span>
 
           <motion.h1
@@ -139,16 +147,32 @@ export function Hero() {
             transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1], delay: 0.6 }}
             className="mx-auto mt-6 max-w-xl text-body-lg text-muted lg:mx-0"
           >
-            Describe a scene, animate a photo, or drop in audio. Vixerra generates
-            broadcast-ready video and imagery in minutes — no crew, no timeline,
-            no waiting.
+            Describe a scene, animate a photo, or edit an existing shot. Vixerra
+            generates and refines broadcast-ready video and imagery in minutes —
+            no crew, no timeline, no waiting.
           </motion.p>
+
+          <motion.div
+            initial={shouldReduceMotion ? undefined : { opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1], delay: 0.7 }}
+            className="mt-5 flex flex-wrap justify-center gap-2 lg:justify-start"
+          >
+            {CAPABILITIES.map((capability) => (
+              <span
+                key={capability}
+                className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-caption text-white/70"
+              >
+                {capability}
+              </span>
+            ))}
+          </motion.div>
 
           <motion.div
             initial={shouldReduceMotion ? undefined : { opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1], delay: 0.8 }}
-            className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row lg:justify-start"
+            className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row lg:justify-start"
           >
             <Link
               href="/signup"
