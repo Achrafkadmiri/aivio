@@ -149,6 +149,60 @@ export const CLOUDFLARE_MODELS: CloudflareModelConfig[] = [
     outputPath: ["image"],
     outputKind: "url",
   },
+  // Confirmed via Cloudflare's own model docs (developers.cloudflare.com/ai/
+  // models/google/nano-banana-pro/, checked 2026-08-26): id, input schema
+  // (prompt/aspect_ratio/output_format/image_size/image — image_input is an
+  // array field the dynamic form doesn't support yet, same reason the FLUX.2
+  // models are excluded above) and output schema (`result.image`, a URL) all
+  // match this registry's existing generic-model conventions exactly.
+  // Frontend-only for now — the Cloudflare Workers AI call itself runs in
+  // the separate aiVideo-backend repo, which needs this same entry (plus its
+  // Supabase Edge Function mirror) added before a real generation will
+  // succeed; until then this card routes to /generate but the request fails
+  // server-side.
+  {
+    id: "google/nano-banana-pro",
+    label: "Nano Banana Pro",
+    provider: "Google",
+    description: "Real Cloudflare Workers AI model — Google's higher-quality image model, 4K output & improved detail",
+    category: "text-to-image",
+    promptRequired: true,
+    image: "optional",
+    imageCfParam: "image",
+    fields: [
+      { key: "aspectRatio", cfParam: "aspect_ratio", label: "Aspect ratio", type: "select", options: ["1:1", "3:2", "2:3", "3:4", "4:3", "4:5", "5:4", "9:16", "16:9", "21:9"], defaultValue: "1:1" },
+      { key: "imageSize", cfParam: "image_size", label: "Resolution", type: "select", options: ["1K", "2K", "4K"], defaultValue: "1K" },
+      { key: "outputFormat", cfParam: "output_format", label: "Output format", type: "select", options: ["jpg", "png", "webp"], defaultValue: "png" },
+    ],
+    outputPath: ["image"],
+    outputKind: "url",
+  },
+  // Confirmed via Cloudflare's own model docs (developers.cloudflare.com/ai/
+  // models/openai/gpt-image-2/, checked 2026-08-26): id, input schema
+  // (prompt/quality/size/background/output_format — `images`, the edit-input
+  // field, is an array of up to 16 base64 images the dynamic form doesn't
+  // support yet, same reason the FLUX.2 models are excluded above, so this
+  // is text-to-image only here) and output schema (`result.image`, a URL)
+  // all match this registry's existing generic-model conventions. Same
+  // frontend-only caveat as Nano Banana Pro above — needs the matching
+  // aiVideo-backend entry before a real generation will succeed.
+  {
+    id: "openai/gpt-image-2",
+    label: "GPT Image 2",
+    provider: "OpenAI",
+    description: "Real Cloudflare Workers AI model — OpenAI's flagship image model, precise text rendering & photorealism",
+    category: "text-to-image",
+    promptRequired: true,
+    image: "none",
+    fields: [
+      { key: "quality", cfParam: "quality", label: "Quality", type: "select", options: ["low", "medium", "high", "auto"], defaultValue: "auto" },
+      { key: "size", cfParam: "size", label: "Size", type: "select", options: ["1024x1024", "1024x1536", "1536x1024", "auto"], defaultValue: "auto" },
+      { key: "background", cfParam: "background", label: "Background", type: "select", options: ["transparent", "opaque", "auto"], defaultValue: "auto" },
+      { key: "outputFormat", cfParam: "output_format", label: "Output format", type: "select", options: ["png", "webp", "jpeg"], defaultValue: "png" },
+    ],
+    outputPath: ["image"],
+    outputKind: "url",
+  },
   {
     id: "xai/grok-imagine-image",
     label: "Grok Imagine",

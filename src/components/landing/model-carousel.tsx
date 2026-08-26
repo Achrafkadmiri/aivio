@@ -2,24 +2,29 @@
 
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
-import { SHOWCASE_VIDEOS } from "@/lib/showcase-media";
-import { NANO_BANANA_IMAGES } from "@/lib/nano-banana-showcase";
-import { VIDEO_MODELS, IMAGE_MODELS, SEEDANCE2_MODEL_ID } from "@/lib/constants";
+import { SEEDANCE25_SHOWCASE_VIDEOS } from "@/lib/showcase-media";
+import { GPT_IMAGE_2_IMAGES } from "@/lib/gpt-image-2-showcase";
+import { VIDEO_MODELS, IMAGE_MODELS, SEEDANCE_MODEL_ID } from "@/lib/constants";
 import { useLazyVideo } from "@/hooks/use-lazy-video";
 
-const SEEDANCE_2 = VIDEO_MODELS.find((m) => m.id === SEEDANCE2_MODEL_ID);
-const NANO_BANANA = IMAGE_MODELS.find((m) => m.label === "Nano Banana 2 Lite");
+// This first card leads with Seedance 2.5 and GPT Image 2 — the two flagship
+// models, each shown with its own real output (see showcase-media.ts /
+// gpt-image-2-showcase.ts) rather than borrowing a sample from a different
+// model like the previous Seedance 2.0 / Nano Banana version of this card did.
+const SEEDANCE_25 = VIDEO_MODELS.find((m) => m.id === SEEDANCE_MODEL_ID);
+const GPT_IMAGE_2 = IMAGE_MODELS.find((m) => m.label === "GPT Image 2");
 // `.trim()` guards against the leading-whitespace id corruption some
 // CLOUDFLARE_MODELS entries carry (see cloudflare-models.ts) — matching on
 // label instead of id would be more fragile since ids are stable identifiers.
 const VEO_3_1 = VIDEO_MODELS.find((m) => m.id.trim() === "google/veo-3.1");
 const RECRAFT_4_1 = IMAGE_MODELS.find((m) => m.id.trim() === "recraft/recraftv4-1");
-const HERO_VIDEO = SHOWCASE_VIDEOS.find((v) => v.id === "cinematic-scene") ?? SHOWCASE_VIDEOS[0];
-const HERO_IMAGE = NANO_BANANA_IMAGES.find((i) => i.id === "vaporwave-poster") ?? NANO_BANANA_IMAGES[0];
+const HERO_VIDEO =
+  SEEDANCE25_SHOWCASE_VIDEOS.find((v) => v.id === "anime-breathing-clash") ?? SEEDANCE25_SHOWCASE_VIDEOS[0];
+const HERO_IMAGE = GPT_IMAGE_2_IMAGES.find((i) => i.id === "hero") ?? GPT_IMAGE_2_IMAGES[0];
 
 // Real, verified example outputs from each model's own fal.ai playground
 // page (curl-verified 200 OK on 2026-08-23) — one per additional model, same
-// sourcing standard as SHOWCASE_VIDEOS / NANO_BANANA_IMAGES.
+// sourcing standard as SEEDANCE25_SHOWCASE_VIDEOS / GPT_IMAGE_2_IMAGES.
 const VEO_3_1_VIDEO_URL = "https://v3.fal.media/files/penguin/D-wlVxx1E8BPr2AG9cxhb_output.mp4";
 const VEO_3_1_PROMPT =
   "First-person view soaring low over a medieval battlefield at dawn, gliding past clashing knights in armor, fire-lit arrows whizzing overhead, splintered catapults burning near fallen soldiers, flying inches above torn flags and mud-soaked ground, ambient sounds of swords striking, war cries, galloping hooves, and wind rushing in your ears, raw, terrifying, epic";
@@ -36,20 +41,20 @@ type ModelCard = {
 };
 
 const MODEL_CARDS: ModelCard[] = [
-  SEEDANCE_2 && {
+  SEEDANCE_25 && {
     kind: "video",
-    href: `/generate?model=${encodeURIComponent(SEEDANCE_2.id)}&prompt=${encodeURIComponent(HERO_VIDEO.prompt)}`,
-    label: SEEDANCE_2.label,
-    provider: SEEDANCE_2.provider,
-    description: SEEDANCE_2.description,
+    href: `/generate?model=${encodeURIComponent(SEEDANCE_25.id)}&prompt=${encodeURIComponent(HERO_VIDEO.prompt)}`,
+    label: SEEDANCE_25.label,
+    provider: SEEDANCE_25.provider,
+    description: SEEDANCE_25.description,
     mediaUrl: HERO_VIDEO.url,
   },
-  NANO_BANANA && {
+  GPT_IMAGE_2 && {
     kind: "image",
-    href: `/generate/image?model=${encodeURIComponent(NANO_BANANA.id)}&prompt=${encodeURIComponent(HERO_IMAGE.prompt)}`,
-    label: NANO_BANANA.label,
-    provider: NANO_BANANA.provider,
-    description: NANO_BANANA.description,
+    href: `/generate/image?model=${encodeURIComponent(GPT_IMAGE_2.id)}&prompt=${encodeURIComponent(HERO_IMAGE.prompt)}`,
+    label: GPT_IMAGE_2.label,
+    provider: GPT_IMAGE_2.provider,
+    description: GPT_IMAGE_2.description,
     mediaUrl: HERO_IMAGE.url,
   },
   VEO_3_1 && {
