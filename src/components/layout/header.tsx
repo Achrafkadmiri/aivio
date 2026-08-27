@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useMe } from "@/hooks/use-me";
@@ -16,33 +15,21 @@ const NAV_LINKS = [
   { href: "/gallery", label: "Gallery" },
 ];
 
+// Always-solid, compact bar — matches --color-surface everywhere on the
+// site (there's no light-mode page for a transparent-over-hero header to
+// earn its keep against), so a static hairline border reads cleaner than
+// the old scroll-triggered transparent-to-blurred crossfade.
 export function Header() {
   const { data: user } = useMe();
   const isAuthed = Boolean(user);
   const pathname = usePathname();
 
-  // Flat and transparent over the hero, picks up a hairline border + blur
-  // once content scrolls underneath — a static glass bar on every page
-  // (including short ones with no hero) reads as boilerplate.
-  const [scrolled, setScrolled] = useState(false);
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 12);
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
-
   return (
-    <header
-      className={cn(
-        "sticky top-0 z-20 border-b transition-colors duration-300",
-        scrolled ? "border-line bg-surface/75 backdrop-blur-lg" : "border-transparent bg-transparent",
-      )}
-    >
-      <div className="container-page flex h-16 items-center justify-between">
+    <header className="sticky top-0 z-20 border-b border-line bg-surface/95 backdrop-blur-lg">
+      <div className="container-page flex h-14 items-center justify-between">
         <Logo />
 
-        <nav className="hidden items-center gap-8 lg:flex">
+        <nav className="hidden items-center gap-6 lg:flex">
           {NAV_LINKS.map((link) => {
             const active = pathname === link.href;
             return (
@@ -63,7 +50,7 @@ export function Header() {
           })}
         </nav>
 
-        <div className="hidden items-center gap-5 lg:flex">
+        <div className="hidden items-center gap-4 lg:flex">
           {isAuthed ? (
             <Link href="/dashboard" className={buttonVariants({ size: "sm" })}>
               Dashboard
@@ -77,7 +64,7 @@ export function Header() {
                 Log in
               </Link>
               <Link href="/signup" className={buttonVariants({ size: "sm" })}>
-                Get started
+                Start for Free
               </Link>
             </>
           )}

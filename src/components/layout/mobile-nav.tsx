@@ -20,8 +20,8 @@ export function MobileNav({ isAuthed }: { isAuthed: boolean }) {
   const pathname = usePathname();
   const close = () => setOpen(false);
 
-  // Header applies backdrop-blur-lg to itself once the page scrolls (see
-  // header.tsx) — a backdrop-filter on an ancestor makes the browser treat
+  // Header applies backdrop-blur-lg to itself (see header.tsx) — a
+  // backdrop-filter on an ancestor makes the browser treat
   // position:fixed descendants as fixed to *that element's* box instead of
   // the viewport, so this panel would collapse down to the header's own
   // ~64px height instead of covering the screen. Portaling straight to
@@ -73,7 +73,7 @@ export function MobileNav({ isAuthed }: { isAuthed: boolean }) {
               Log in
             </Link>
             <Link href="/signup" onClick={close} className={buttonVariants({ className: "w-full" })}>
-              Get started
+              Start for Free
             </Link>
           </>
         )}

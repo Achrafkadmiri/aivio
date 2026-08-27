@@ -3,11 +3,14 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { useReducedMotion } from "framer-motion";
-import { Sparkles, ArrowRight } from "lucide-react";
+import { ImagePlus, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
 
 const MODEL_PILLS = ["Seedance 2.5", "Seedance 2.0", "Recraft"];
+// A real, in-range default for Seedance 2.5 (see SEEDANCE_RESOLUTIONS /
+// SEEDANCE_DURATION_MAX / SEEDANCE_ASPECT_RATIOS in constants.ts) — shown as
+// informational chrome only, not a claim that these are the only options.
+const SPECS_PILL = "720p · 30s · 16:9";
 
 // Rotates the empty-state placeholder through a few real prompt ideas
 // (pulled from the same curated set shown in the Showcase section below)
@@ -47,42 +50,46 @@ export function HeroDemoWidget() {
     router.push("/signup");
   }
 
+  function cycleModel() {
+    const i = MODEL_PILLS.indexOf(model);
+    setModel(MODEL_PILLS[(i + 1) % MODEL_PILLS.length]);
+  }
+
   return (
     <form
       onSubmit={handleSubmit}
       className="glass mx-auto mt-10 max-w-2xl rounded-2xl p-2 shadow-floating sm:p-3"
     >
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-        <div className="flex flex-1 items-center gap-2 px-3 py-2">
-          <Sparkles className="size-4 shrink-0 text-brand" aria-hidden="true" />
-          <input
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
-            placeholder={PLACEHOLDER_PROMPTS[placeholderIndex]}
-            className="w-full bg-transparent text-body-sm text-ink-soft placeholder:text-muted focus:outline-none"
-          />
-        </div>
-        <Button type="submit" className="shrink-0">
-          Generate <ArrowRight className="size-4" aria-hidden="true" />
+      <input
+        value={prompt}
+        onChange={(e) => setPrompt(e.target.value)}
+        placeholder={PLACEHOLDER_PROMPTS[placeholderIndex]}
+        className="w-full bg-transparent px-3 py-2 text-body-sm text-ink-soft placeholder:text-muted focus:outline-none"
+      />
+      <div className="mt-2 flex flex-wrap items-center gap-2 border-t border-line px-1 pt-3">
+        <button
+          type="button"
+          aria-label="Attach a reference image"
+          className="flex size-8 shrink-0 items-center justify-center rounded-full border border-line text-muted transition-colors hover:border-muted hover:text-ink-soft"
+        >
+          <ImagePlus className="size-4" aria-hidden="true" />
+        </button>
+
+        <button
+          type="button"
+          onClick={cycleModel}
+          className="rounded-full border border-line bg-white/5 px-3 py-1.5 font-mono text-caption text-ink-soft transition-colors hover:border-muted"
+        >
+          {model} <span className="text-muted">▾</span>
+        </button>
+
+        <span className="hidden rounded-full border border-line px-3 py-1.5 font-mono text-caption text-muted sm:inline-block">
+          {SPECS_PILL}
+        </span>
+
+        <Button type="submit" variant="accent" className="ml-auto shrink-0">
+          Generate AI Video <Sparkles className="size-4" aria-hidden="true" />
         </Button>
-      </div>
-      <div className="mt-2 flex flex-wrap items-center gap-2 border-t border-line px-3 pt-3">
-        <span className="text-caption text-muted">Model</span>
-        {MODEL_PILLS.map((m) => (
-          <button
-            key={m}
-            type="button"
-            onClick={() => setModel(m)}
-            className={cn(
-              "rounded-full border px-3 py-1 font-mono text-caption transition-colors",
-              model === m
-                ? "border-brand bg-brand/10 text-brand"
-                : "border-line text-muted hover:border-muted hover:text-ink-soft",
-            )}
-          >
-            {m}
-          </button>
-        ))}
       </div>
       <p className="mt-2 px-3 text-caption text-muted">
         Interactive preview — sign up to generate for real.
