@@ -12,8 +12,6 @@ const EDGE_API_URL = process.env.NEXT_PUBLIC_EDGE_API_URL ?? "";
 const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
-      { protocol: "https", hostname: "v3b.fal.media" },
-      { protocol: "https", hostname: "storage.googleapis.com" },
       { protocol: "https", hostname: "picsum.photos" },
       { protocol: "https", hostname: "pdbhvyklkrasersozbqe.supabase.co" }, // R2-backed uploads, served via the Edge Function
     ],

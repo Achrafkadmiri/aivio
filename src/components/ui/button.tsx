@@ -2,7 +2,7 @@ import { forwardRef, type ButtonHTMLAttributes } from "react";
 import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export type ButtonVariant = "primary" | "secondary" | "ghost" | "circular" | "accent";
+export type ButtonVariant = "primary" | "secondary" | "ghost" | "circular" | "accent" | "glass";
 export type ButtonSize = "default" | "sm" | "icon" | "icon-circular";
 
 // Focus ring comes from the global :focus-visible rule in globals.css —
@@ -35,6 +35,16 @@ const variants: Record<ButtonVariant, string> = {
     "border-0 rounded-full bg-white/5 text-muted hover:bg-white/10 hover:text-ink-soft active:scale-95",
   accent:
     "border-0 bg-brand text-white shadow-glow-md hover:bg-brand-hover hover:shadow-glow-lg hover:scale-[1.02] active:scale-[0.98] active:bg-brand-active disabled:opacity-40 disabled:hover:scale-100",
+  // Frosted "liquid glass" pill — see .btn-glass in globals.css for the
+  // gradient-reflection border. Used where a CTA needs to sit directly on
+  // top of busy media (hero) rather than a flat surface, without competing
+  // with the solid-white primary pill's visual weight. `relative` is
+  // required here (not baked into .btn-glass itself — see its comment) so
+  // the ::before gradient-border overlay has a containing block to anchor
+  // to; a call site that's already `fixed`/`absolute` for other reasons
+  // (e.g. BackToTop) satisfies that without needing this variant at all.
+  glass:
+    "btn-glass relative border-0 text-white hover:bg-white/12 hover:scale-[1.02] active:scale-[0.98]",
 };
 
 const sizes: Record<ButtonSize, string> = {

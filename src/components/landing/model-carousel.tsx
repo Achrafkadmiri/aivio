@@ -1,11 +1,13 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 import { SEEDANCE25_SHOWCASE_VIDEOS } from "@/lib/showcase-media";
 import { GPT_IMAGE_2_IMAGES } from "@/lib/gpt-image-2-showcase";
 import { VIDEO_MODELS, IMAGE_MODELS, SEEDANCE_MODEL_ID } from "@/lib/constants";
 import { useLazyVideo } from "@/hooks/use-lazy-video";
+import { cn } from "@/lib/utils";
 
 // This first card leads with Seedance 2.5 and GPT Image 2 — the two flagship
 // models, each shown with its own real output (see showcase-media.ts /
@@ -18,17 +20,19 @@ const GPT_IMAGE_2 = IMAGE_MODELS.find((m) => m.label === "GPT Image 2");
 // label instead of id would be more fragile since ids are stable identifiers.
 const VEO_3_1 = VIDEO_MODELS.find((m) => m.id.trim() === "google/veo-3.1");
 const RECRAFT_4_1 = IMAGE_MODELS.find((m) => m.id.trim() === "recraft/recraftv4-1");
+// Deliberately a different id than Hero's BG_VIDEO (also from
+// SEEDANCE25_SHOWCASE_VIDEOS) so this card doesn't repeat the exact clip the
+// visitor just saw playing behind the hero copy.
 const HERO_VIDEO =
-  SEEDANCE25_SHOWCASE_VIDEOS.find((v) => v.id === "anime-breathing-clash") ?? SEEDANCE25_SHOWCASE_VIDEOS[0];
+  SEEDANCE25_SHOWCASE_VIDEOS.find((v) => v.id === "night-rally-car") ?? SEEDANCE25_SHOWCASE_VIDEOS[0];
 const HERO_IMAGE = GPT_IMAGE_2_IMAGES.find((i) => i.id === "hero") ?? GPT_IMAGE_2_IMAGES[0];
 
-// Real, verified example outputs from each model's own fal.ai playground
-// page (curl-verified 200 OK on 2026-08-23) — one per additional model, same
-// sourcing standard as SEEDANCE25_SHOWCASE_VIDEOS / GPT_IMAGE_2_IMAGES.
-const VEO_3_1_VIDEO_URL = "https://v3.fal.media/files/penguin/D-wlVxx1E8BPr2AG9cxhb_output.mp4";
+// Local media only — one per additional model, sourced from public/media
+// (no external CDN), same as SEEDANCE25_SHOWCASE_VIDEOS / GPT_IMAGE_2_IMAGES.
+const VEO_3_1_VIDEO_URL = "/media/videos/makeup-girl.mp4";
 const VEO_3_1_PROMPT =
   "First-person view soaring low over a medieval battlefield at dawn, gliding past clashing knights in armor, fire-lit arrows whizzing overhead, splintered catapults burning near fallen soldiers, flying inches above torn flags and mud-soaked ground, ambient sounds of swords striking, war cries, galloping hooves, and wind rushing in your ears, raw, terrifying, epic";
-const RECRAFT_4_1_IMAGE_URL = "https://v3b.fal.media/files/b/0a9a2a9f/s5xQCa912mB4YWFRl3ggv_image.webp";
+const RECRAFT_4_1_IMAGE_URL = "/media/images/gpt-image-09.webp";
 const RECRAFT_4_1_PROMPT = "High-end skincare bottle floating on a swirl of cream texture, macro, soft pink palette";
 
 type ModelCard = {
@@ -101,15 +105,46 @@ function CarouselVideo({ src }: { src: string }) {
   );
 }
 
+const FILTERS = [
+  { value: "all", label: "All models" },
+  { value: "video", label: "Video models" },
+  { value: "image", label: "Image models" },
+] as const;
+type Filter = (typeof FILTERS)[number]["value"];
+
 // Large feature-card carousel, one per live model with curated examples —
 // mirrors higgsfield.ai's horizontal model-carousel pattern: big media
-// preview, title/description scrim, single "Open" CTA per card.
+// preview, title/description scrim, single "Open" CTA per card. Pill
+// segmented control filters by modality (migration brief §3, step 5's
+// "Video AI tools / Image AI tools" tab pattern) rather than a separate
+// tabbed UI — same card list, just narrowed.
 export function ModelCarousel() {
+  const [filter, setFilter] = useState<Filter>("all");
+
   if (MODEL_CARDS.length === 0) return null;
 
+  const visibleCards = filter === "all" ? MODEL_CARDS : MODEL_CARDS.filter((c) => c.kind === filter);
+
   return (
-    <div className="-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-2 sm:mx-0 sm:gap-5 sm:px-0">
-      {MODEL_CARDS.map((card) => (
+    <div>
+      <div className="mb-6 inline-flex items-center gap-1 rounded-full border border-line bg-surface-2 p-1">
+        {FILTERS.map((f) => (
+          <button
+            key={f.value}
+            type="button"
+            onClick={() => setFilter(f.value)}
+            className={cn(
+              "rounded-full px-4 py-1.5 text-label font-medium transition-colors",
+              filter === f.value ? "bg-brand text-white" : "text-muted hover:text-ink",
+            )}
+          >
+            {f.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-2 sm:mx-0 sm:gap-5 sm:px-0">
+        {visibleCards.map((card) => (
         <Link
           key={card.label}
           href={card.href}
@@ -118,7 +153,7 @@ export function ModelCarousel() {
           {card.kind === "video" ? (
             <CarouselVideo src={card.mediaUrl} />
           ) : (
-            // eslint-disable-next-line @next/next/no-img-element -- remote fal.ai CDN thumbnail, no next/image domain config for this host
+            // eslint-disable-next-line @next/next/no-img-element -- local asset from public/media
             <img
               src={card.mediaUrl}
               alt={card.label}
@@ -147,7 +182,8 @@ export function ModelCarousel() {
             </span>
           </div>
         </Link>
-      ))}
+        ))}
+      </div>
     </div>
   );
 }

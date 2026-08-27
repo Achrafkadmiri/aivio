@@ -1,12 +1,15 @@
 import { Hero } from "@/components/landing/hero";
 import { SeedancePromoBanner } from "@/components/landing/seedance-promo-banner";
+import { StatsStrip } from "@/components/landing/stats-strip";
+import { FeaturesShowcase } from "@/components/landing/features-showcase";
+import { CapabilityConcepts } from "@/components/landing/capability-concepts";
+import { HowItWorks } from "@/components/landing/how-it-works";
+import { LightBeam } from "@/components/marketing/light-beam";
 import { ModelStrip } from "@/components/landing/model-strip";
 import { ModelCarousel } from "@/components/landing/model-carousel";
 import { ShowcaseTabs } from "@/components/landing/showcase-tabs";
-import { HowItWorks } from "@/components/landing/how-it-works";
-import { FeaturesShowcase } from "@/components/landing/features-showcase";
-import { CapabilitiesGrid } from "@/components/landing/capabilities-grid";
-import { StatsStrip } from "@/components/landing/stats-strip";
+import { Personas } from "@/components/landing/personas";
+import { CreatorUseCases } from "@/components/landing/creator-use-cases";
 import { PricingPreview } from "@/components/landing/pricing-preview";
 import { FaqAccordion } from "@/components/landing/faq-accordion";
 import { CtaSection } from "@/components/landing/cta-section";
@@ -16,6 +19,12 @@ export default function LandingPage() {
     <>
       <Hero />
       <SeedancePromoBanner />
+      <StatsStrip />
+      <FeaturesShowcase />
+      <CapabilityConcepts />
+      <HowItWorks />
+
+      <LightBeam className="container-page" />
       <ModelStrip />
 
       <section id="showcase" className="container-page py-20 sm:py-28">
@@ -36,10 +45,8 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <HowItWorks />
-      <FeaturesShowcase />
-      <CapabilitiesGrid />
-      <StatsStrip />
+      <Personas />
+      <CreatorUseCases />
       <PricingPreview />
       <FaqAccordion />
       <CtaSection />

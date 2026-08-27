@@ -412,6 +412,77 @@
     border: 1px solid rgb(255 255 255 / 0.06);
   }
 
+  /* "Liquid glass" button — frosted pill with a thin gradient-reflection
+     border instead of a flat 1px line, the signature CTA treatment from the
+     migration brief. Built as a single-element ::before overlay (padding +
+     mask-exclude trick) rather than the source's 3-nested-div structure —
+     same visual result, no extra wrapper markup needed at each call site.
+     The reflection gradient stays plain white (it's reading as *glass
+     material*, not a brand accent) so it drops straight into buttonVariants'
+     "glass" variant without touching color tokens.
+     No `position` here on purpose: this is applied alongside a Tailwind
+     position utility at each call site (relative/absolute/fixed), and
+     since both live in the same `utilities` layer, a `position` set here
+     would win over that utility by source order regardless of which one
+     the call site actually needs — broke BackToTop's `fixed` positioning
+     this way (silently fell back to `relative`, collapsing its containing
+     block to the button's own size). `isolation: isolate` alone still
+     creates the new stacking context the ::before overlay needs, with no
+     position requirement. */
+  .btn-glass {
+    isolation: isolate;
+    background: rgb(255 255 255 / 0.08);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+  .btn-glass::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(
+      -15deg,
+      rgb(255 255 255 / 0.9) 3%,
+      rgb(255 255 255 / 0.12) 40%,
+      rgb(255 255 255 / 0.12) 60%,
+      rgb(255 255 255 / 0.9) 99%
+    );
+    -webkit-mask:
+      linear-gradient(#fff 0 0) content-box exclude,
+      linear-gradient(#fff 0 0);
+    mask:
+      linear-gradient(#fff 0 0) content-box exclude,
+      linear-gradient(#fff 0 0);
+    pointer-events: none;
+  }
+
+  /* Light-beam section divider — a blurred, multi-stop horizontal band used
+     as a dramatic separator (migration brief §3, step 5). Recolored to
+     Vixerra's own ember→teal duo instead of the source's blue→violet→red,
+     consistent with "no unrelated hues" (see --color-brand's own comment
+     above). Two layers: a soft wide glow plus a crisp thin line on top. */
+  .light-beam {
+    position: relative;
+    height: 2px;
+    background: linear-gradient(
+      to right,
+      transparent,
+      var(--color-brand) 35%,
+      var(--color-accent-teal) 65%,
+      transparent
+    );
+    opacity: 0.8;
+  }
+  .light-beam::before {
+    content: "";
+    position: absolute;
+    inset: -40px 0;
+    background: inherit;
+    filter: blur(32px);
+    opacity: 0.6;
+  }
+
   /* Faint diagonal hairline grid — an ArtCraft-style texture for hero/
      section backgrounds that want more surface interest than flat black
      without reaching for another gradient blob. Opt-in per section. */

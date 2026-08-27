@@ -4,11 +4,9 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { TIER_INFO } from "@/lib/constants";
+import { TIERS, TIER_INFO } from "@/lib/constants";
 import { Reveal } from "@/components/marketing/reveal";
 import { PlanPrice } from "@/components/pricing/plan-price";
-
-const PREVIEW_TIERS = ["free", "starter", "creator"] as const;
 
 export function PricingPreview() {
   return (
@@ -19,8 +17,8 @@ export function PricingPreview() {
           <p className="mt-4 text-body text-muted">Start free. Upgrade when you&apos;re ready to scale.</p>
         </Reveal>
 
-        <div className="mt-16 grid gap-6 lg:grid-cols-3">
-          {PREVIEW_TIERS.map((tier, index) => {
+        <div className="mt-16 grid gap-6 lg:grid-cols-4">
+          {TIERS.map((tier, index) => {
             const info = TIER_INFO[tier];
             const isPopular = tier === "creator";
             return (

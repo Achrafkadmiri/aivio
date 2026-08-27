@@ -2,12 +2,10 @@
 
 import Link from "next/link";
 import { motion, useReducedMotion } from "framer-motion";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, ChevronDown } from "lucide-react";
 import { HeroDemoWidget } from "./hero-demo-widget";
-import { GradientGlow } from "@/components/marketing/gradient-glow";
-import { Marquee } from "@/components/marketing/marquee";
+import { buttonVariants } from "@/components/ui/button";
 import { SEEDANCE25_SHOWCASE_VIDEOS } from "@/lib/showcase-media";
-import { GPT_IMAGE_2_IMAGES } from "@/lib/gpt-image-2-showcase";
 import { heroContainerVariants, heroWordVariants } from "@/lib/animations";
 
 // Bold grotesk statement + a short italic-serif line underneath — the same
@@ -15,91 +13,45 @@ import { heroContainerVariants, heroWordVariants } from "@/lib/animations";
 // one all-caps declarative line the eye reads first, then a quieter,
 // lowercase editorial line that reads more like a considered subhead than
 // another shouted headline.
-// "STUDIO" instead of the old "GENERATOR" — the previous headline (and its
-// "// ...video generation" kicker) named only the video half of the product,
-// when Vixerra is equally an image generator (Nano Banana, GPT Image 2,
-// Recraft) with plain-language editing and reference-guided control on top,
-// same "AI creative studio" framing already used in the page's own <meta>
-// description. The capability row below the body copy makes that range
-// concrete instead of just asserting it.
 const TITLE_WORDS = ["THE", "AI", "VIDEO", "& IMAGE"];
 const TITLE_ACCENT_WORD = "STUDIO";
 const TITLE_SCRIPT_LINE = "for ambitious creators.";
 const CAPABILITIES = ["Text to Video", "Image to Video", "Text to Image", "Plain-language editing"];
 
-// One deliberate exception to "media only in the Showcase section" (see
-// showcase-tabs.tsx): a film-reel strip of real output is the hero's whole
-// visual identity here, not a decorative aside — mostly static frames (6
-// real GPT Image 2 stills) plus a single looping clip, never a wall of
-// simultaneous autoplaying video.
-const REEL_VIDEO = SEEDANCE25_SHOWCASE_VIDEOS.find((v) => v.id === "anime-breathing-clash")!;
-const REEL_IMAGE_IDS = [
-  "hero",
-  "photorealism",
-  "90s-hallway-portrait",
-  "pc-cafe-candid",
-  "product-photography",
-  "text-rendering",
-];
-const REEL_IMAGES = REEL_IMAGE_IDS.map((id) => GPT_IMAGE_2_IMAGES.find((i) => i.id === id)!);
+// Full-bleed real video background — the migration brief's hero pattern
+// (mindvideo.ai: full-screen bg video, centered copy, two glass CTAs)
+// replaces the asymmetric film-reel version built earlier in this project's
+// history. Still exactly one real clip, still the same honesty standard as
+// the rest of the page (see showcase-media.ts) — just framed differently.
+const BG_VIDEO = SEEDANCE25_SHOWCASE_VIDEOS.find((v) => v.id === "anime-breathing-clash")!;
 
-function ReelFrame({
-  kind,
-  src,
-  alt,
-  label,
-}: {
-  kind: "video" | "image";
-  src: string;
-  alt: string;
-  label: string;
-}) {
-  return (
-    <div className="relative aspect-[3/4] w-full overflow-hidden rounded-xl border border-white/10 bg-surface-2">
-      {kind === "video" ? (
-        <video
-          className="absolute inset-0 h-full w-full object-cover"
-          autoPlay
-          muted
-          loop
-          playsInline
-          preload="metadata"
-          aria-hidden="true"
-        >
-          <source src={src} type="video/mp4" />
-        </video>
-      ) : (
-        // eslint-disable-next-line @next/next/no-img-element -- remote fal.ai/jxp CDN thumbnail, no next/image domain config for these hosts
-        <img src={src} alt={alt} className="absolute inset-0 h-full w-full object-cover" />
-      )}
-      <span className="absolute bottom-2 left-2 rounded-full border border-white/15 bg-black/50 px-2 py-0.5 text-[10px] leading-4 font-medium text-white/80 backdrop-blur">
-        {label}
-      </span>
-    </div>
-  );
-}
-
-// No boxed "card" for the hero's proof — a vertical film-reel strip bleeds
-// off the right edge of the viewport instead, breaking out of container-page
-// the way the centered-card-on-a-blob template never does. Text stays
-// left-aligned in its own column rather than centered over/beside a
-// decorative blob, so the whole composition reads as an asymmetric editorial
-// layout instead of the badge → headline → CTA stack most AI-tool landers
-// default to.
 export function Hero() {
   const shouldReduceMotion = useReducedMotion();
 
   return (
-    <section className="relative bg-black">
-      <GradientGlow variant="hero" />
-      <div className="grid-texture pointer-events-none absolute inset-0" aria-hidden="true" />
+    <section className="relative isolate flex min-h-screen flex-col justify-center overflow-hidden bg-black">
+      <video
+        className="absolute inset-0 h-full w-full object-cover"
+        autoPlay
+        muted
+        loop
+        playsInline
+        preload="metadata"
+        aria-hidden="true"
+      >
+        <source src={BG_VIDEO.url} type="video/mp4" />
+      </video>
+      <div
+        className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/70 via-black/60 to-black"
+        aria-hidden="true"
+      />
+      <div
+        className="pointer-events-none absolute left-1/2 top-0 h-[36rem] w-[70%] -translate-x-1/2 -translate-y-1/3 rounded-full bg-brand/20 blur-[120px]"
+        aria-hidden="true"
+      />
 
-      <div className="relative flex flex-col lg:min-h-[760px] lg:flex-row lg:items-stretch">
-        {/* Text column — a real-world left margin (not container-page, which
-            would cap this row's width and keep the reel from truly reaching
-            the viewport edge), capped so it never runs unreasonably wide on
-            ultra-wide monitors. */}
-        <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col justify-center px-4 pt-28 pb-16 text-center sm:px-5 sm:pt-32 lg:mx-0 lg:max-w-none lg:pl-8 lg:pr-12 lg:pt-0 lg:pb-0 lg:text-left xl:pl-12">
+      <div className="container-page relative py-24">
+        <div className="mx-auto max-w-3xl text-center">
           <motion.span
             initial={shouldReduceMotion ? undefined : { opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
@@ -145,7 +97,7 @@ export function Hero() {
             initial={shouldReduceMotion ? undefined : { opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1], delay: 0.6 }}
-            className="mx-auto mt-6 max-w-xl text-body-lg text-muted lg:mx-0"
+            className="mx-auto mt-6 max-w-xl text-body-lg text-muted"
           >
             Describe a scene, animate a photo, or edit an existing shot. Vixerra
             generates and refines broadcast-ready video and imagery in minutes —
@@ -156,7 +108,7 @@ export function Hero() {
             initial={shouldReduceMotion ? undefined : { opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1], delay: 0.7 }}
-            className="mt-5 flex flex-wrap justify-center gap-2 lg:justify-start"
+            className="mt-5 flex flex-wrap justify-center gap-2"
           >
             {CAPABILITIES.map((capability) => (
               <span
@@ -168,22 +120,25 @@ export function Hero() {
             ))}
           </motion.div>
 
+          {/* Two glass CTAs side by side — the migration brief's signature
+              hero pattern — instead of one solid pill + a text link. Both
+              still route to the same real destinations. */}
           <motion.div
             initial={shouldReduceMotion ? undefined : { opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1], delay: 0.8 }}
-            className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row lg:justify-start"
+            className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row"
           >
             <Link
               href="/signup"
-              className="font-display inline-flex w-full items-center justify-center gap-2 rounded-full bg-white px-7 py-3.5 text-label font-semibold text-black transition-transform duration-300 hover:scale-[1.02] active:scale-[0.98] sm:w-auto sm:px-6 sm:py-3"
+              className={buttonVariants({ variant: "glass", className: "w-full px-7 sm:w-auto" })}
             >
               Start creating free
               <ArrowRight className="size-4" aria-hidden="true" />
             </Link>
             <Link
               href="#showcase"
-              className="text-label font-medium text-white/70 underline decoration-white/30 underline-offset-4 transition-colors hover:text-white"
+              className={buttonVariants({ variant: "glass", className: "w-full px-7 sm:w-auto" })}
             >
               See examples
             </Link>
@@ -199,35 +154,6 @@ export function Hero() {
           </motion.p>
         </div>
 
-        {/* Film-reel strip — full-bleed to the viewport's right edge, real
-            output scrolling past like an actual reel instead of sitting in
-            a card. Hidden below lg: a strip needs real height to read as a
-            reel rather than a cramped thumbnail row. */}
-        <motion.div
-          initial={shouldReduceMotion ? undefined : { opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 1, delay: 0.4 }}
-          className="relative hidden w-full shrink-0 lg:block lg:h-[760px] lg:w-[34%] xl:w-[30%]"
-        >
-          <div
-            className="pointer-events-none absolute inset-y-0 left-0 z-10 w-24 bg-gradient-to-r from-black to-transparent"
-            aria-hidden="true"
-          />
-          {/* Marquee's vertical track sizes itself to its (looping, so
-              effectively infinite) content — without a definite height here
-              to clip against, overflow-hidden has nothing to constrain and
-              the column grows to the track's full stacked height instead of
-              acting as a fixed-height window onto it. */}
-          <Marquee direction="vertical" className="h-full py-6 pr-6">
-            <ReelFrame kind="video" src={REEL_VIDEO.url} alt={REEL_VIDEO.prompt} label="Seedance 2.5" />
-            {REEL_IMAGES.map((img) => (
-              <ReelFrame key={img.id} kind="image" src={img.url} alt={img.prompt} label="GPT Image 2" />
-            ))}
-          </Marquee>
-        </motion.div>
-      </div>
-
-      <div className="container-page relative pb-20 lg:pb-28">
         <motion.div
           initial={shouldReduceMotion ? undefined : { opacity: 0, y: 30, scale: 0.95 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -236,6 +162,21 @@ export function Hero() {
           <HeroDemoWidget />
         </motion.div>
       </div>
+
+      {!shouldReduceMotion && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.7, delay: 1.4 }}
+          className="pointer-events-none absolute inset-x-0 bottom-6 flex flex-col items-center gap-1 text-white/40"
+          aria-hidden="true"
+        >
+          <span className="text-caption tracking-wide uppercase">Scroll to explore</span>
+          <motion.div animate={{ y: [0, 6, 0] }} transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}>
+            <ChevronDown className="size-4" />
+          </motion.div>
+        </motion.div>
+      )}
     </section>
   );
 }

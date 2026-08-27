@@ -19,9 +19,9 @@ import { useLazyVideo } from "@/hooks/use-lazy-video";
 const SEEDANCE_25 = VIDEO_MODELS.find((m) => m.id === SEEDANCE_MODEL_ID);
 const GPT_IMAGE_2 = IMAGE_MODELS.find((m) => m.label === "GPT Image 2");
 
-// CSS-column masonry (higgsfield-style preset gallery) rather than a fixed
-// grid-flow-dense bento — item height drives the offset layout naturally,
-// and `break-inside-avoid` keeps each card intact across columns.
+// All 4 Seedance 2.5 entries are "square" so every tile in the grid below
+// renders the same size — "tall"/"wide" stay defined for any future entry
+// that wants a different shape, but nothing currently uses them.
 const VIDEO_ASPECT: Record<ShowcaseVideo["tile"], string> = {
   wide: "aspect-video",
   tall: "aspect-[3/4]",
@@ -43,7 +43,7 @@ function VideoTile({ video }: { video: ShowcaseVideo }) {
   const tryHref = `/generate?model=${encodeURIComponent(targetModelId)}&prompt=${encodeURIComponent(video.prompt)}`;
 
   return (
-    <TiltCard className="mb-2 block break-inside-avoid overflow-hidden rounded-lg sm:mb-3">
+    <TiltCard className="block overflow-hidden rounded-lg">
       <Link
         href={tryHref}
         ref={containerRef}
@@ -118,7 +118,7 @@ function ImageTile({ image }: { image: GptImage2Image }) {
           // there. The fixed aspect-[3/4] height means eager-loading these
           // is not the perf concern it would've been on the old zero-height
           // masonry skeleton (that was the reason lazy was avoided there too).
-          // eslint-disable-next-line @next/next/no-img-element -- remote fal.ai/jxp CDN thumbnails, no next/image domain config for these hosts
+          // eslint-disable-next-line @next/next/no-img-element -- local asset from public/media
           <img
             src={image.url}
             alt={image.prompt}
@@ -139,33 +139,24 @@ function ImageTile({ image }: { image: GptImage2Image }) {
 // header (name + tagline), rather than repeating it on every tile — and
 // every model's section is always on the page, not gated behind a tab
 // switch. With only two live models here, both sections render stacked.
-// `layout` picks the tile arrangement: "masonry" keeps the video section's
-// CSS-column poster wall (tile height varies on purpose, see VIDEO_ASPECT);
-// "grid" is a real CSS grid so every row of fixed-aspect image tiles lines
-// up on the same bottom edge instead of trailing off unevenly.
+// A real CSS grid (not a CSS-column masonry) so every row of fixed-aspect
+// tiles lines up on the same bottom edge instead of trailing off unevenly —
+// both sections are capped at a handful of entries now, so a poster-wall
+// masonry has nothing left to do that a plain grid doesn't already do better.
 function ShowcaseSection({
   name,
   description,
-  layout = "masonry",
   children,
 }: {
   name: string;
   description: string;
-  layout?: "masonry" | "grid";
   children: ReactNode;
 }) {
   return (
     <div>
       <h3 className="text-heading font-extrabold uppercase tracking-tight text-brand">{name}</h3>
       <p className="mt-1 text-body text-muted">{description}</p>
-      <div
-        className={cn(
-          "mt-6",
-          layout === "grid"
-            ? "grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 lg:grid-cols-4"
-            : "columns-2 gap-2 sm:columns-3 sm:gap-3 lg:columns-4",
-        )}
-      >
+      <div className="mt-6 grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 lg:grid-cols-4">
         {children}
       </div>
     </div>
@@ -184,7 +175,7 @@ export function ShowcaseTabs() {
       )}
 
       {GPT_IMAGE_2 && (
-        <ShowcaseSection name={GPT_IMAGE_2.label} description={GPT_IMAGE_2.description} layout="grid">
+        <ShowcaseSection name={GPT_IMAGE_2.label} description={GPT_IMAGE_2.description}>
           {GPT_IMAGE_2_IMAGES.map((image) => (
             <ImageTile key={image.id} image={image} />
           ))}

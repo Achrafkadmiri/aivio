@@ -1,24 +1,18 @@
 import Link from "next/link";
 import { Logo } from "./logo";
 
-const FOOTER_LINKS: Record<string, { href: string; label: string }[]> = {
-  Product: [
-    { href: "/features", label: "Features" },
-    { href: "/pricing", label: "Pricing" },
-    { href: "/prompts", label: "Prompts" },
-    { href: "/gallery", label: "Gallery" },
-  ],
-  Account: [
-    { href: "/signup", label: "Sign up" },
-    { href: "/login", label: "Log in" },
-  ],
-  Company: [
-    { href: "/about", label: "About" },
-    { href: "/contact", label: "Contact" },
-  ],
-};
-
-const LEGAL_LINKS = [
+// Condensed to a single row (migration brief: "no mega-footer, the site
+// bets everything on the final CTA") rather than the old 3-column link
+// grid — but every link stays reachable (About/Contact/Terms/Privacy have
+// no other nav path anywhere on the site), just inline instead of in
+// columns, so nothing gets orphaned.
+const FOOTER_LINKS = [
+  { href: "/features", label: "Features" },
+  { href: "/pricing", label: "Pricing" },
+  { href: "/prompts", label: "Prompts" },
+  { href: "/gallery", label: "Gallery" },
+  { href: "/about", label: "About" },
+  { href: "/contact", label: "Contact" },
   { href: "/terms", label: "Terms" },
   { href: "/privacy", label: "Privacy" },
 ];
@@ -26,37 +20,10 @@ const LEGAL_LINKS = [
 export function Footer() {
   return (
     <footer className="border-t border-line bg-surface">
-      <div className="container-page grid gap-10 py-16 sm:grid-cols-2 lg:grid-cols-[1.5fr_1fr_1fr_1fr]">
-        <div>
-          <Logo />
-          <p className="mt-4 max-w-xs text-body-sm text-muted">
-            AI video and image generation for teams that ship fast.
-          </p>
-        </div>
-        {Object.entries(FOOTER_LINKS).map(([title, links]) => (
-          <div key={title}>
-            <h3 className="text-label font-medium text-ink">{title}</h3>
-            <ul className="mt-4 space-y-3">
-              {links.map((link) => (
-                <li key={link.href}>
-                  <Link
-                    href={link.href}
-                    className="text-body-sm text-muted transition-colors hover:text-brand"
-                  >
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-        ))}
-      </div>
-      <div className="container-page flex flex-col items-center justify-between gap-4 border-t border-line py-6 sm:flex-row">
-        <p className="text-caption text-muted">
-          © {new Date().getFullYear()} Vixerra. All rights reserved.
-        </p>
-        <div className="flex items-center gap-4">
-          {LEGAL_LINKS.map((link) => (
+      <div className="container-page flex flex-col items-center gap-6 py-10 text-center">
+        <Logo />
+        <nav className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
+          {FOOTER_LINKS.map((link) => (
             <Link
               key={link.href}
               href={link.href}
@@ -65,8 +32,10 @@ export function Footer() {
               {link.label}
             </Link>
           ))}
-        </div>
-        <p className="text-caption text-muted">Built with Next.js on Cloudflare Workers AI.</p>
+        </nav>
+        <p className="text-caption text-muted">
+          © {new Date().getFullYear()} Vixerra. All rights reserved.
+        </p>
       </div>
     </footer>
   );

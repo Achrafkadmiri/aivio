@@ -1,23 +1,19 @@
-// Full generation "templates" for the /prompts page: each pairs a real,
-// verified-reachable Seedance sample video with a structured, shot-by-shot
-// prompt template (ByteDance's bracket-tag format — 【Style】/【Duration】/
-// 【Main Character】 plus timestamped shots) and a suggested full parameter
-// set — duration, resolution, aspect ratio, camera, audio.
+// Full generation "templates" for the /prompts page: each pairs a local
+// sample video (served from public/media, no external CDN) with a
+// structured, shot-by-shot prompt template (ByteDance's bracket-tag format —
+// 【Style】/【Duration】/【Main Character】 plus timestamped shots) and a
+// suggested full parameter set — duration, resolution, aspect ratio,
+// camera, audio.
 //
-// Honesty note: the video files are real Seedance sample outputs (see the
-// per-entry source comments). The structured prompt text is NOT published
-// by the source alongside them — fal.ai only exposes a short one-line
-// caption for a couple of these, nothing near this level of shot detail for
-// any of them. These are curated templates *inspired by* what's on screen,
-// written to be copied and adapted, not a claim that this exact text
-// produced that exact clip. Same for the parameters: valid, in-range
-// defaults (see SEEDANCE2_* in constants.ts), not the source's original
-// settings. The UI must keep both framed as templates/suggestions, never as
-// "the prompt that generated this."
+// Honesty note: the structured prompt text is a curated template *inspired
+// by* the kind of shot it describes, written to be copied and adapted — not
+// a claim that this exact text produced the attached clip. Same for the
+// parameters: valid, in-range defaults (see SEEDANCE2_* in constants.ts),
+// not literal source settings. The UI must keep both framed as
+// templates/suggestions, never as "the prompt that generated this."
 //
-// Two of these (fal-pro-*) are new videos not shown elsewhere in this app,
-// sourced from ByteDance/fal.ai's public model playgrounds. The other nine
-// reuse SHOWCASE_VIDEOS (already used on the landing page).
+// Two of these (fal-pro-*) use their own local clip; the other nine reuse
+// SHOWCASE_VIDEOS (already used on the landing page).
 
 import { SHOWCASE_VIDEOS } from "@/lib/showcase-media";
 import { SEEDANCE2_MODEL_ID, SEEDANCE2_RESOLUTIONS, SEEDANCE2_ASPECT_RATIOS } from "@/lib/constants";
@@ -42,7 +38,7 @@ function showcaseUrl(id: string): string {
 export const PROMPT_TEMPLATES: PromptTemplate[] = [
   {
     id: "fal-pro-race-car",
-    videoUrl: "https://storage.googleapis.com/falserverless/example_inputs/seedance_pro_t2v.mp4",
+    videoUrl: "/media/videos/sippo.mp4",
     prompt: `【Style】Cinematic motorsport commercial, hyperrealism, dynamic multi-angle camera work, dramatic storm lighting, epic tone.
 【Duration】12 seconds
 【Main Character】A bright blue race car, part of a pack racing through a blizzard.
@@ -62,7 +58,7 @@ Key detail: Wind-blown snow and light trails should feel physically heavy, not d
   },
   {
     id: "fal-pro-skier",
-    videoUrl: "https://storage.googleapis.com/falserverless/example_inputs/seedance_pro_i2v.mp4",
+    videoUrl: "/media/videos/model.mp4",
     prompt: `【Style】Cinematic sports commercial, hyperrealism, smooth tracking camera, crisp winter natural light, exhilarating tone.
 【Duration】8 seconds
 【Main Character】A skier in bright gear, mid-run on a fresh powder slope.
