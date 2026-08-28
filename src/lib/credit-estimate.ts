@@ -1,5 +1,5 @@
 // DUPLIQUÉ dans aiVideo-backend/src/lib/credit-estimate.ts — garder synchronisé.
-import { SEEDANCE_MODEL_ID, SEEDANCE_DURATION_MIN, type GenerationType, type VideoResolution } from "@/lib/constants";
+import { SEEDANCE_MODEL_ID, SEEDANCE2_MODEL_ID, SEEDANCE_DURATION_MIN, type GenerationType, type VideoResolution } from "@/lib/constants";
 
 // Pure cost-estimation logic — imported client-side too (e.g. for a live
 // "estimated cost" readout in the generate forms), no network round-trip.
@@ -92,14 +92,10 @@ const LIVE_VIDEO_AUTO_DURATION_ESTIMATE = 8;
 // which are in this catalog: the three ids below are the only ones whose own
 // label/description says "pro"/flagship/"quality".
 const QUALITY_IMAGE_MODELS = new Set([
-  " /recraft/recraftv4-1-pro",
-  "  leonardo/phoenix-1.0",
-  "  xai/grok-imagine-image-quality",
-  // Added frontend-only (see cloudflare-models.ts) — same judgment call as
-  // the three ids above (own label says "pro"/flagship), not yet a real
-  // priced rate since the backend integration isn't wired up.
-  "google/nano-banana-pro",
+  "recraft/recraftv4-1-pro",
+  "xai/grok-imagine-image-quality",
   "openai/gpt-image-2",
+  "google/nano-banana-pro",
 ]);
 const FAST_IMAGE_CREDITS = 1;
 const QUALITY_IMAGE_CREDITS = 5;
@@ -139,7 +135,7 @@ export function estimateVideoCredits(
     return Math.max(SEEDANCE25_KIE_AI_MIN_CREDITS, Math.round(effectiveDuration * perSecond));
   }
 
-  const entry = LIVE_VIDEO_RATE[model];
+  const entry = LIVE_VIDEO_RATE[model] ?? LIVE_VIDEO_RATE[SEEDANCE2_MODEL_ID];
   const useVideoRates = options.hasReferenceVideo && entry.videoRates;
   const rates = useVideoRates ? entry.videoRates! : entry.rates;
   const minCredits = useVideoRates ? (entry.minCreditsVideo ?? entry.minCredits) : entry.minCredits;
