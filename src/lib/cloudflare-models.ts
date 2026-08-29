@@ -386,6 +386,35 @@ export const CLOUDFLARE_MODELS: CloudflareModelConfig[] = [
     outputKind: "url",
   },
 
+  // MiniMax's schema: duration is a 6|10 enum rather than a range, the
+  // resolution tiers are spelled with a capital P, and additionalProperties
+  // is false — anything not listed here is a hard 400. We keep our own
+  // values canonical ("6", "768p") and translate on the wire, so the credit
+  // rate table still matches.
+  //
+  // Its declared output is { task_id, status?, video? } with only task_id
+  // required — the shape of an async job API. Should Cloudflare ever answer
+  // before the render finishes, runCloudflareModel surfaces that status
+  // verbatim rather than a generic "no result" error.
+  {
+    id: "minimax/hailuo-2.3",
+    label: "Hailuo 2.3",
+    provider: "MiniMax",
+    description: "Real Cloudflare Workers AI model — MiniMax Hailuo 2.3, 6s or 10s at up to 1080p",
+    category: "text-to-video",
+    promptRequired: true,
+    image: "optional",
+    imageCfParam: "first_frame_image",
+    fields: [
+      { key: "duration", cfParam: "duration", label: "Duration", type: "select", options: ["6", "10"], defaultValue: "6", helperText: "seconds", cfValueMap: { "6": 6, "10": 10 } },
+      { key: "resolution", cfParam: "resolution", label: "Resolution", type: "select", options: ["768p", "1080p"], defaultValue: "768p", cfValueMap: { "768p": "768P", "1080p": "1080P" } },
+      { key: "promptOptimizer", cfParam: "prompt_optimizer", label: "Optimize prompt", type: "switch", defaultValue: true },
+      { key: "fastPretreatment", cfParam: "fast_pretreatment", label: "Fast pretreatment", type: "switch", defaultValue: false },
+    ],
+    outputPath: ["video"],
+    outputKind: "url",
+  },
+
   // ---------- image-to-video (image required) ----------
   // Both Alibaba models share one schema: image, prompt, negative_prompt,
   // resolution, duration, seed, watermark. They have NO aspect_ratio (the

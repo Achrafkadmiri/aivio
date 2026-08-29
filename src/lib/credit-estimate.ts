@@ -79,6 +79,12 @@ const LIVE_VIDEO_RATE: Record<
     rates: { "720p": 17.55, "1080p": 40.7 },
     minCredits: 53,
   },
+  // MiniMax Hailuo 2.3 — 1.2x (768p) / 1.08x (1080p) of Seedance 2.0. Its
+  // shortest clip is 6s (there is no 3s option), so the floor is 6s @ 768p.
+  "minimax/hailuo-2.3": {
+    rates: { "768p": 18, "1080p": 40 },
+    minCredits: 108,
+  },
 };
 // duration=-1 ("automatic") doesn't tell us the real output length ahead of
 // time, so cost estimation assumes this many seconds for that case. Only
