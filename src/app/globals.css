@@ -199,6 +199,10 @@
      reasoning/timing as sheet-up above, just sliding in from the edge the
      panel is anchored to instead of the bottom. */
   --animate-sheet-left: sheet-left 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+>>>>>>> fd123bcab661e5c17da2f4cbcc0cf65bb3202139
   /* Generation loader (see generate/generation-loader.tsx) — the render
      placeholder on the generate page is a miniature of the thing being
      made (a film frame for video, a photo frame for image) rather than a
@@ -225,6 +229,21 @@
   --animate-iris-spin: iris-spin 9s linear infinite;
   --animate-reticle-breathe: reticle-breathe 2.6s ease-in-out infinite;
   --animate-status-pulse: status-pulse 1.8s ease-in-out infinite;
+<<<<<<< HEAD
+=======
+=======
+  /* Progress bar motion (see ui/progress.tsx, used by the generate page's
+     job status card). progress-sheen is a soft highlight sweeping along the
+     filled portion so a long render still reads as "working" even while the
+     reported percentage sits still; progress-indeterminate slides a short
+     segment across the whole track for the queued/0% phase, where a
+     zero-width fill would otherwise look frozen. Both are applied with
+     motion-safe: at the call site. */
+  --animate-progress-sheen: progress-sheen 1.8s ease-in-out infinite;
+  --animate-progress-indeterminate: progress-indeterminate 1.5s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+  --animate-progress-pulse: progress-pulse 1.8s ease-in-out infinite;
+>>>>>>> 2f9d61cffa74e9cc6a9857101099bcbedca9eba1
+>>>>>>> fd123bcab661e5c17da2f4cbcc0cf65bb3202139
 }
 
 @keyframes blob-float {
@@ -290,6 +309,10 @@
   }
 }
 
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+>>>>>>> fd123bcab661e5c17da2f4cbcc0cf65bb3202139
 @keyframes latent-cell {
   0%,
   100% {
@@ -375,6 +398,38 @@
   50% {
     opacity: 1;
     transform: scale(1.2);
+<<<<<<< HEAD
+=======
+=======
+@keyframes progress-sheen {
+  from {
+    transform: translateX(-140%);
+  }
+  to {
+    transform: translateX(340%);
+  }
+}
+
+@keyframes progress-indeterminate {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(320%);
+  }
+}
+
+@keyframes progress-pulse {
+  0%,
+  100% {
+    opacity: 0.45;
+    transform: scale(0.9);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.15);
+>>>>>>> 2f9d61cffa74e9cc6a9857101099bcbedca9eba1
+>>>>>>> fd123bcab661e5c17da2f4cbcc0cf65bb3202139
   }
 }
 
