@@ -77,6 +77,13 @@ export type CloudflareModelConfig = {
    *  `image`, and sending the wrong one is a 400. */
   imageStaticParams?: Record<string, string | number | boolean>;
   noImageStaticParams?: Record<string, string | number | boolean>;
+  /** Some providers refuse to host the generated file and instead demand a
+   *  URL to upload it to — xAI enforces exactly this for Grok video on
+   *  Zero Data Retention teams ("ZDR teams must provide output.upload_url").
+   *  When set, the runner mints a pre-signed R2 PUT URL, passes it under
+   *  `{ [cfParam]: { [urlKey]: url } }`, and persists that object as the
+   *  result instead of re-downloading one from the provider. */
+  outputUploadTarget?: { cfParam: string; urlKey: string; contentType: string };
   /** Path into the response (relative to `json.result ?? json`, matching the
    *  existing runCloudflareVideoModel convention) where the result lives. */
   outputPath: string[];
@@ -314,6 +321,7 @@ export const CLOUDFLARE_MODELS: CloudflareModelConfig[] = [
       { key: "resolution", cfParam: "resolution", label: "Resolution", type: "select", options: ["480p", "720p"], defaultValue: "720p" },
     ],
     staticParams: { _operation: "generate" },
+    outputUploadTarget: { cfParam: "output", urlKey: "upload_url", contentType: "video/mp4" },
     outputPath: ["video"],
     outputKind: "url",
   },
@@ -333,6 +341,7 @@ export const CLOUDFLARE_MODELS: CloudflareModelConfig[] = [
       { key: "resolution", cfParam: "resolution", label: "Resolution", type: "select", options: ["480p", "720p"], defaultValue: "720p" },
     ],
     staticParams: { _operation: "generate" },
+    outputUploadTarget: { cfParam: "output", urlKey: "upload_url", contentType: "video/mp4" },
     outputPath: ["video"],
     outputKind: "url",
   },
