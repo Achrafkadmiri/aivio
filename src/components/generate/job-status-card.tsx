@@ -1,9 +1,9 @@
 "use client";
 
-import { Loader2, CheckCircle2, XCircle, Sparkles, RotateCcw, Download as DownloadIcon } from "lucide-react";
+import { CheckCircle2, XCircle, Sparkles, RotateCcw, Download as DownloadIcon } from "lucide-react";
 import { Card } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
+import { GenerationLoader } from "./generation-loader";
 import type { useGeneration } from "@/hooks/use-generation";
 
 type Generation = ReturnType<typeof useGeneration>;
@@ -112,28 +112,44 @@ export function JobStatusCard({
     );
   }
 
-  // Generating / queued — a soft pulsing canvas behind the spinner instead
-  // of a flat card, so the placeholder itself feels like it's "rendering"
-  // rather than just sitting still.
+  // Generating / queued — the frame being rendered stands in for itself
+  // (see GenerationLoader). No spinner and no percentage bar: the numbers
+  // the provider gives us are too coarse to be worth showing, and a picture
+  // of the model working says the same thing without pretending to measure.
+  const queued = generation.status === "queued";
+
   return (
     <Card
       variant="standard"
-      className="sticky top-24 flex min-h-[24rem] flex-col items-center justify-center gap-5 overflow-hidden rounded-2xl text-center"
+      className="sticky top-24 flex min-h-[24rem] flex-col items-center justify-center gap-6 overflow-hidden rounded-2xl text-center"
     >
       <div
         className="pointer-events-none absolute inset-0 animate-pulse opacity-20"
         style={{ background: "var(--gradient-hero-glow)" }}
         aria-hidden="true"
       />
-      <span className="relative flex size-14 items-center justify-center rounded-2xl bg-brand shadow-glow-md">
-        <Loader2 className="size-6 animate-spin text-white" aria-hidden="true" />
-      </span>
-      <div className="relative w-full max-w-xs">
-        <p className="text-body-sm text-ink-soft">
-          {generation.status === "queued" ? "Queued…" : "Generating…"}
+
+      <GenerationLoader isVideo={isVideo} className="relative px-4" />
+
+      {/* aria-live so a screen reader is told the state changed — the visual
+        * above is decorative and carries none of that. */}
+      <div className="relative" role="status" aria-live="polite">
+        <p className="flex items-center justify-center gap-2 text-body-sm font-medium whitespace-nowrap text-ink">
+          <span
+            className="size-1.5 rounded-full bg-brand motion-safe:animate-status-pulse"
+            aria-hidden="true"
+          />
+          {queued
+            ? "Queued"
+            : isVideo
+              ? "Painting your video"
+              : "Painting your image"}
         </p>
-        <Progress value={generation.progress} className="mt-3" />
-        <p className="mt-2 font-mono text-caption text-muted">{generation.progress}%</p>
+        <p className="mt-1.5 text-caption text-muted">
+          {queued
+            ? "Waiting for a free slot on the model"
+            : "This usually takes under a minute"}
+        </p>
       </div>
     </Card>
   );
