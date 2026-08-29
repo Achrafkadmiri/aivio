@@ -199,51 +199,27 @@
      reasoning/timing as sheet-up above, just sliding in from the edge the
      panel is anchored to instead of the bottom. */
   --animate-sheet-left: sheet-left 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
-<<<<<<< HEAD
-=======
-<<<<<<< HEAD
->>>>>>> fd123bcab661e5c17da2f4cbcc0cf65bb3202139
-  /* Generation loader (see generate/generation-loader.tsx) — the render
-     placeholder on the generate page is a miniature of the thing being
-     made (a film frame for video, a photo frame for image) rather than a
-     spinner over a percentage bar: the provider's percentage jumps in
-     coarse steps and sits at 0 for most of a render, so it told the user
-     nothing a moving image couldn't tell them better.
-       latent-cell   — one tile of the grid inside the frame; each cell runs
-                       the same cycle with a delay derived from its row+col,
-                       so brightness travels across as a diagonal wave and
-                       the block of noise reads as resolving into a picture.
-       render-scan-y — the render pass sweeping down a video frame.
-       render-scan-x — same, sweeping across an image frame.
-       film-advance  — sprocket rail creeping by (video only). The pitch in
-                       the keyframe is the dot spacing; keep them in sync or
-                       the loop visibly jumps.
-       iris-spin     — the aperture ring on the image frame.
-       reticle-breathe / status-pulse — viewfinder corners and the label dot.
-     All transform/opacity only (no layout or paint properties), and every
-     one is applied with motion-safe: at the call site. */
-  --animate-latent-cell: latent-cell 2.6s ease-in-out infinite;
-  --animate-render-scan-y: render-scan-y 2.8s cubic-bezier(0.45, 0, 0.55, 1) infinite;
-  --animate-render-scan-x: render-scan-x 2.8s cubic-bezier(0.45, 0, 0.55, 1) infinite;
-  --animate-film-advance: film-advance 900ms linear infinite;
-  --animate-iris-spin: iris-spin 9s linear infinite;
-  --animate-reticle-breathe: reticle-breathe 2.6s ease-in-out infinite;
+  /* Generation loader (see generate/generation-loader.tsx) — the generate
+     page's "working on it" state is an animated line icon of the thing
+     being made (a film frame for video, a photo for image), not a spinner
+     over a percentage bar: the provider reports progress in coarse jumps
+     and parks at 0 for most of a render, so the number was either frozen
+     or misleading.
+       icon-trace     — wipes a stroke on and back off along its own path,
+                        so the icon looks like it's being drawn. Needs a
+                        --dash var at the call site holding that path's
+                        length (see the SVGs).
+       icon-pulse     — the filled bits (play triangle, sun) breathing.
+       sparkle-twinkle — the little AI sparks popping in and out.
+       status-pulse   — the dot next to the status label.
+     icon-trace animates stroke-dashoffset, which isn't a compositor-only
+     property like the rest — fine here because it's two short paths in a
+     72px icon, not a full-screen effect. All are applied with motion-safe:
+     at the call site. */
+  --animate-icon-trace: icon-trace 2.4s ease-in-out infinite;
+  --animate-icon-pulse: icon-pulse 2s ease-in-out infinite;
+  --animate-sparkle-twinkle: sparkle-twinkle 2.2s ease-in-out infinite;
   --animate-status-pulse: status-pulse 1.8s ease-in-out infinite;
-<<<<<<< HEAD
-=======
-=======
-  /* Progress bar motion (see ui/progress.tsx, used by the generate page's
-     job status card). progress-sheen is a soft highlight sweeping along the
-     filled portion so a long render still reads as "working" even while the
-     reported percentage sits still; progress-indeterminate slides a short
-     segment across the whole track for the queued/0% phase, where a
-     zero-width fill would otherwise look frozen. Both are applied with
-     motion-safe: at the call site. */
-  --animate-progress-sheen: progress-sheen 1.8s ease-in-out infinite;
-  --animate-progress-indeterminate: progress-indeterminate 1.5s cubic-bezier(0.65, 0, 0.35, 1) infinite;
-  --animate-progress-pulse: progress-pulse 1.8s ease-in-out infinite;
->>>>>>> 2f9d61cffa74e9cc6a9857101099bcbedca9eba1
->>>>>>> fd123bcab661e5c17da2f4cbcc0cf65bb3202139
 }
 
 @keyframes blob-float {
@@ -309,83 +285,43 @@
   }
 }
 
-<<<<<<< HEAD
-=======
-<<<<<<< HEAD
->>>>>>> fd123bcab661e5c17da2f4cbcc0cf65bb3202139
-@keyframes latent-cell {
+@keyframes icon-trace {
+  0% {
+    stroke-dashoffset: var(--dash);
+    opacity: 0.5;
+  }
+  45% {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+  100% {
+    stroke-dashoffset: calc(var(--dash) * -1);
+    opacity: 0.5;
+  }
+}
+
+@keyframes icon-pulse {
   0%,
   100% {
-    opacity: 0.22;
-    transform: scale(0.6);
-  }
-  40% {
-    opacity: 1;
-    transform: scale(1);
-  }
-  70% {
-    opacity: 0.45;
-    transform: scale(0.85);
-  }
-}
-
-@keyframes render-scan-y {
-  0% {
-    opacity: 0;
-    transform: translateY(-25%);
-  }
-  12%,
-  88% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 0;
-    transform: translateY(100%);
-  }
-}
-
-@keyframes render-scan-x {
-  0% {
-    opacity: 0;
-    transform: translateX(-25%);
-  }
-  12%,
-  88% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 0;
-    transform: translateX(100%);
-  }
-}
-
-@keyframes film-advance {
-  from {
-    transform: translateX(0);
-  }
-  to {
-    transform: translateX(-14px);
-  }
-}
-
-@keyframes iris-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-@keyframes reticle-breathe {
-  0%,
-  100% {
-    opacity: 0.35;
-    transform: scale(1);
+    opacity: 0.6;
+    transform: scale(0.82);
   }
   50% {
-    opacity: 0.9;
-    transform: scale(1.08);
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes sparkle-twinkle {
+  0%,
+  70%,
+  100% {
+    opacity: 0;
+    transform: scale(0.4) rotate(0deg);
+  }
+  30% {
+    opacity: 1;
+    transform: scale(1) rotate(45deg);
   }
 }
 
@@ -398,38 +334,6 @@
   50% {
     opacity: 1;
     transform: scale(1.2);
-<<<<<<< HEAD
-=======
-=======
-@keyframes progress-sheen {
-  from {
-    transform: translateX(-140%);
-  }
-  to {
-    transform: translateX(340%);
-  }
-}
-
-@keyframes progress-indeterminate {
-  from {
-    transform: translateX(-100%);
-  }
-  to {
-    transform: translateX(320%);
-  }
-}
-
-@keyframes progress-pulse {
-  0%,
-  100% {
-    opacity: 0.45;
-    transform: scale(0.9);
-  }
-  50% {
-    opacity: 1;
-    transform: scale(1.15);
->>>>>>> 2f9d61cffa74e9cc6a9857101099bcbedca9eba1
->>>>>>> fd123bcab661e5c17da2f4cbcc0cf65bb3202139
   }
 }
 

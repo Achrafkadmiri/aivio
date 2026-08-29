@@ -1,144 +1,49 @@
 import { cn } from "@/lib/utils";
 
 /**
- * The "your render is happening" visual for the generate page.
+ * The "working on it" mark for the generate page — an animated line icon of
+ * the thing being made: a film frame for video, a photo for image.
  *
- * Deliberately NOT a spinner + percentage bar: the provider reports progress
- * in coarse jumps and parks at 0 for most of a render, so the bar spent its
- * time either frozen or lying. This shows the *thing being made* instead — a
- * miniature film frame for video, a photo frame for image — with a block of
- * latent tiles resolving out of noise under a render scan pass. Nothing here
- * claims to know how far along the job is; it only says "a model is painting
- * this right now", which is the one thing we can honestly show.
+ * Deliberately not a spinner over a percentage bar. The provider reports
+ * progress in coarse jumps and sits at 0 for most of a render, so the number
+ * was either frozen or lying; a mark that draws itself says "a model is
+ * making this right now" without claiming to know how far along it is.
  *
- * Every layer animates transform/opacity only and is gated on motion-safe:,
- * so a reduced-motion user gets the same composition, held still.
+ * Both variants are one 72px SVG: the outline traces itself on a loop, the
+ * solid detail inside breathes, and two sparks twinkle off the corner.
+ * Everything is gated on motion-safe:, so reduced motion gets the same icon
+ * held still.
  */
 
-/** Grid density per modality — 16:9 gets a wider, shorter tile field. */
-const GRID = {
-  video: { cols: 12, rows: 7 },
-  image: { cols: 9, rows: 9 },
-} as const;
+/** Rough path lengths, used to seed each stroke's dash cycle. They only need
+ *  to be close — a value under the real length just shortens the trailing
+ *  gap, which reads fine at this size. */
+const FRAME_DASH = 132;
+const RIDGE_DASH = 44;
 
-/** Tile cycle length in ms; delays below are spread across it. */
-const CELL_CYCLE = 2600;
-
-function LatentField({ cols, rows }: { cols: number; rows: number }) {
+/** Two AI sparks, offset so they alternate rather than blink together. */
+function Sparks() {
   return (
-    <div
-      className="absolute inset-0 grid gap-[3px] p-3"
-      style={{
-        gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
-        gridTemplateRows: `repeat(${rows}, minmax(0, 1fr))`,
-      }}
-      aria-hidden="true"
-    >
-      {Array.from({ length: cols * rows }, (_, i) => {
-        const col = i % cols;
-        const row = Math.floor(i / cols);
-        // Diagonal wave: delay grows with row+col so brightness travels
-        // corner to corner. Negative so every tile starts mid-cycle — no
-        // dead beat on first paint while the wave winds up.
-        const delay = -(((row + col) * 130) % CELL_CYCLE);
-        // Deterministic (not random) accent scatter: hydration has to match,
-        // and a fixed pattern reads as structure emerging rather than static.
-        const seed = (col * 3 + row * 5) % 17;
-        return (
-          <span
-            key={i}
-            className={cn(
-              "rounded-[2px] opacity-25 motion-safe:animate-latent-cell",
-              // Sparse on purpose — a handful of colour among mostly neutral
-              // tiles reads as detail emerging; colouring more of them just
-              // looks like confetti.
-              seed === 0
-                ? "bg-brand"
-                : seed === 6
-                  ? "bg-brand-soft"
-                  : seed === 11
-                    ? "bg-accent-teal"
-                    : "bg-white/45",
-            )}
-            style={{ animationDelay: `${delay}ms` }}
-          />
-        );
-      })}
-    </div>
-  );
-}
-
-/** Viewfinder corners — L-brackets that breathe, one per corner. */
-function Reticle() {
-  return (
-    <div className="pointer-events-none absolute inset-2" aria-hidden="true">
+    <>
       {[
-        "left-0 top-0 border-l-2 border-t-2 rounded-tl-md",
-        "right-0 top-0 border-r-2 border-t-2 rounded-tr-md",
-        "left-0 bottom-0 border-b-2 border-l-2 rounded-bl-md",
-        "right-0 bottom-0 border-b-2 border-r-2 rounded-br-md",
-      ].map((corner, i) => (
-        <span
-          key={corner}
-          className={cn(
-            "absolute size-3 border-brand motion-safe:animate-reticle-breathe",
-            corner,
-          )}
-          // Staggered so the four corners ripple round the frame instead of
-          // flashing in unison.
-          style={{ animationDelay: `${i * 320}ms` }}
+        { d: "M40 8 L41.4 11.6 L45 13 L41.4 14.4 L40 18 L38.6 14.4 L35 13 L38.6 11.6 Z", delay: 0 },
+        { d: "M9 30 L9.9 32.1 L12 33 L9.9 33.9 L9 36 L8.1 33.9 L6 33 L8.1 32.1 Z", delay: 1100 },
+      ].map((spark) => (
+        <path
+          key={spark.d}
+          d={spark.d}
+          fill="currentColor"
+          className="text-brand-soft motion-safe:animate-sparkle-twinkle"
+          style={{
+            animationDelay: `${spark.delay}ms`,
+            // SVG children scale from the user-space origin by default, which
+            // would fling these off-centre — box them first.
+            transformBox: "fill-box",
+            transformOrigin: "center",
+          }}
         />
       ))}
-    </div>
-  );
-}
-
-/** Film sprocket rail — the dots creep by, so the strip reads as running. */
-function SprocketRail({ className }: { className?: string }) {
-  return (
-    <div
-      className={cn("absolute inset-x-0 flex h-2 items-center overflow-hidden", className)}
-      aria-hidden="true"
-    >
-      {/* 14px pitch (6px dot + 8px gap) must match film-advance's translate
-        * distance in globals.css, or the loop jumps every cycle. */}
-      <div className="flex shrink-0 gap-2 motion-safe:animate-film-advance">
-        {Array.from({ length: 40 }, (_, i) => (
-          <span key={i} className="size-1.5 shrink-0 rounded-[1px] bg-white/25" />
-        ))}
-      </div>
-    </div>
-  );
-}
-
-/** Aperture iris for the image frame — dashed ring turning over the field. */
-function Iris() {
-  return (
-    <svg
-      viewBox="0 0 100 100"
-      className="pointer-events-none absolute left-1/2 top-1/2 size-20 -translate-x-1/2 -translate-y-1/2 text-brand opacity-70 motion-safe:animate-iris-spin"
-      fill="none"
-      aria-hidden="true"
-    >
-      <circle
-        cx="50"
-        cy="50"
-        r="34"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeDasharray="26 18"
-      />
-      {/* Six blades, drawn as a rotated hexagon — the classic aperture
-        * silhouette, kept as an outline so the tiles stay visible through it. */}
-      <path
-        d="M50 22 74 36 74 64 50 78 26 64 26 36Z"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeOpacity="0.55"
-        strokeLinejoin="round"
-      />
-    </svg>
+    </>
   );
 }
 
@@ -149,55 +54,88 @@ export function GenerationLoader({
   isVideo: boolean;
   className?: string;
 }) {
-  const { cols, rows } = isVideo ? GRID.video : GRID.image;
+  const trace = "motion-safe:animate-icon-trace";
+  const breathe = "motion-safe:animate-icon-pulse";
 
   return (
-    <div className={cn("relative flex w-full justify-center", className)} aria-hidden="true">
-      {/* Ambient ember bloom behind the frame — flat color + blur, no
+    <div className={cn("relative flex items-center justify-center", className)} aria-hidden="true">
+      {/* Soft ember bloom behind the mark — flat colour plus blur, no
         * gradient fill (see the palette note in globals.css). */}
-      <div
-        className="pointer-events-none absolute -inset-6 rounded-[2rem] bg-brand opacity-[0.12] blur-3xl motion-safe:animate-blob-float"
-      />
+      <span className="pointer-events-none absolute size-24 rounded-full bg-brand opacity-20 blur-2xl" />
 
-      <div
-        className={cn(
-          "relative overflow-hidden rounded-2xl border border-border-strong bg-surface-dark shadow-glow-md",
-          // Fluid rather than fixed: this sits inside a card that narrows
-          // right down on mobile, where a hard width would overflow it. The
-          // max-w values look generous because the generate page renders the
-          // whole card inside a [zoom:0.7] wrapper — on screen they land at
-          // roughly 224px / 179px.
-          isVideo ? "aspect-video w-full max-w-80" : "aspect-square w-full max-w-64",
-        )}
+      <svg
+        viewBox="0 0 48 48"
+        fill="none"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className="relative size-18 text-brand"
       >
-        <LatentField cols={cols} rows={rows} />
+        {/* Ghost outline underneath, so the icon still reads as a shape
+          * during the part of the cycle where the traced stroke is gone. */}
+        <rect
+          x="6"
+          y="12"
+          width="36"
+          height="24"
+          rx="5"
+          stroke="currentColor"
+          strokeOpacity="0.3"
+          strokeWidth="2.5"
+        />
+        <rect
+          x="6"
+          y="12"
+          width="36"
+          height="24"
+          rx="5"
+          stroke="currentColor"
+          strokeWidth="2.5"
+          strokeDasharray={FRAME_DASH}
+          className={trace}
+          style={{ "--dash": FRAME_DASH } as React.CSSProperties}
+        />
 
         {isVideo ? (
-          <>
-            {/* Render pass sweeping down the frame. The wrapper spans the
-              * frame so the bar's translate is measured against the frame's
-              * own height — no magic percentages tied to the bar's size. */}
-            <div className="pointer-events-none absolute inset-0 motion-safe:animate-render-scan-y motion-reduce:hidden">
-              <div className="h-6 w-full bg-brand/70 blur-[10px]" />
-              <div className="h-px w-full bg-brand-soft" />
-            </div>
-            <SprocketRail className="top-0" />
-            <SprocketRail className="bottom-0" />
-          </>
+          // Play triangle, breathing in the middle of the frame.
+          <path
+            d="M21 19.5 L30 24 L21 28.5 Z"
+            fill="currentColor"
+            className={breathe}
+            style={{ transformBox: "fill-box", transformOrigin: "center" }}
+          />
         ) : (
           <>
-            <div className="pointer-events-none absolute inset-0 flex motion-safe:animate-render-scan-x motion-reduce:hidden">
-              <div className="h-full w-6 bg-brand/70 blur-[10px]" />
-              <div className="h-full w-px bg-brand-soft" />
-            </div>
-            <Iris />
-            {/* Crop marks belong to the photo frame only — on the video
-              * frame the sprocket rails already do the framing, and both at
-              * once just crowds a 288px box. */}
-            <Reticle />
+            {/* Sun, then a ridge line that draws itself across the frame —
+              * the photo composing itself inside the border. The ghost copy
+              * underneath keeps the shape readable at the point in the cycle
+              * where the traced stroke has run off the end. */}
+            <circle
+              cx="16.5"
+              cy="19.5"
+              r="2.5"
+              fill="currentColor"
+              className={breathe}
+              style={{ transformBox: "fill-box", transformOrigin: "center" }}
+            />
+            <path
+              d="M9 32 L18 24 L25 29.5 L31 25 L39 32"
+              stroke="currentColor"
+              strokeOpacity="0.3"
+              strokeWidth="2.5"
+            />
+            <path
+              d="M9 32 L18 24 L25 29.5 L31 25 L39 32"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeDasharray={RIDGE_DASH}
+              className={trace}
+              style={{ "--dash": RIDGE_DASH, animationDelay: "400ms" } as React.CSSProperties}
+            />
           </>
         )}
-      </div>
+
+        <Sparks />
+      </svg>
     </div>
   );
 }
