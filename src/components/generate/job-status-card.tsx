@@ -129,11 +129,17 @@ export function JobStatusCard({
         <Loader2 className="size-6 animate-spin text-white" aria-hidden="true" />
       </span>
       <div className="relative w-full max-w-xs">
-        <p className="text-body-sm text-ink-soft">
-          {generation.status === "queued" ? "Queued…" : "Generating…"}
+        <p className="flex items-center justify-center gap-2 text-body-sm text-ink-soft">
+          <span
+            className="size-1.5 rounded-full bg-brand motion-safe:animate-progress-pulse"
+            aria-hidden="true"
+          />
+          {generation.status === "queued" ? "Queued" : "Generating"}
         </p>
-        <Progress value={generation.progress} className="mt-3" />
-        <p className="mt-2 font-mono text-caption text-muted">{generation.progress}%</p>
+        {/* No numeric readout: the provider's percentage jumps in coarse
+          * steps and sits at 0 for most of a render, so the animated bar
+          * carries the "still working" signal on its own. */}
+        <Progress value={generation.progress} animated className="mt-3" />
       </div>
     </Card>
   );
