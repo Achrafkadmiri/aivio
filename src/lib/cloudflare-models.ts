@@ -1,5 +1,5 @@
-﻿// Duplicated in aiVideo-backend/src/lib/cloudflare-models.ts and
-// aiVideo-backend/supabase/functions/api/lib/cloudflare-models.ts — keep all three in sync.
+﻿// Duplicated in aiVideo-backend/supabase/functions/api/lib/cloudflare-models.ts —
+// keep both in sync.
 // Config-driven registry for the Cloudflare Workers AI models that get a
 // *generic* real-API integration (as opposed to the two bespoke Seedance
 // 2.5/2.0 forms). Each entry describes a model's tunable fields well enough
@@ -14,6 +14,10 @@
 // invalid field, which makes the API answer with the model's real field
 // list and enum options without executing (and so without billing) the
 // model. Do not "tidy" these values from memory or from docs — re-probe.
+//
+// The Vidu Q3 pair below are synchronous over /ai/run (they answer with a
+// plain { video } URL), unlike the older Vidu endpoints that needed job
+// polling — which is why they can live here.
 //
 // Deliberately excluded: the 6 FLUX.2 models (multipart/form-data + binary
 // uploads), the 5 async job-polling models (RunwayML/Vidu/PixVerse), and
@@ -65,8 +69,14 @@ export type CloudflareModelConfig = {
   imageCfParam?: string;
   /** grok wants `{ url }` (its schema calls the field `image.url`), veo-3.1
    *  wants a raw base64-encoded image (fetched and re-encoded server-side,
-   *  see generation-runner.ts), most others want a bare URL string. */
-  imageParamShape?: "string" | "urlObject" | "base64";
+   *  see generation-runner.ts), the Seedream 4.5/5-lite pair demand an
+ *  array in `image_input`, and most others want a bare URL string. */
+  imageParamShape?: "string" | "urlObject" | "base64" | "urlArray";
+  /** Cloudflare param for a closing-frame reference image, for the models
+   *  that accept one. runCloudflareJob already resolves the stored
+   *  lastFrameImage to a signed URL for the Seedance path, so wiring it
+   *  here just forwards that same value. */
+  lastFrameCfParam?: string;
   /** Extra tunable params exposed in the dynamic form. */
   fields: DynamicField[];
   /** Params always sent as-is, not user-editable (e.g. a fixed operation). */
@@ -180,11 +190,19 @@ export const CLOUDFLARE_MODELS: CloudflareModelConfig[] = [
     id: "google/nano-banana-pro",
     label: "Nano Banana Pro",
     provider: "Google",
-    description: "Google's highest-fidelity Gemini image model",
+    description: "Google's highest-fidelity Gemini image model, up to 4K",
     category: "text-to-image",
     promptRequired: true,
-    image: "none",
-    fields: [],
+    image: "optional",
+    imageCfParam: "image_input",
+    imageParamShape: "urlArray",
+    fields: [
+      { key: "aspectRatio", cfParam: "aspect_ratio", label: "Aspect ratio", type: "select", options: ["1:1", "3:2", "2:3", "3:4", "4:3", "4:5", "5:4", "9:16", "16:9", "21:9"], defaultValue: "1:1" },
+      { key: "imageSize", cfParam: "image_size", label: "Resolution", type: "select", options: ["1K", "2K", "4K"], defaultValue: "2K" },
+      { key: "outputFormat", cfParam: "output_format", label: "Output format", type: "select", options: ["jpg", "png", "webp"], defaultValue: "png" },
+    ],
+    // Unlike the Seedream trio, which answer with `images: [...]`, this one
+    // returns a single scalar `image` URL — hence outputPath stays ["image"].
     outputPath: ["image"],
     outputKind: "url",
   },
@@ -243,6 +261,72 @@ export const CLOUDFLARE_MODELS: CloudflareModelConfig[] = [
     staticParams: { response_format: "url" },
     outputPath: ["image"],
     fallbackOutputPath: ["images", "0"],
+    outputKind: "url",
+  },
+
+  // Probed live, and it differs from ByteDance's published schema: it also
+  // accepts `watermark` (boolean), and `size` is validated as 1K | 2K |
+  // WIDTHxHEIGHT rather than being a free-form string. Unlike its 4.5 and
+  // 5-lite siblings it takes `image` as a bare URL (or data: URI) string,
+  // not an array. All three answer with `images: [...]`, so the result is
+  // at images.0 rather than a scalar field.
+  {
+    id: "bytedance/seedream-5-pro",
+    label: "Seedream 5 Pro",
+    provider: "ByteDance",
+    description: "ByteDance's flagship image model, 1K/2K or custom size",
+    category: "text-to-image",
+    promptRequired: true,
+    image: "optional",
+    imageCfParam: "image",
+    fields: [
+      { key: "size", cfParam: "size", label: "Size", type: "text", defaultValue: "2K", helperText: "1K, 2K, or WIDTHxHEIGHT" },
+      { key: "watermark", cfParam: "watermark", label: "Watermark", type: "switch", defaultValue: false },
+    ],
+    outputPath: ["images", "0"],
+    outputKind: "url",
+  },
+  // 4.5 and 5-lite share a shape: `image_input` is strictly an array (a bare
+  // string is rejected), and both can batch-generate via
+  // sequential_image_generation. We pin that to "disabled": this pipeline
+  // persists exactly one result URL, so a batch would bill the user for
+  // images we then silently drop. 4.5's disable_safety_checker is
+  // deliberately not exposed — the provider's checker stays on.
+  {
+    id: "bytedance/seedream-4.5",
+    label: "Seedream 4.5",
+    provider: "ByteDance",
+    description: "Up to 4K with aspect-ratio control",
+    category: "text-to-image",
+    promptRequired: true,
+    image: "optional",
+    imageCfParam: "image_input",
+    imageParamShape: "urlArray",
+    fields: [
+      { key: "size", cfParam: "size", label: "Size", type: "select", options: ["2K", "4K"], defaultValue: "2K" },
+      { key: "aspectRatio", cfParam: "aspect_ratio", label: "Aspect ratio", type: "select", options: ["match_input_image", "1:1", "4:3", "3:4", "16:9", "9:16", "3:2", "2:3", "21:9"], defaultValue: "1:1" },
+    ],
+    staticParams: { sequential_image_generation: "disabled" },
+    outputPath: ["images", "0"],
+    outputKind: "url",
+  },
+  {
+    id: "bytedance/seedream-5-lite",
+    label: "Seedream 5 Lite",
+    provider: "ByteDance",
+    description: "Faster Seedream 5, 2K/3K with PNG or JPEG output",
+    category: "text-to-image",
+    promptRequired: true,
+    image: "optional",
+    imageCfParam: "image_input",
+    imageParamShape: "urlArray",
+    fields: [
+      { key: "size", cfParam: "size", label: "Size", type: "select", options: ["2K", "3K"], defaultValue: "2K" },
+      { key: "aspectRatio", cfParam: "aspect_ratio", label: "Aspect ratio", type: "select", options: ["match_input_image", "1:1", "4:3", "3:4", "16:9", "9:16", "3:2", "2:3", "21:9"], defaultValue: "1:1" },
+      { key: "outputFormat", cfParam: "output_format", label: "Output format", type: "select", options: ["png", "jpeg"], defaultValue: "png" },
+    ],
+    staticParams: { sequential_image_generation: "disabled" },
+    outputPath: ["images", "0"],
     outputKind: "url",
   },
 
@@ -410,6 +494,87 @@ export const CLOUDFLARE_MODELS: CloudflareModelConfig[] = [
       { key: "resolution", cfParam: "resolution", label: "Resolution", type: "select", options: ["768p", "1080p"], defaultValue: "768p", cfValueMap: { "768p": "768P", "1080p": "1080P" } },
       { key: "promptOptimizer", cfParam: "prompt_optimizer", label: "Optimize prompt", type: "switch", defaultValue: true },
       { key: "fastPretreatment", cfParam: "fast_pretreatment", label: "Fast pretreatment", type: "switch", defaultValue: false },
+    ],
+    outputPath: ["video"],
+    outputKind: "url",
+  },
+
+  // Two things to know before touching this entry.
+  //
+  // 1. Pruna ships `disable_safety_filter` defaulting to TRUE — the model's
+  //    safety filter is off unless you say otherwise. We pin it to false as
+  //    a static param so the filter stays on, and deliberately don't expose
+  //    a toggle for it (same stance as seedream-4.5's safety checker).
+  // 2. Its `additionalProperties` is permissive ({}), not false, so unknown
+  //    fields are ACCEPTED rather than rejected. Never schema-probe this
+  //    model with a junk field — the request would execute and bill a real
+  //    video. Guard a probe with an invalid enum value instead.
+  //
+  // `audio` is not exposed: there is no audio upload anywhere in the
+  // pipeline yet. Supplying it would also make `duration` a no-op.
+  {
+    id: "pruna/p-video",
+    label: "P-Video",
+    provider: "Pruna",
+    description: "1-20s at 720p/1080p, 24 or 48 fps, optional audio track",
+    category: "text-to-video",
+    promptRequired: true,
+    image: "optional",
+    imageCfParam: "image",
+    lastFrameCfParam: "last_frame_image",
+    fields: [
+      { key: "duration", cfParam: "duration", label: "Duration", type: "number", defaultValue: 5, min: 1, max: 20, helperText: "seconds" },
+      { key: "resolution", cfParam: "resolution", label: "Resolution", type: "select", options: ["720p", "1080p"], defaultValue: "720p" },
+      { key: "fps", cfParam: "fps", label: "Frames per second", type: "select", options: ["24", "48"], defaultValue: "24", cfValueMap: { "24": 24, "48": 48 } },
+      { key: "aspectRatio", cfParam: "aspect_ratio", label: "Aspect ratio", type: "select", options: ["16:9", "9:16", "4:3", "3:4", "3:2", "2:3", "1:1"], defaultValue: "16:9", helperText: "Ignored when a reference image is supplied" },
+      { key: "draft", cfParam: "draft", label: "Draft mode (fast preview)", type: "switch", defaultValue: false },
+      { key: "saveAudio", cfParam: "save_audio", label: "Include audio", type: "switch", defaultValue: true },
+      { key: "promptUpsampling", cfParam: "prompt_upsampling", label: "Enhance prompt", type: "switch", defaultValue: true },
+      { key: "seed", cfParam: "seed", label: "Seed", type: "number" },
+    ],
+    staticParams: { disable_safety_filter: false },
+    outputPath: ["video"],
+    outputKind: "url",
+  },
+
+  // Vidu's Q3 pair share one input schema; only the speed/quality tier
+  // differs. `start_image` is the opening frame and `end_image` the closing
+  // one — the latter is only valid alongside the former, which the schema
+  // does not enforce, so generation-runner.ts gates it on hasImage.
+  {
+    id: "vidu/q3-pro",
+    label: "Vidu Q3 Pro",
+    provider: "Vidu",
+    description: "Vidu Q3 at up to 1080p with synced audio",
+    category: "text-to-video",
+    promptRequired: true,
+    image: "optional",
+    imageCfParam: "start_image",
+    lastFrameCfParam: "end_image",
+    fields: [
+      { key: "duration", cfParam: "duration", label: "Duration", type: "number", defaultValue: 5, min: 1, max: 16, helperText: "seconds" },
+      { key: "resolution", cfParam: "resolution", label: "Resolution", type: "select", options: ["540p", "720p", "1080p"], defaultValue: "720p" },
+      { key: "aspectRatio", cfParam: "aspect_ratio", label: "Aspect ratio", type: "select", options: ["16:9", "9:16", "3:4", "4:3", "1:1"], defaultValue: "16:9", helperText: "Ignored when a reference image is supplied" },
+      { key: "audio", cfParam: "audio", label: "Generate audio", type: "switch", defaultValue: true },
+    ],
+    outputPath: ["video"],
+    outputKind: "url",
+  },
+  {
+    id: "vidu/q3-turbo",
+    label: "Vidu Q3 Turbo",
+    provider: "Vidu",
+    description: "Faster, cheaper Vidu Q3 variant",
+    category: "text-to-video",
+    promptRequired: true,
+    image: "optional",
+    imageCfParam: "start_image",
+    lastFrameCfParam: "end_image",
+    fields: [
+      { key: "duration", cfParam: "duration", label: "Duration", type: "number", defaultValue: 5, min: 1, max: 16, helperText: "seconds" },
+      { key: "resolution", cfParam: "resolution", label: "Resolution", type: "select", options: ["540p", "720p", "1080p"], defaultValue: "720p" },
+      { key: "aspectRatio", cfParam: "aspect_ratio", label: "Aspect ratio", type: "select", options: ["16:9", "9:16", "3:4", "4:3", "1:1"], defaultValue: "16:9", helperText: "Ignored when a reference image is supplied" },
+      { key: "audio", cfParam: "audio", label: "Generate audio", type: "switch", defaultValue: true },
     ],
     outputPath: ["video"],
     outputKind: "url",

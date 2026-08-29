@@ -80,7 +80,28 @@ const LIVE_VIDEO_RATE: Record<
     minCredits: 53,
   },
   // MiniMax Hailuo 2.3 — 1.2x (768p) / 1.08x (1080p) of Seedance 2.0. Its
-  // shortest clip is 6s (there is no 3s option), so the floor is 6s @ 768p.
+  // shortest clip is 6s (there is no 3s option), so the floor is 6s @ 768p.
+  // Vidu Q3 — estimates, no published per-second cost. Pro at 1.33x and
+  // Turbo at 0.75x of Seedance 2.0's 720p/1080p rates, with 540p carried
+  // down proportionally. Both allow 1s clips, so the floor is 1s @ 540p.
+  "vidu/q3-pro": {
+    rates: { "540p": 9.3, "720p": 20, "1080p": 49 },
+    minCredits: 9,
+  },
+  "vidu/q3-turbo": {
+    rates: { "540p": 5.25, "720p": 11.25, "1080p": 27.75 },
+    minCredits: 5,
+  },
+  // Pruna P-Video — no published per-second cost to scale from, so this is
+  // parity with Seedance 2.0's 720p/1080p rates as a placeholder until real
+  // numbers exist. Its floor is a 1s clip at 720p (it allows durations down
+  // to 1s, unlike everything else here). NOTE: the rate tables key on
+  // resolution only, so a 48fps clip bills the same as 24fps despite
+  // rendering twice the frames.
+  "pruna/p-video": {
+    rates: { "720p": 15, "1080p": 37 },
+    minCredits: 15,
+  },
   "minimax/hailuo-2.3": {
     rates: { "768p": 18, "1080p": 40 },
     minCredits: 108,
@@ -99,6 +120,7 @@ const LIVE_VIDEO_AUTO_DURATION_ESTIMATE = 8;
 // label/description says "pro"/flagship/"quality".
 const QUALITY_IMAGE_MODELS = new Set([
   "recraft/recraftv4-1-pro",
+  "bytedance/seedream-5-pro",
   "xai/grok-imagine-image-quality",
   "openai/gpt-image-2",
   "google/nano-banana-pro",
