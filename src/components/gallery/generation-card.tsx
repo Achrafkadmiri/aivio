@@ -2,12 +2,9 @@
 
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { MoreVertical, Download, Share2, Copy, Trash2, FolderPlus, FolderMinus, AlertCircle } from "lucide-react";
-import { Badge, type BadgeVariant } from "@/components/ui/badge";
-import { DropdownRoot, DropdownTrigger, DropdownContent, DropdownItem } from "@/components/ui/dropdown";
-import { Button } from "@/components/ui/button";
+import { AlertCircle, Heart } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
-import { cn, truncate } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 
 // Only starts loading once the tile scrolls into view, then pauses/resumes
 // on exit/re-entry (without re-fetching) for the rest of its life — so a
@@ -72,37 +69,31 @@ export type GalleryItem = {
   resultUrl: string | null;
   thumbnailUrl: string | null;
   isPublic: boolean;
-};
-
-const STATUS_VARIANT: Record<string, BadgeVariant> = {
-  completed: "success",
-  processing: "brand",
-  queued: "neutral",
-  pending: "neutral",
-  failed: "accent",
+  // Everything below is already on every serialized generation the API
+  // returns (see serializeGeneration in the backend) — optional here only
+  // because a few local call sites build GalleryItems by hand. The preview
+  // modal reads them for its prompt/details panel.
+  negativePrompt?: string | null;
+  seed?: number | null;
+  parameters?: Record<string, unknown> | null;
+  costCredits?: number;
+  processingTimeSeconds?: number | null;
+  errorMessage?: string | null;
+  createdAt?: string;
 };
 
 export function GenerationCard({
   item,
   onOpen,
-  onDelete,
-  onDuplicate,
-  onAddToCollection,
-  onRemoveFromCollection,
-  onTogglePublic,
+  liked = false,
+  onToggleLike,
 }: {
   item: GalleryItem;
   onOpen: () => void;
-  onDelete?: () => void;
-  onDuplicate?: () => void;
-  onAddToCollection?: () => void;
-  onRemoveFromCollection?: () => void;
-  onTogglePublic?: () => void;
+  liked?: boolean;
+  onToggleLike?: () => void;
 }) {
   const isVideo = item.type !== "text-to-image";
-  const hasActions = Boolean(
-    onDelete || onDuplicate || onAddToCollection || onRemoveFromCollection || onTogglePublic,
-  );
 
   return (
     <div className="group relative aspect-square overflow-hidden rounded-2xl border border-line bg-surface-2 shadow-card transition-[border-color,box-shadow,transform] duration-300 ease-out hover:-translate-y-1 hover:border-border-strong hover:shadow-glow-sm">
@@ -137,71 +128,28 @@ export function GenerationCard({
         )}
       </button>
 
-      {/* Always visible below sm: — touch devices have no hover state, so a
-          hover-only reveal leaves the actions menu unreachable without
-          opening the lightbox first. Desktop keeps the cleaner hover-to-
-          reveal treatment since a mouse actually has one. */}
-      <div className="pointer-events-none absolute inset-0 flex flex-col justify-between bg-gradient-to-t from-black/80 via-black/0 to-black/40 p-3 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100">
-        <div className="flex items-start justify-between gap-2">
-          <Badge variant={STATUS_VARIANT[item.status] ?? "neutral"} className="pointer-events-none">
-            {item.status}
-          </Badge>
-          {hasActions && (
-            <div className="pointer-events-auto">
-              <DropdownRoot>
-                <DropdownTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="bg-surface/60"
-                    aria-label="Generation actions"
-                  >
-                    <MoreVertical className="size-4" />
-                  </Button>
-                </DropdownTrigger>
-                <DropdownContent>
-                  {item.resultUrl && (
-                    <DropdownItem asChild>
-                      <a href={item.resultUrl} download target="_blank" rel="noreferrer">
-                        <Download className="mr-2 inline size-4" /> Download
-                      </a>
-                    </DropdownItem>
-                  )}
-                  {onDuplicate && (
-                    <DropdownItem onSelect={onDuplicate}>
-                      <Copy className="mr-2 inline size-4" /> Duplicate
-                    </DropdownItem>
-                  )}
-                  {onAddToCollection && (
-                    <DropdownItem onSelect={onAddToCollection}>
-                      <FolderPlus className="mr-2 inline size-4" /> Add to collection
-                    </DropdownItem>
-                  )}
-                  {onRemoveFromCollection && (
-                    <DropdownItem onSelect={onRemoveFromCollection}>
-                      <FolderMinus className="mr-2 inline size-4" /> Remove from collection
-                    </DropdownItem>
-                  )}
-                  {onTogglePublic && (
-                    <DropdownItem onSelect={onTogglePublic}>
-                      <Share2 className="mr-2 inline size-4" />{" "}
-                      {item.isPublic ? "Make private" : "Share publicly"}
-                    </DropdownItem>
-                  )}
-                  {onDelete && (
-                    <DropdownItem onSelect={onDelete} className="text-accent data-[highlighted]:text-accent">
-                      <Trash2 className="mr-2 inline size-4" /> Delete
-                    </DropdownItem>
-                  )}
-                </DropdownContent>
-              </DropdownRoot>
-            </div>
+      {/* The only chrome on a tile: everything else (status, prompt, actions)
+          now lives in the preview modal. Always visible below sm: — touch
+          devices have no hover state, so a hover-only reveal would put the
+          heart out of reach. A liked tile keeps its heart on at every size,
+          otherwise there's no way to see what you've liked. */}
+      {onToggleLike && (
+        <button
+          type="button"
+          onClick={onToggleLike}
+          aria-pressed={liked}
+          aria-label={liked ? "Unlike" : "Like"}
+          className={cn(
+            "absolute top-2.5 right-2.5 flex size-9 items-center justify-center rounded-full",
+            "bg-black/40 text-white backdrop-blur-sm transition-[opacity,transform,background-color] duration-200",
+            "hover:bg-black/60 active:scale-90",
+            liked ? "opacity-100" : "sm:opacity-0 sm:group-hover:opacity-100 sm:focus-visible:opacity-100",
           )}
-        </div>
-        <p className="pointer-events-none line-clamp-2 font-mono text-caption text-ink-soft">
-          {truncate(item.prompt, 90)}
-        </p>
-      </div>
+        >
+          <Heart className={cn("size-4.5", liked && "fill-brand text-brand")} aria-hidden="true" />
+        </button>
+      )}
+
     </div>
   );
 }

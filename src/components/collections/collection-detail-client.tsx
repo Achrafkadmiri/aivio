@@ -14,6 +14,7 @@ import { GalleryGrid } from "@/components/gallery/gallery-grid";
 import { useToast } from "@/components/ui/toast";
 import type { GalleryItem } from "@/components/gallery/generation-card";
 import { apiFetch } from "@/lib/api-client";
+import { useMe } from "@/hooks/use-me";
 
 type CollectionDetail = {
   id: string;
@@ -124,6 +125,7 @@ function CollectionEditor({
   deleting: boolean;
 }) {
   const { toast } = useToast();
+  const { data: me } = useMe();
   const [name, setName] = useState(collection.name);
   const [isPublic, setIsPublic] = useState(collection.isPublic);
   const [saving, setSaving] = useState(false);
@@ -215,7 +217,11 @@ function CollectionEditor({
           No items in this collection yet. Add some from your gallery.
         </p>
       ) : (
-        <GalleryGrid items={collection.items} onRemoveFromCollection={onRemoveItem} />
+        <GalleryGrid
+          items={collection.items}
+          author={me ? { name: me.name, avatarUrl: me.avatarUrl } : undefined}
+          onRemoveFromCollection={onRemoveItem}
+        />
       )}
     </div>
   );

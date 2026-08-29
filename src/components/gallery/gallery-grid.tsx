@@ -1,11 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { useLikedGenerations } from "@/hooks/use-liked-generations";
 import { GenerationCard, type GalleryItem } from "./generation-card";
-import { Lightbox } from "./lightbox";
+import { PreviewModal, type PreviewAuthor } from "./preview-modal";
 
 export function GalleryGrid({
   items,
+  author,
   onDelete,
   onDuplicate,
   onAddToCollection,
@@ -13,6 +15,11 @@ export function GalleryGrid({
   onTogglePublic,
 }: {
   items: GalleryItem[];
+  /** Shown in the preview modal's header. Pass it only where the viewer is
+   *  known to be the owner (my gallery, dashboard, own collections) — the
+   *  public gallery has no author data, and guessing "you" there would
+   *  credit the wrong person. */
+  author?: PreviewAuthor;
   onDelete?: (id: string) => void;
   onDuplicate?: (id: string) => void;
   onAddToCollection?: (id: string) => void;
@@ -20,6 +27,8 @@ export function GalleryGrid({
   onTogglePublic?: (id: string) => void;
 }) {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
+  const openItem = openIndex === null ? null : items[openIndex];
+  const { liked, toggleLike } = useLikedGenerations();
 
   return (
     <>
@@ -29,21 +38,28 @@ export function GalleryGrid({
             key={item.id}
             item={item}
             onOpen={() => setOpenIndex(i)}
-            onDelete={onDelete ? () => onDelete(item.id) : undefined}
-            onDuplicate={onDuplicate ? () => onDuplicate(item.id) : undefined}
-            onAddToCollection={onAddToCollection ? () => onAddToCollection(item.id) : undefined}
-            onRemoveFromCollection={
-              onRemoveFromCollection ? () => onRemoveFromCollection(item.id) : undefined
-            }
-            onTogglePublic={onTogglePublic ? () => onTogglePublic(item.id) : undefined}
+            liked={liked.has(item.id)}
+            onToggleLike={() => toggleLike(item.id)}
           />
         ))}
       </div>
-      <Lightbox
+      <PreviewModal
         items={items}
         index={openIndex}
+        author={author}
         onClose={() => setOpenIndex(null)}
         onNavigate={setOpenIndex}
+        onDelete={onDelete && openItem ? () => onDelete(openItem.id) : undefined}
+        onDuplicate={onDuplicate && openItem ? () => onDuplicate(openItem.id) : undefined}
+        onAddToCollection={
+          onAddToCollection && openItem ? () => onAddToCollection(openItem.id) : undefined
+        }
+        onRemoveFromCollection={
+          onRemoveFromCollection && openItem
+            ? () => onRemoveFromCollection(openItem.id)
+            : undefined
+        }
+        onTogglePublic={onTogglePublic && openItem ? () => onTogglePublic(openItem.id) : undefined}
       />
     </>
   );

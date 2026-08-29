@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { useToast } from "@/components/ui/toast";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import { useMe } from "@/hooks/use-me";
 import { GalleryGrid } from "./gallery-grid";
 import { AddToCollectionModal } from "./add-to-collection-modal";
 import type { GalleryItem } from "./generation-card";
@@ -18,6 +19,7 @@ type GenerationsResponse = { items: GalleryItem[]; nextCursor: string | null; ha
 
 export function MyGalleryClient() {
   const { toast } = useToast();
+  const { data: me } = useMe();
   const queryClient = useQueryClient();
   const [type, setType] = useState("");
   const [status, setStatus] = useState("");
@@ -126,6 +128,7 @@ export function MyGalleryClient() {
           <>
             <GalleryGrid
               items={items}
+              author={me ? { name: me.name, avatarUrl: me.avatarUrl } : undefined}
               onDelete={(id) => deleteMutation.mutate(id)}
               onDuplicate={(id) => duplicateMutation.mutate(id)}
               onAddToCollection={(id) => setCollectionTarget(id)}

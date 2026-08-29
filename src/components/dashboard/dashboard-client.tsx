@@ -177,7 +177,10 @@ export function DashboardClient() {
               </Link>
             </Card>
           ) : (
-            <GalleryGrid items={recentGenerations} />
+            <GalleryGrid
+              items={recentGenerations}
+              author={{ name: user.name, avatarUrl: user.avatarUrl }}
+            />
           )}
         </div>
       </div>
