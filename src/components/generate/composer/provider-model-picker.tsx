@@ -1,8 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Check, ChevronDown, ChevronRight, Zap } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { Check, ChevronDown, ChevronRight } from "lucide-react";
 import { DropdownRoot, DropdownTrigger, DropdownContent } from "@/components/ui/dropdown";
 import { ProviderLogo } from "./provider-logo";
 import { pillClass } from "./pill";
@@ -14,7 +13,6 @@ export type PickerModel<T extends string> = {
   label: string;
   provider?: string;
   description: string;
-  live?: boolean;
 };
 
 /**
@@ -112,12 +110,6 @@ export function ProviderModelPicker<T extends string>({
                         <span className="min-w-0 flex-1">
                           <span className="flex items-center gap-2">
                             <span className="truncate text-label text-ink-soft">{model.label}</span>
-                            {model.live && (
-                              <Badge variant="success" className="shrink-0 gap-1 px-1.5 py-0.5">
-                                <Zap className="size-2.5" aria-hidden="true" />
-                                Live
-                              </Badge>
-                            )}
                           </span>
                           {specBadges.length > 0 ? (
                             <span className="mt-1 flex flex-wrap gap-1">

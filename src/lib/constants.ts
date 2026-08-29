@@ -185,7 +185,6 @@ const DYNAMIC_VIDEO_ENTRIES = CLOUDFLARE_MODELS.filter(
   label: m.label,
   provider: m.provider,
   description: m.description,
-  live: true as const,
 }));
 
 const DYNAMIC_IMAGE_ENTRIES = CLOUDFLARE_MODELS.filter((m) => m.category === "text-to-image").map(
@@ -194,7 +193,6 @@ const DYNAMIC_IMAGE_ENTRIES = CLOUDFLARE_MODELS.filter((m) => m.category === "te
     label: m.label,
     provider: m.provider,
     description: m.description,
-    live: true as const,
   }),
 );
 
@@ -203,15 +201,13 @@ export const VIDEO_MODELS = [
     id: "bytedance/seedance-2.5",
     label: "Seedance 2.5",
     provider: "ByteDance",
-    description: "Real Cloudflare Workers AI model — up to 30s, reference control & audio",
-    live: true,
+    description: "Up to 30s, reference control & audio",
   },
   {
     id: "bytedance/seedance-2.0",
     label: "Seedance 2.0",
     provider: "ByteDance",
-    description: "Real Cloudflare Workers AI model — up to 4K, fixed camera & native audio",
-    live: true,
+    description: "Up to 4K, fixed camera & native audio",
   },
   ...DYNAMIC_VIDEO_ENTRIES,
 ] as const;

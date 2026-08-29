@@ -22,7 +22,7 @@ const SECTIONS = [
   },
   {
     title: "5. Availability",
-    body: "Generation depends on third-party model providers (Cloudflare Workers AI, kie.ai, and others). We aim for high availability but don't guarantee uninterrupted service, and a provider outage may delay or fail generations outside our control.",
+    body: "Generation depends on third-party model providers (kie.ai and others). We aim for high availability but don't guarantee uninterrupted service, and a provider outage may delay or fail generations outside our control.",
   },
   {
     title: "6. Changes",

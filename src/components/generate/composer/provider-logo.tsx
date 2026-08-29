@@ -58,12 +58,107 @@ const REAL_LOGOS: Record<string, { viewBox: string; content: ReactNode; padded?:
       />
     ),
   },
+  MiniMax: {
+    viewBox: "0 0 48 48",
+    content: (
+      <>
+        <path
+          fill="url(#minimax-gradient)"
+          d="M32.6 4c2.3 0 4.1 1.9 4.1 4.1v25a1.5 1.5 0 0 0 1.5 1.5 1.5 1.5 0 0 0 1.5-1.5V18.2a4 4 0 0 1 5.7-3.8 4 4 0 0 1 2.6 3.8v13.1a1.3 1.3 0 0 1-1.8 1.2 1 1 0 0 1-.8-1.2V18.2a1.5 1.5 0 0 0-1.5-1.5 1.5 1.5 0 0 0-1.6 1.5v15a4 4 0 0 1-5.6 3.7A4 4 0 0 1 34 33v-25a2 2 0 0 0-1.5-1.5A1.6 1.6 0 0 0 31 8.1V40a4 4 0 0 1-5.7 3.7 4 4 0 0 1-2.5-3.8v-3.8q.1-1.2 1.3-1.3 1.2.1 1.3 1.3v3.8q0 .9.7 1.3a1.5 1.5 0 0 0 2-.5q.3-.3.3-.8V8.1C28.4 6 30.2 4 32.6 4M21.2 4c2.3 0 4.2 1.9 4.2 4.1v23a1.3 1.3 0 0 1-1.8 1.3 1 1 0 0 1-.8-1.2v-23a1.6 1.6 0 0 0-1.6-1.6A1.6 1.6 0 0 0 19.6 8v28a4 4 0 0 1-4.1 4.2 4 4 0 0 1-4.2-4.1v-18a1.5 1.5 0 0 0-1.5-1.5 1.5 1.5 0 0 0-1.5 1.5v7.6a4 4 0 0 1-5.7 3.8A4 4 0 0 1 0 25.8V23q.1-1.1 1.3-1.2T2.6 23v2.8q.2 1.4 1.5 1.5 1.5-.1 1.6-1.5v-7.6a4 4 0 0 1 4.1-4.1 4 4 0 0 1 4.2 4.1v18q0 1.3 1.5 1.5 1.3-.2 1.5-1.5v-28C17 5.8 19 4 21.2 4"
+        />
+        <defs>
+          <linearGradient id="minimax-gradient" x1="0" x2="48.1" y1="24" y2="24" gradientUnits="userSpaceOnUse">
+            <stop stopColor="#e2167e" />
+            <stop offset="1" stopColor="#fe603c" />
+          </linearGradient>
+        </defs>
+      </>
+    ),
+  },
+  Recraft: {
+    viewBox: "0 0 48 48",
+    content: (
+      <>
+        <g clipPath="url(#recraft-clip-a)">
+          <mask
+            id="recraft-mask"
+            width="48"
+            height="48"
+            x="0"
+            y="0"
+            maskUnits="userSpaceOnUse"
+            style={{ maskType: "luminance" }}
+          >
+            <path fill="#fff" d="M48 0H0v48h48z" />
+          </mask>
+          <g mask="url(#recraft-mask)">
+            <path fill="#fff" d="M40 0H8a8 8 0 0 0-8 8v32a8 8 0 0 0 8 8h32a8 8 0 0 0 8-8V8a8 8 0 0 0-8-8" />
+            <g fill="#000" fillRule="evenodd" clipPath="url(#recraft-clip-c)" clipRule="evenodd">
+              <path d="M34.9 18.5c0-6.5-6-11.7-13.2-11.7-2.5 0-4.5 5.2-4.5 11.7q0 2.4.3 4.5h-4.4L8.4 39.3h13.3v-9.1C29 30.2 35 24.9 35 18.5M21.7 8.9c1.3 0 2.4 4.3 2.4 9.6s-1 9.5-2.4 9.5-2.4-4.2-2.4-9.5 1.1-9.6 2.4-9.6" />
+              <path d="M35.1 30.2H21.7l5.2 9.1h13.3z" />
+            </g>
+          </g>
+        </g>
+        <defs>
+          <clipPath id="recraft-clip-a">
+            <path fill="#fff" d="M0 0h48v48H0z" />
+          </clipPath>
+          <clipPath id="recraft-clip-c">
+            <path fill="#fff" d="M7 6.8h34v34H7z" />
+          </clipPath>
+        </defs>
+      </>
+    ),
+  },
+  OpenAI: {
+    viewBox: "0 0 48 48",
+    content: (
+      <>
+        <g clipPath="url(#openai-clip-a)">
+          <mask
+            id="openai-mask-b"
+            width="48"
+            height="48"
+            x="0"
+            y="0"
+            maskUnits="userSpaceOnUse"
+            style={{ maskType: "luminance" }}
+          >
+            <path fill="#fff" d="M48 0H0v48h48z" />
+          </mask>
+          <g mask="url(#openai-mask-b)">
+            <path fill="#fff" d="M40 0H8a8 8 0 0 0-8 8v32a8 8 0 0 0 8 8h32a8 8 0 0 0 8-8V8a8 8 0 0 0-8-8" />
+            <mask
+              id="openai-mask-c"
+              width="36"
+              height="36"
+              x="6"
+              y="6"
+              maskUnits="userSpaceOnUse"
+              style={{ maskType: "luminance" }}
+            >
+              <path fill="#fff" d="M42 6H6v36h36z" />
+            </mask>
+            <g mask="url(#openai-mask-c)">
+              <path
+                fill="#000"
+                d="M39.4 20.7a9 9 0 0 0-.8-7.3A9 9 0 0 0 29 9a9.1 9.1 0 0 0-15.4 3.3 9 9 0 0 0-6 4.3 9 9 0 0 0 1 10.7 9 9 0 0 0 .9 7.3A9 9 0 0 0 19 39a9 9 0 0 0 6.8 3 9 9 0 0 0 8.6-6.3 9 9 0 0 0 7.2-9.8 9 9 0 0 0-2.3-5.2M26 39.7q-2.5 0-4.3-1.6l.2-.1 7.2-4.2a1 1 0 0 0 .5-1V22.7l3 1.8h.1V33a7 7 0 0 1-6.7 6.7m-14.5-6.2q-1.2-2.1-.8-4.6l.2.2 7.2 4.1a1 1 0 0 0 1.2 0l8.7-5v3.5L20.6 36a6.7 6.7 0 0 1-9.2-2.4M9.5 17.8q1.2-2 3.6-3v8.6a1 1 0 0 0 .5 1l8.8 5-3 1.8a.1.1 0 0 1-.2 0L12 27a7 7 0 0 1-2.5-9.2m25 5.8-8.8-5 3-1.8L36 21A6.7 6.7 0 0 1 35 33v-8.5a1 1 0 0 0-.6-1m3-4.5-.3-.1-7.2-4.2a1 1 0 0 0-1.1 0l-8.8 5v-3.5l7.3-4.2a6.7 6.7 0 0 1 10 7m-19 6.2-3-1.8h-.1V15a6.7 6.7 0 0 1 11-5.2l-.2.2-7.1 4a1 1 0 0 0-.6 1.1zm1.6-3.6 4-2.2 3.8 2.2v4.5L24 28.5l-3.9-2.3z"
+              />
+            </g>
+          </g>
+        </g>
+        <defs>
+          <clipPath id="openai-clip-a">
+            <path fill="#fff" d="M0 0h48v48H0z" />
+          </clipPath>
+        </defs>
+      </>
+    ),
+  },
 };
 
 const MONOGRAM_STYLES: Record<string, { initials: string; className: string }> = {
-  "Stability AI (Cloudflare)": { initials: "SA", className: "bg-[#6366F1]/15 text-[#6366F1]" },
   Leonardo: { initials: "LE", className: "bg-[#8B5CF6]/15 text-[#8B5CF6]" },
-  Recraft: { initials: "RC", className: "bg-[#F43F5E]/15 text-[#F43F5E]" },
 };
 
 const FALLBACK_CLASSES = [

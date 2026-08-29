@@ -238,7 +238,7 @@ export function SeedanceVideoForm({
         <Zap className="size-3 text-success" aria-hidden="true" />
         {resolution === "1080p" || referenceVideoUrl
           ? "Billed on your kie.ai account per generation."
-          : "Billed on your Cloudflare account per generation."}
+          : "Billed per generation."}
       </p>
 
       <ComposerShell>

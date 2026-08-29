@@ -206,7 +206,7 @@ export function Seedance2VideoForm({
     <form onSubmit={submit} className="space-y-2" noValidate>
       <p className="flex items-center gap-1.5 px-1 text-caption text-muted">
         <Zap className="size-3 text-success" aria-hidden="true" />
-        Billed on your Cloudflare account per generation.
+        Billed per generation.
       </p>
 
       <ComposerShell>

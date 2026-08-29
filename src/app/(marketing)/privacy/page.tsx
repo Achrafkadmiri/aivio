@@ -14,7 +14,7 @@ const SECTIONS = [
   },
   {
     title: "Third parties",
-    body: "Generation requests are sent to the model provider that fulfills them (Cloudflare Workers AI, kie.ai) — your prompt and any reference image/video you attach is shared with that provider to produce the result. Uploaded files and results are stored on Cloudflare R2. Authentication (including Google sign-in) is handled via Supabase Auth.",
+    body: "Generation requests are sent to the model provider that fulfills them (kie.ai and others) — your prompt and any reference image/video you attach is shared with that provider to produce the result. Uploaded files and results are stored with our cloud storage provider. Authentication (including Google sign-in) is handled via Supabase Auth.",
   },
   {
     title: "Your content's visibility",
