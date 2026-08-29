@@ -128,6 +128,7 @@ export function JobStatusCard({
         style={{ background: "var(--gradient-hero-glow)" }}
         aria-hidden="true"
       />
+<<<<<<< HEAD
 
       <GenerationLoader isVideo={isVideo} className="relative px-4" />
 
@@ -150,6 +151,23 @@ export function JobStatusCard({
             ? "Waiting for a free slot on the model"
             : "This usually takes under a minute"}
         </p>
+=======
+      <span className="relative flex size-14 items-center justify-center rounded-2xl bg-brand shadow-glow-md">
+        <Loader2 className="size-6 animate-spin text-white" aria-hidden="true" />
+      </span>
+      <div className="relative w-full max-w-xs">
+        <p className="flex items-center justify-center gap-2 text-body-sm text-ink-soft">
+          <span
+            className="size-1.5 rounded-full bg-brand motion-safe:animate-progress-pulse"
+            aria-hidden="true"
+          />
+          {generation.status === "queued" ? "Queued" : "Generating"}
+        </p>
+        {/* No numeric readout: the provider's percentage jumps in coarse
+          * steps and sits at 0 for most of a render, so the animated bar
+          * carries the "still working" signal on its own. */}
+        <Progress value={generation.progress} animated className="mt-3" />
+>>>>>>> 2f9d61cffa74e9cc6a9857101099bcbedca9eba1
       </div>
     </Card>
   );
