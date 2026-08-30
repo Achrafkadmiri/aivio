@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { Check } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
 import { TIERS, TIER_INFO, type Tier } from "@/lib/constants";
+import { PlanFeatureList } from "@/components/pricing/plan-feature-list";
 import { PlanPrice } from "@/components/pricing/plan-price";
 import { apiFetch } from "@/lib/api-client";
 import { useInvalidateCredits } from "@/hooks/use-credits";
@@ -49,14 +49,12 @@ export function PlanSwitcher({ currentTier }: { currentTier: string }) {
             <p className="mt-1 text-heading font-bold text-ink">
               <PlanPrice priceMonthly={info.priceMonthly} showSuffix={false} />
             </p>
-            <ul className="mt-3 flex-1 space-y-2">
-              {info.features.slice(0, 3).map((feat) => (
-                <li key={feat} className="flex items-start gap-2 text-caption text-muted">
-                  <Check className="mt-0.5 size-3.5 shrink-0 text-brand" aria-hidden="true" />
-                  {feat}
-                </li>
-              ))}
-            </ul>
+            <PlanFeatureList
+              features={info.features.slice(0, 3)}
+              note={info.featuresNote}
+              size="sm"
+              className="mt-3 flex-1"
+            />
             <Button
               variant={isCurrent ? "secondary" : "primary"}
               disabled={isCurrent}

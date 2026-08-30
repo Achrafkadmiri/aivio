@@ -20,7 +20,8 @@ import {
 // A credit SELLS for CREDIT_VALUE_USD ($0.01 — see constants.ts, where
 // every plan and pack is priced at that rate). TARGET_GROSS_MARGIN is the
 // cut of that we keep, so a credit may only buy COST_USD_PER_CREDIT =
-// $0.005 of provider compute:
+// $0.005 of provider compute on video. Images use their own, steeper
+// IMAGE_GROSS_MARGIN (65%, so IMAGE_COST_USD_PER_CREDIT = $0.0035):
 //
 //   credits = round(seconds × usdPerSecond / COST_USD_PER_CREDIT)
 //
@@ -33,8 +34,25 @@ import {
 const TARGET_GROSS_MARGIN = 0.5;
 const COST_USD_PER_CREDIT = CREDIT_VALUE_USD * (1 - TARGET_GROSS_MARGIN);
 
+// Images carry a steeper margin than video (2026-08-30). A single image is
+// cheap enough in absolute terms that the whole move is $0.02 -> $0.03, which
+// barely registers next to a multi-dollar clip, so the extra 15 points are
+// taken here instead of on video where the same percentage would cost a user
+// real money per generation.
+const IMAGE_GROSS_MARGIN = 0.65;
+const IMAGE_COST_USD_PER_CREDIT = CREDIT_VALUE_USD * (1 - IMAGE_GROSS_MARGIN);
+
 function creditsFor(seconds: number, usdPerSecond: number): number {
   return Math.round((seconds * usdPerSecond) / COST_USD_PER_CREDIT);
+}
+
+// Rounds UP where creditsFor rounds to nearest, because a credit is too coarse
+// to land on 65% exactly: a quality image is 14.29 credits, and rounding it
+// down to 14 would sell at 64.3%, under the target. Ceil keeps every image at
+// or above IMAGE_GROSS_MARGIN - both buckets land on 66.7% (fast: 3 credits,
+// quality: 15).
+function imageCreditsFor(costUsd: number): number {
+  return Math.ceil(costUsd / IMAGE_COST_USD_PER_CREDIT);
 }
 
 // Real provider cost per second of output, keyed by resolution since the
@@ -157,7 +175,8 @@ const LIVE_VIDEO_AUTO_DURATION_ESTIMATE = 8;
 // are the ones whose own label/description says "pro"/flagship/"quality".
 // These two buckets are the least-grounded numbers in this file — if a real
 // per-image cost ever lands, split them per model like the video table
-// above rather than nudging the buckets.
+// above rather than nudging the buckets. Both sell at IMAGE_GROSS_MARGIN
+// (65%), not video's 50%: fast = 3 credits ($0.03), quality = 15 ($0.15).
 const QUALITY_IMAGE_MODELS = new Set([
   "recraft/recraftv4-1-pro",
   "bytedance/seedream-5-pro",
@@ -217,7 +236,7 @@ export function estimateVideoCredits(
 
 export function estimateImageCredits(model: string) {
   const costUsd = QUALITY_IMAGE_MODELS.has(model) ? QUALITY_IMAGE_COST_USD : FAST_IMAGE_COST_USD;
-  return creditsFor(1, costUsd);
+  return imageCreditsFor(costUsd);
 }
 
 export function estimateCreditsForRequest(input: {

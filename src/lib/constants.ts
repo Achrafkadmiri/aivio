@@ -9,7 +9,8 @@ import { CLOUDFLARE_MODELS } from "@/lib/cloudflare-models";
 //
 // It is ALSO the base credit-estimate.ts prices generations from: a credit
 // may buy CREDIT_VALUE_USD × (1 - TARGET_GROSS_MARGIN) = $0.005 of provider
-// compute, so the margin rides on every generation. Until 2026-08-30 it
+// compute on video, or $0.0035 on images (they carry a steeper 65% margin).
+// The margin therefore rides on every generation. Until 2026-08-30 it
 // worked the other way round — generations were priced at cost (1 credit =
 // $0.01 of compute) and the margin came from tiers granting fewer credits
 // than their price would buy. Flat 1,000/2,500/5,000 grants inverted that
@@ -21,6 +22,28 @@ export const CREDIT_VALUE_USD = 0.01;
 
 export const TIERS = ["free", "starter", "creator", "studio"] as const;
 export type Tier = (typeof TIERS)[number];
+
+// One disclosure per plan card. Every "~N" figure in a card is computed at the
+// cheapest settings the credits can be spent on, because that is the most the
+// plan can produce. That caveat used to sit inline in the bullets themselves
+// ("(720p)", "(fast models)"), where it read as a cap on the plan rather than
+// as the floor price the number was computed at. It now lives in a single info
+// bubble under the list (PlanFeatureList, frontend side), so a bullet carries
+// its number and nothing else.
+const ESTIMATES_NOTE =
+  "Estimates. Unless a line says otherwise, every figure above is what these " +
+  "credits buy at each model's cheapest settings — 480p for video, and the " +
+  "fast image models. Higher resolutions and the quality image models cost " +
+  "more per generation, so the same credits stretch proportionally less far.";
+
+// Découverte can't reach Seedance 2.0 at all (its shortest clip costs 56
+// credits, past the 50-credit budget), so that card advertises the Mini variant
+// and its note says why.
+const ESTIMATES_NOTE_FREE =
+  "Estimates. Every figure above is what these credits buy at each model's " +
+  "cheapest settings — 480p, which is also this plan's ceiling, and the fast " +
+  "image models. Seedance 2.0 itself needs 56 credits for its shortest clip, " +
+  "just past the budget here, so its Mini variant is what these credits reach.";
 
 export const TIER_INFO: Record<
   Tier,
@@ -40,18 +63,23 @@ export const TIER_INFO: Record<
     priorityQueue: boolean;
     apiAccess: boolean;
     features: string[];
+    /** One disclosure for the whole card, see ESTIMATES_NOTE. */
+    featuresNote: string;
   }
 > = {
   // Credits recalibrated 2026-08-30: every plan sells credits at a flat
   // CREDIT_VALUE_USD ($0.01) — $9.99 → 1,000, $24 → 2,500, $49 → 5,000 — and
   // the margin now comes from generation pricing instead (credit-estimate.ts
-  // bills each generation at a 50% gross margin over real provider cost).
-  // Spending a plan's credits in full therefore costs us half its price:
-  // ~50% gross, ~39-40% net of the ~2.9%+$0.30 Stripe fee and the ~5%
+  // bills video at a 50% gross margin over real provider cost, images at
+  // 65%).
+  // Spending a plan's credits in full on video therefore costs us half its
+  // price: ~50% gross, ~39-40% net of the ~2.9%+$0.30 Stripe fee and the ~5%
   // storage/support/hosting overhead — still clearing the 40% net floor the
   // v2 pricing was built around, but with no headroom left, so a further
   // credit increase has to be paid for by raising prices or the margin in
-  // credit-estimate.ts. maxResolution/maxDurationSeconds/
+  // credit-estimate.ts. That is the video-only worst case: images bill at a
+  // 66.7% gross margin (~56-57% net), so an image-heavy user is the
+  // comfortable one. maxResolution/maxDurationSeconds/
   // concurrentGenerations/videoWatermark/priorityQueue/apiAccess are enforced
   // server-side (see aiVideo-backend's generations.ts).
   free: {
@@ -76,11 +104,12 @@ export const TIER_INFO: Record<
     apiAccess: false,
     features: [
       "50 credits / month",
-      "~25 images (fast models)",
-      "~3s video (480p, Seedance 2.0 Mini)",
+      "~16 images",
+      "~4s Seedance 2.0 Mini video",
       "Video watermark",
       "Standard queue",
     ],
+    featuresNote: ESTIMATES_NOTE_FREE,
   },
   starter: {
     label: "Starter",
@@ -97,13 +126,16 @@ export const TIER_INFO: Record<
     apiAccess: false,
     features: [
       "1,000 credits / month",
-      "~500 images (fast models)",
-      "~21s Seedance 2.5 video (720p)",
+      "~333 images",
+      "~71s Seedance 2.0 video",
+      "~21s Seedance 2.5 video",
+      "Add credits as needed",
       "Up to 1080p",
       "No watermark",
       "Commercial license",
       "Standard queue",
     ],
+    featuresNote: ESTIMATES_NOTE,
   },
   creator: {
     label: "Créateur",
@@ -120,13 +152,16 @@ export const TIER_INFO: Record<
     apiAccess: false,
     features: [
       "2,500 credits / month",
-      "~1,250 images (fast models)",
-      "~54s Seedance 2.5 video (720p)",
+      "~833 images",
+      "~178s Seedance 2.0 video",
+      "~54s Seedance 2.5 video",
+      "Add credits as needed",
       "Up to 1080p",
       "Priority queue",
       "Commercial license",
       "Unused credits roll over 1 month",
     ],
+    featuresNote: ESTIMATES_NOTE,
   },
   studio: {
     label: "Studio",
@@ -144,14 +179,17 @@ export const TIER_INFO: Record<
     apiAccess: true,
     features: [
       "5,000 credits / month",
-      "~2,500 images (fast models)",
-      "~108s Seedance 2.5 video (720p)",
+      "~1,666 images",
+      "~357s Seedance 2.0 video",
+      "~108s Seedance 2.5 video",
       "~32s Seedance 2.0 video (4K, exclusive)",
+      "Add credits as needed",
       "Commercial license",
       "API access",
       "3 team seats",
       "Max priority queue",
     ],
+    featuresNote: ESTIMATES_NOTE,
   },
 };
 export type TierInfo = (typeof TIER_INFO)[Tier];

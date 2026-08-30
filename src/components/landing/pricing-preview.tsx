@@ -1,11 +1,11 @@
 import Link from "next/link";
-import { Check } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { TIERS, TIER_INFO } from "@/lib/constants";
 import { Reveal } from "@/components/marketing/reveal";
+import { PlanFeatureList } from "@/components/pricing/plan-feature-list";
 import { PlanPrice } from "@/components/pricing/plan-price";
 
 export function PricingPreview() {
@@ -46,14 +46,11 @@ export function PricingPreview() {
                     suffixClassName="text-body-sm text-muted"
                   />
                 </p>
-                <ul className="mt-6 flex-1 space-y-3">
-                  {info.features.map((feat) => (
-                    <li key={feat} className="flex items-start gap-2 text-body-sm text-muted">
-                      <Check className="mt-0.5 size-4 shrink-0 text-brand" aria-hidden="true" />
-                      {feat}
-                    </li>
-                  ))}
-                </ul>
+                <PlanFeatureList
+                  features={info.features}
+                  note={info.featuresNote}
+                  className="mt-6 flex-1"
+                />
                 <Link
                   href="/signup"
                   className={buttonVariants({
