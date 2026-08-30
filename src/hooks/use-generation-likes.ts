@@ -24,16 +24,24 @@ type LikeState = { likedByMe: boolean; likeCount: number };
 
 /**
  * Applies a like to whichever generation-shaped payload this cache holds.
- * The API returns generations in four shapes — an infinite query's `pages`,
- * a plain `{ items }` list, a collection's `{ items }`, and the dashboard's
- * `{ recentGenerations }` — so the patch walks all four rather than assuming
- * one and silently missing the others.
+ * Callers store generations in four different shapes and the patch has to
+ * walk all of them, because missing one fails silently — the request goes
+ * through, the cache keeps the old value, and the heart only catches up on
+ * the next refetch:
+ *   - a bare `GalleryItem[]`      (public gallery: its queryFn returns data.items)
+ *   - an infinite query's `pages` (my gallery)
+ *   - `{ items }`                 (collections, shared collections)
+ *   - `{ recentGenerations }`     (dashboard)
  */
 function patchCachedGenerations(data: unknown, id: string, next: LikeState): unknown {
   if (!data || typeof data !== "object") return data;
 
   const patchOne = (item: GalleryItem) =>
     item.id === id ? { ...item, ...next } : item;
+
+  // Checked before the object cases: an array is typeof "object" too, so
+  // without this it fell through every branch below and returned unchanged.
+  if (Array.isArray(data)) return (data as GalleryItem[]).map(patchOne);
 
   const record = data as Record<string, unknown>;
 
@@ -70,6 +78,12 @@ export function useToggleLike() {
   const queryClient = useQueryClient();
 
   return useMutation({
+    // One like at a time, app-wide. Toggling fast otherwise races a PUT
+    // against a DELETE on the same row: whichever reply lands last wins the
+    // cache, and it isn't necessarily the one that wrote the DB last — the
+    // count then disagrees with the heart until a reload.
+    scope: { id: "generation-like" },
+
     mutationFn: async ({ item }: { item: GalleryItem }) => {
       const res = await apiFetch(`/api/generations/${item.id}/like`, {
         method: item.likedByMe ? "DELETE" : "PUT",
