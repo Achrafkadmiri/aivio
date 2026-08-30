@@ -29,7 +29,7 @@ export function JobStatusCard({
     return (
       <Card
         variant="standard"
-        className="sticky top-24 flex min-h-[24rem] flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-line bg-surface-2/50 text-center shadow-none hover:translate-y-0 hover:border-line hover:shadow-none"
+        className="flex h-full min-h-80 flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-line bg-surface-2/50 text-center shadow-none hover:translate-y-0 hover:border-line hover:shadow-none"
       >
         <span className="flex size-14 items-center justify-center rounded-2xl bg-white/5">
           <Sparkles className="size-6 text-muted" aria-hidden="true" />
@@ -45,7 +45,7 @@ export function JobStatusCard({
     return (
       <Card
         variant="standard"
-        className="sticky top-24 flex min-h-[24rem] flex-col items-center justify-center gap-4 rounded-2xl text-center"
+        className="flex h-full min-h-80 flex-col items-center justify-center gap-4 rounded-2xl text-center hover:translate-y-0 hover:shadow-card"
       >
         <span className="flex size-14 items-center justify-center rounded-2xl bg-accent/10">
           <XCircle className="size-6 text-accent" aria-hidden="true" />
@@ -60,13 +60,26 @@ export function JobStatusCard({
   }
 
   if (generation.status === "completed" && generation.result) {
+    // The card claims the full height the composer leaves free and splits it
+    // header / media / actions, with only the media flexing. That's what
+    // keeps the result whole and the Download button on screen without
+    // scrolling: previously the media rendered at its natural height, so a
+    // 16:9 video at card width ran past the fold and pushed the buttons
+    // underneath the docked composer bar.
     return (
-      <Card variant="standard" className="sticky top-24 rounded-2xl">
+      <Card
+        variant="standard"
+        className="flex h-full min-h-80 flex-col gap-4 rounded-2xl p-4 hover:translate-y-0 hover:shadow-card sm:p-5 motion-safe:animate-fade-up"
+      >
         <div className="flex items-center gap-2 text-success">
           <CheckCircle2 className="size-4" aria-hidden="true" />
           <span className="text-label">Done</span>
         </div>
-        <div className="mt-4 overflow-hidden rounded-xl border border-line shadow-glow-sm">
+
+        {/* min-h-0 is load-bearing: without it this flex child refuses to
+          * shrink below its content's natural size and the overflow comes
+          * straight back. */}
+        <div className="flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-xl border border-line bg-surface-dark shadow-glow-sm">
           {isVideo ? (
             <video
               src={generation.result.resultUrl}
@@ -74,36 +87,39 @@ export function JobStatusCard({
               autoPlay
               loop
               muted
-              className="w-full"
+              playsInline
+              className="max-h-full max-w-full object-contain"
             />
           ) : (
             // Intentionally plain <img>: the result can be any aspect ratio
-            // (square Picsum samples, arbitrary model output, ...) and this
-            // scales to container width at its natural height — next/image
-            // needs a fixed box (fill) or known dimensions, either of which
-            // would force/crop an aspect ratio we don't actually know here.
+            // (square Picsum samples, arbitrary model output, ...) and
+            // object-contain inside the flexed box shows all of it whatever
+            // that ratio turns out to be — next/image needs a fixed box
+            // (fill) or known dimensions, either of which would force/crop
+            // an aspect ratio we don't actually know here.
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={generation.result.resultUrl}
               alt="Generation result"
-              className="w-full"
+              className="max-h-full max-w-full object-contain"
             />
           )}
         </div>
-        <div className="mt-4 flex gap-2">
+
+        <div className="flex flex-col gap-2 sm:flex-row">
           <a
             href={generation.result.resultUrl}
             download
             target="_blank"
             rel="noreferrer"
-            className="flex-1"
+            className="sm:flex-1"
           >
             <Button className="w-full">
               <DownloadIcon className="size-4" aria-hidden="true" />
               Download
             </Button>
           </a>
-          <Button variant="secondary" onClick={onReset}>
+          <Button variant="secondary" onClick={onReset} className="w-full sm:w-auto">
             <Sparkles className="size-4" aria-hidden="true" />
             Create another
           </Button>
@@ -121,7 +137,7 @@ export function JobStatusCard({
   return (
     <Card
       variant="standard"
-      className="sticky top-24 flex min-h-[24rem] flex-col items-center justify-center gap-6 overflow-hidden rounded-2xl text-center"
+      className="flex h-full min-h-80 flex-col items-center justify-center gap-6 overflow-hidden rounded-2xl text-center hover:translate-y-0 hover:shadow-card"
     >
       <div
         className="pointer-events-none absolute inset-0 animate-pulse opacity-20"
