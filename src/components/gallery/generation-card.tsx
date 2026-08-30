@@ -5,10 +5,28 @@ import { AlertCircle, Heart } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
 
-// Only starts loading once the tile scrolls into view, then pauses/resumes
-// on exit/re-entry (without re-fetching) for the rest of its life — so a
-// long gallery page doesn't keep dozens of offscreen clips decoding at once.
-function LazyVideoTile({ src, alt }: { src: string; alt: string }) {
+// A tile sits still on its first frame and only plays while the pointer is
+// on the card — a grid of clips all looping at once is noise, and dozens of
+// simultaneous decodes are expensive. Loading still waits for the tile to
+// scroll into view, and leaving the viewport pauses playback (scrolling away
+// mid-hover) without ever re-fetching.
+//
+// `#t=0.1` on a source without a thumbnail asks the browser to seek just
+// past the start, which is what actually paints a still frame — a plain
+// paused <video> with preload="metadata" can stay blank, and clips often
+// open on a black frame anyway. Playback resumes from wherever it paused
+// rather than rewinding, so re-hovering doesn't restart the clip.
+function LazyVideoTile({
+  src,
+  poster,
+  alt,
+  playing,
+}: {
+  src: string;
+  poster: string | null;
+  alt: string;
+  playing: boolean;
+}) {
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const [inView, setInView] = useState(false);
@@ -32,12 +50,12 @@ function LazyVideoTile({ src, alt }: { src: string; alt: string }) {
   useEffect(() => {
     const videoEl = videoRef.current;
     if (!videoEl) return;
-    if (inView) {
+    if (playing && inView) {
       videoEl.play().catch(() => {});
     } else {
       videoEl.pause();
     }
-  }, [inView, hasLoadedOnce]);
+  }, [playing, inView, hasLoadedOnce]);
 
   return (
     <div ref={containerRef} className="h-full w-full bg-surface-3">
@@ -45,7 +63,8 @@ function LazyVideoTile({ src, alt }: { src: string; alt: string }) {
         <video
           ref={videoRef}
           className={cn("h-full w-full object-cover transition-opacity duration-300", loaded ? "opacity-100" : "opacity-0")}
-          src={src}
+          src={poster ? src : `${src}#t=0.1`}
+          poster={poster ?? undefined}
           muted
           loop
           playsInline
@@ -106,9 +125,17 @@ export function GenerationCard({
   const isVideo = item.type !== "text-to-image";
   const liked = item.likedByMe ?? false;
   const likeCount = item.likeCount ?? 0;
+  // Tracked on the card root, not the video itself: enter/leave don't fire
+  // for moves between a node and its descendants, so drifting onto the like
+  // button keeps the clip running instead of stuttering it.
+  const [hovered, setHovered] = useState(false);
 
   return (
-    <div className="group relative aspect-square overflow-hidden rounded-2xl border border-line bg-surface-2 shadow-card transition-[border-color,box-shadow,transform] duration-300 ease-out hover:-translate-y-1 hover:border-border-strong hover:shadow-glow-sm">
+    <div
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      className="group relative aspect-square overflow-hidden rounded-2xl border border-line bg-surface-2 shadow-card transition-[border-color,box-shadow,transform] duration-300 ease-out hover:-translate-y-1 hover:border-border-strong hover:shadow-glow-sm"
+    >
       <button
         type="button"
         onClick={onOpen}
@@ -117,7 +144,12 @@ export function GenerationCard({
       >
         {item.status === "completed" && item.resultUrl ? (
           isVideo ? (
-            <LazyVideoTile src={item.resultUrl} alt={item.prompt} />
+            <LazyVideoTile
+              src={item.resultUrl}
+              poster={item.thumbnailUrl}
+              alt={item.prompt}
+              playing={hovered}
+            />
           ) : (
             // Plain <img>, not next/image: results are served from R2 behind
             // the Edge Function, and the optimizer fetches them server-side
