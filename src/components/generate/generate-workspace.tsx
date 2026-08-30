@@ -172,7 +172,11 @@ export function GenerateStudio({ type }: { type: GenerationType }) {
           style={composerHeight ? { paddingBottom: (composerHeight + 32) / HERO_ZOOM } : undefined}
         >
           {hasJob ? (
-            <div className="mx-auto w-full max-w-4xl">
+            // h-full hands the card the exact height left above the docked
+            // composer (this scroll container's padding-bottom already
+            // reserves that space), so the result can size itself to fit
+            // instead of running off the bottom of the viewport.
+            <div className="mx-auto h-full w-full max-w-4xl">
               <JobStatusCard
                 generation={generation}
                 hasJob={hasJob}

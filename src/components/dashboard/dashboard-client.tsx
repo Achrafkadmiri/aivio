@@ -180,6 +180,7 @@ export function DashboardClient() {
             <GalleryGrid
               items={recentGenerations}
               author={{ name: user.name, avatarUrl: user.avatarUrl }}
+              viewerIsOwner
             />
           )}
         </div>

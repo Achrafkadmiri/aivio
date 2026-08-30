@@ -12,7 +12,9 @@ import {
   Download,
   FolderMinus,
   FolderPlus,
+  Globe,
   Info,
+  Lock,
   RefreshCw,
   Share2,
   Sparkles,
@@ -28,6 +30,20 @@ import { IMAGE_MODELS, SEEDANCE_DURATION_AUTO, VIDEO_MODELS } from "@/lib/consta
 import type { GalleryItem } from "./generation-card";
 
 export type PreviewAuthor = { name: string; avatarUrl: string | null };
+
+function Avatar({ author, fallback }: { author?: PreviewAuthor; fallback: string }) {
+  // Avatar URLs are arbitrary user-supplied hosts (see the profile form),
+  // which next/image's remotePatterns allowlist can't cover — plain <img> is
+  // the only option that works.
+  return author?.avatarUrl ? (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img src={author.avatarUrl} alt="" className="size-9 shrink-0 rounded-full object-cover" />
+  ) : (
+    <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-surface-3 text-label font-semibold text-ink-soft">
+      {fallback}
+    </span>
+  );
+}
 
 const STATUS_VARIANT: Record<string, BadgeVariant> = {
   completed: "success",
@@ -114,6 +130,7 @@ export function PreviewModal({
   items,
   index,
   author,
+  viewerIsOwner = false,
   onClose,
   onNavigate,
   onDelete,
@@ -125,6 +142,9 @@ export function PreviewModal({
   items: GalleryItem[];
   index: number | null;
   author?: PreviewAuthor;
+  /** True when the signed-in viewer made these — see the header note in
+   *  PreviewBody for why the creator gets a different identity block. */
+  viewerIsOwner?: boolean;
   onClose: () => void;
   onNavigate: (index: number) => void;
   onDelete?: () => void;
@@ -148,6 +168,7 @@ export function PreviewModal({
             index={index}
             total={items.length}
             author={author}
+            viewerIsOwner={viewerIsOwner}
             onClose={onClose}
             onNavigate={onNavigate}
             onDelete={onDelete}
@@ -167,6 +188,7 @@ function PreviewBody({
   index,
   total,
   author,
+  viewerIsOwner,
   onClose,
   onNavigate,
   onDelete,
@@ -179,6 +201,7 @@ function PreviewBody({
   index: number;
   total: number;
   author?: PreviewAuthor;
+  viewerIsOwner?: boolean;
   onClose: () => void;
   onNavigate: (index: number) => void;
   onDelete?: () => void;
@@ -307,23 +330,37 @@ function PreviewBody({
       {/* Info panel */}
       <div className="flex w-full shrink-0 flex-col overflow-hidden rounded-2xl border border-line bg-surface-2 shadow-modal lg:h-full lg:w-[380px]">
         <div className="flex items-center justify-between gap-3 border-b border-border-subtle p-4">
-          {author ? (
+          {/* Three headers, because the panel answers a different question
+            * depending on who is looking:
+            *   - the creator already knows who made it, so crediting them to
+            *     themselves ("yassine qadmar / Author") is noise. What they
+            *     can't see anywhere else on this screen is whether the piece
+            *     is public, so that's what goes here.
+            *   - another viewer needs the credit, so they get the byline.
+            *   - with no author data at all (the public feed today), fall
+            *     back to what made it rather than who. */}
+          {viewerIsOwner ? (
             <div className="flex min-w-0 items-center gap-3">
-              {author.avatarUrl ? (
-                // Avatar URLs are arbitrary user-supplied hosts (see the
-                // profile form), which next/image's remotePatterns allowlist
-                // can't cover — plain <img> is the only option that works.
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={author.avatarUrl}
-                  alt=""
-                  className="size-9 shrink-0 rounded-full object-cover"
-                />
-              ) : (
-                <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-surface-3 text-label font-semibold text-ink-soft">
-                  {author.name.charAt(0).toUpperCase()}
-                </span>
-              )}
+              <Avatar author={author} fallback="Y" />
+              <div className="min-w-0">
+                <p className="truncate text-label font-semibold text-ink">Your creation</p>
+                <p className="flex items-center gap-1.5 text-caption text-text-tertiary">
+                  {item.isPublic ? (
+                    <>
+                      <Globe className="size-3" aria-hidden="true" /> Shared in the community
+                      gallery
+                    </>
+                  ) : (
+                    <>
+                      <Lock className="size-3" aria-hidden="true" /> Private to you
+                    </>
+                  )}
+                </p>
+              </div>
+            </div>
+          ) : author ? (
+            <div className="flex min-w-0 items-center gap-3">
+              <Avatar author={author} fallback={author.name.charAt(0).toUpperCase()} />
               <div className="min-w-0">
                 <p className="truncate text-label font-semibold text-ink">{author.name}</p>
                 <p className="text-caption text-text-tertiary">Author</p>
