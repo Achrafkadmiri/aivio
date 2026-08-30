@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import * as Dialog from "@radix-ui/react-dialog";
 import { Sparkles, X } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { SHOWCASE_VIDEOS } from "@/lib/showcase-media";
 import { apiFetch } from "@/lib/api-client";
@@ -14,24 +16,6 @@ const DISMISSED_KEY = "aivio:seedance-2-5-announcement";
 const SUPPRESSED_PREFIXES = ["/login", "/signup", "/forgot-password", "/reset-password"];
 
 const HERO = SHOWCASE_VIDEOS.find((v) => v.id === "falcon-desert")!;
-const THUMBS = ["chocolate-product", "studio-portrait", "man-dancing"]
-  .map((id) => SHOWCASE_VIDEOS.find((v) => v.id === id)!)
-  .filter(Boolean);
-
-function AutoplayVideo({ url, className }: { url: string; className?: string }) {
-  return (
-    <video
-      className={cn("h-full w-full object-cover", className)}
-      autoPlay
-      muted
-      loop
-      playsInline
-      preload="metadata"
-    >
-      <source src={url} type="video/mp4" />
-    </video>
-  );
-}
 
 /**
  * One-time-per-session "new model" spotlight. Shown app-wide (mounted in the
@@ -59,11 +43,10 @@ export function ReleaseAnnouncementModal() {
       })
       .catch(() => {})
       .finally(() => {
-        // Opening this immediately would start 4 more autoplaying video
-        // fetches (the hero clip + 3 thumbs below) right on top of the
-        // landing page's own hero video and any above-the-fold showcase
-        // clips — exactly when bandwidth is most contended. A short delay
-        // lets the page's own critical media win that race first.
+        // Opening this immediately would start the hero clip's fetch right
+        // on top of the landing page's own hero video and any above-the-fold
+        // showcase clips — exactly when bandwidth is most contended. A short
+        // delay lets the page's own critical media win that race first.
         if (!cancelled) openTimer = setTimeout(() => setOpen(true), 1500);
       });
 
@@ -92,10 +75,13 @@ export function ReleaseAnnouncementModal() {
     <Dialog.Root open={open} onOpenChange={(next) => (next ? setOpen(true) : dismiss())}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-50 bg-overlay/80 backdrop-blur-sm data-[state=open]:animate-fade-up" />
+        {/* max-w-sm + rounded-xl matches ui/modal.tsx's shell rather than the
+            oversized bespoke card this used to be: an announcement should read
+            as a card, not take over the screen. */}
         <Dialog.Content
           className={cn(
-            "fixed top-1/2 left-1/2 z-[60] w-[calc(100%-2rem)] max-w-xl -translate-x-1/2 -translate-y-1/2",
-            "overflow-hidden rounded-[28px] border border-line bg-surface-2 shadow-modal focus:outline-none",
+            "fixed top-1/2 left-1/2 z-[60] w-[calc(100%-2rem)] max-w-sm -translate-x-1/2 -translate-y-1/2",
+            "overflow-hidden rounded-xl border border-line bg-surface-2 shadow-modal focus:outline-none",
           )}
         >
           <Dialog.Title className="sr-only">Seedance 2.5 is now live</Dialog.Title>
@@ -103,72 +89,53 @@ export function ReleaseAnnouncementModal() {
             Announcement: Seedance 2.5 has been added to the model catalog.
           </Dialog.Description>
 
-          <div className="relative aspect-[4/3] w-full bg-surface-3 sm:aspect-video">
-            <AutoplayVideo url={HERO.url} />
+          <div className="relative aspect-video w-full bg-surface-3">
+            <video
+              className="h-full w-full object-cover"
+              autoPlay
+              muted
+              loop
+              playsInline
+              preload="metadata"
+            >
+              <source src={HERO.url} type="video/mp4" />
+            </video>
             <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-surface-2 via-surface-2/10 to-transparent" />
 
             <Dialog.Close asChild>
-              <button
-                type="button"
+              <Button
+                variant="ghost"
+                size="icon"
                 aria-label="Close"
-                className="absolute top-4 right-4 flex size-9 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-sm transition-colors hover:bg-black/70"
+                className="absolute top-2 right-2 bg-black/50 text-white backdrop-blur-sm hover:bg-black/70"
               >
                 <X className="size-4" />
-              </button>
+              </Button>
             </Dialog.Close>
 
-            <div className="absolute inset-x-0 bottom-0 p-5 sm:p-6">
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-warning/40 bg-warning/10 px-3 py-1 text-caption font-semibold text-warning">
+            <div className="absolute inset-x-0 bottom-0 p-4">
+              <Badge variant="brand">
                 <Sparkles className="size-3.5" aria-hidden="true" />
                 New release
-              </span>
-              <h2 className="mt-3 text-subheading font-bold text-white sm:text-heading">
-                Seedance 2.5 is now live
-              </h2>
+              </Badge>
+              <h2 className="mt-2 text-feature-title font-bold text-ink">Seedance 2.5 is now live</h2>
             </div>
           </div>
 
-          <div className="space-y-5 p-5 sm:p-6">
-            <p className="text-body-sm text-ink-soft">
-              Generate cinematic videos with Seedance 2.5 from text, images, and references — with
-              native audio and up to 30s runtime.
-            </p>
+          <p className="px-4 pt-4 text-body-sm text-muted">
+            Cinematic video from text, images, and references — with native audio, reference
+            control, and up to 30s runtime.
+          </p>
 
-            {THUMBS.length > 0 && (
-              <div className="grid grid-cols-3 gap-2 sm:gap-3">
-                {THUMBS.map((clip) => (
-                  <div
-                    key={clip.id}
-                    className="aspect-square overflow-hidden rounded-xl border border-line bg-surface-3"
-                  >
-                    <AutoplayVideo url={clip.url} />
-                  </div>
-                ))}
-              </div>
-            )}
-
-            <p className="text-body-sm text-muted">
-              Choose Seedance 2.5 in the generator to create 480p and 720p videos with reference
-              control and native audio.
-            </p>
-          </div>
-
-          <div className="flex items-center justify-between gap-4 border-t border-line px-5 py-4 sm:px-6">
+          <div className="flex items-center justify-end gap-2 p-4">
             <Dialog.Close asChild>
-              <button
-                type="button"
-                className="text-label font-medium text-muted transition-colors hover:text-ink-soft"
-              >
+              <Button variant="ghost" size="sm">
                 Maybe later
-              </button>
+              </Button>
             </Dialog.Close>
-            <button
-              type="button"
-              onClick={handleTryNow}
-              className="rounded-full bg-warning px-6 py-3 text-label font-semibold text-surface transition-[transform,box-shadow] hover:-translate-y-px hover:shadow-glow-sm active:translate-y-0"
-            >
+            <Button variant="accent" size="sm" onClick={handleTryNow}>
               Try 2.5 now
-            </button>
+            </Button>
           </div>
         </Dialog.Content>
       </Dialog.Portal>
