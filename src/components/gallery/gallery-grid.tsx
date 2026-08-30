@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { useLikedGenerations } from "@/hooks/use-liked-generations";
+import { useToggleLike } from "@/hooks/use-generation-likes";
+import { useMe } from "@/hooks/use-me";
+import { useToast } from "@/components/ui/toast";
 import { GenerationCard, type GalleryItem } from "./generation-card";
 import { PreviewModal, type PreviewAuthor } from "./preview-modal";
 
@@ -9,6 +11,7 @@ export function GalleryGrid({
   items,
   author,
   viewerIsOwner = false,
+  showAuthor = false,
   onDelete,
   onDuplicate,
   onAddToCollection,
@@ -23,6 +26,9 @@ export function GalleryGrid({
    *  collections). Switches the preview's header from a byline to the
    *  creator's own view — see PreviewBody. */
   viewerIsOwner?: boolean;
+  /** Credits each generation's creator on the tile — the public feed and
+   *  shared collections. */
+  showAuthor?: boolean;
   onDelete?: (id: string) => void;
   onDuplicate?: (id: string) => void;
   onAddToCollection?: (id: string) => void;
@@ -31,7 +37,11 @@ export function GalleryGrid({
 }) {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
   const openItem = openIndex === null ? null : items[openIndex];
-  const { liked, toggleLike } = useLikedGenerations();
+  const { toast } = useToast();
+  // Liking writes to the server, so it needs an account. `me` fails (and
+  // stays undefined) for a signed-out visitor on the public feed.
+  const { data: me } = useMe();
+  const toggleLike = useToggleLike();
 
   return (
     <>
@@ -41,8 +51,15 @@ export function GalleryGrid({
             key={item.id}
             item={item}
             onOpen={() => setOpenIndex(i)}
-            liked={liked.has(item.id)}
-            onToggleLike={() => toggleLike(item.id)}
+            showAuthor={showAuthor}
+            onToggleLike={() =>
+              me
+                ? toggleLike.mutate({ item })
+                : toast({
+                    title: "Sign in to like",
+                    description: "Likes are saved to your account.",
+                  })
+            }
           />
         ))}
       </div>
