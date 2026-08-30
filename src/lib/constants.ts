@@ -2,13 +2,21 @@
 // supabase/functions/api/lib/constants.ts) — garder synchronisé.
 import { CLOUDFLARE_MODELS } from "@/lib/cloudflare-models";
 
-// Real-money value backing each credit ($0.01 = 1 credit), for display (e.g.
-// "this generation costs ~$0.45") AND as the actual conversion rate used to
-// price every generation in credit-estimate.ts (credits/s = round(rateUsd /
-// CREDIT_VALUE_USD)) — i.e. a generation's credit cost tracks its real infra
-// cost 1:1, no markup. Margin instead comes from each tier granting fewer
-// credits than its price would buy at this rate (see TIER_INFO comments) —
-// see the "Plan Tarifaire Créateur" pricing artifact this was modeled on.
+// The selling price of one credit. Every plan and pack below charges exactly
+// this ($9.99 → 1,000, $24 → 2,500, $49 → 5,000, packs likewise), so it is
+// also the honest figure to show users next to a credit amount (e.g. "this
+// generation costs ~$2.31").
+//
+// It is ALSO the base credit-estimate.ts prices generations from: a credit
+// may buy CREDIT_VALUE_USD × (1 - TARGET_GROSS_MARGIN) = $0.005 of provider
+// compute, so the margin rides on every generation. Until 2026-08-30 it
+// worked the other way round — generations were priced at cost (1 credit =
+// $0.01 of compute) and the margin came from tiers granting fewer credits
+// than their price would buy. Flat 1,000/2,500/5,000 grants inverted that
+// (they'd hand out more compute than they cost), so the markup moved to the
+// generation side, where it also scales with how much a user actually
+// generates. See the "Plan Tarifaire Créateur" pricing artifact for the
+// underlying provider cost table.
 export const CREDIT_VALUE_USD = 0.01;
 
 export const TIERS = ["free", "starter", "creator", "studio"] as const;
@@ -34,19 +42,29 @@ export const TIER_INFO: Record<
     features: string[];
   }
 > = {
-  // Credits/prices recalibrated 2026-08-25 ("Plan Tarifaire Créateur v2") so
-  // every paid tier clears a 40% NET margin (credits at CREDIT_VALUE_USD +
-  // ~2.9%+$0.30 Stripe fee + ~5% overhead for storage/support/hosting), not
-  // just a 40%+ margin on raw credit cost. maxResolution/maxDurationSeconds/
+  // Credits recalibrated 2026-08-30: every plan sells credits at a flat
+  // CREDIT_VALUE_USD ($0.01) — $9.99 → 1,000, $24 → 2,500, $49 → 5,000 — and
+  // the margin now comes from generation pricing instead (credit-estimate.ts
+  // bills each generation at a 50% gross margin over real provider cost).
+  // Spending a plan's credits in full therefore costs us half its price:
+  // ~50% gross, ~39-40% net of the ~2.9%+$0.30 Stripe fee and the ~5%
+  // storage/support/hosting overhead — still clearing the 40% net floor the
+  // v2 pricing was built around, but with no headroom left, so a further
+  // credit increase has to be paid for by raising prices or the margin in
+  // credit-estimate.ts. maxResolution/maxDurationSeconds/
   // concurrentGenerations/videoWatermark/priorityQueue/apiAccess are enforced
   // server-side (see aiVideo-backend's generations.ts).
   free: {
     label: "Découverte",
     priceMonthly: 0,
     monthlyCredits: 50,
-    // Capped at 480p (not 720p): a 5s 720p clip costs 75-115 credits,
-    // more than the entire free budget — 480p is the only resolution a
-    // free user can actually afford one real clip in.
+    // Capped at 480p (not 720p): the cheapest 5s 720p clip is 113 credits,
+    // more than the entire free budget. Even at 480p, 50 credits only
+    // reaches the shortest clip on the cheapest model (Seedance 2.0 Mini,
+    // 3s @ 480p = 32 credits) — Seedance 2.5's 4s floor is 82 credits, out
+    // of reach since generations started carrying the margin. Raising this
+    // to ~110 would put one 5s Seedance 2.5 480p clip (103 credits) back in
+    // range, if the free tier should demo the flagship model.
     maxResolution: "480p",
     maxDurationSeconds: 5,
     concurrentGenerations: 1,
@@ -58,8 +76,8 @@ export const TIER_INFO: Record<
     apiAccess: false,
     features: [
       "50 credits / month",
-      "~50 Nano Banana images",
-      "~5s Seedance 2.5 video (480p)",
+      "~25 images (fast models)",
+      "~3s video (480p, Seedance 2.0 Mini)",
       "Video watermark",
       "Standard queue",
     ],
@@ -67,7 +85,7 @@ export const TIER_INFO: Record<
   starter: {
     label: "Starter",
     priceMonthly: 9.99,
-    monthlyCredits: 480,
+    monthlyCredits: 1000,
     maxResolution: "1080p",
     maxDurationSeconds: 20,
     concurrentGenerations: 2,
@@ -78,8 +96,8 @@ export const TIER_INFO: Record<
     priorityQueue: false,
     apiAccess: false,
     features: [
-      "480 credits / month",
-      "~480 Nano Banana images",
+      "1,000 credits / month",
+      "~500 images (fast models)",
       "~21s Seedance 2.5 video (720p)",
       "Up to 1080p",
       "No watermark",
@@ -90,7 +108,7 @@ export const TIER_INFO: Record<
   creator: {
     label: "Créateur",
     priceMonthly: 24,
-    monthlyCredits: 1200,
+    monthlyCredits: 2500,
     maxResolution: "1080p",
     maxDurationSeconds: 30,
     concurrentGenerations: 3,
@@ -101,9 +119,9 @@ export const TIER_INFO: Record<
     priorityQueue: true,
     apiAccess: false,
     features: [
-      "1,200 credits / month",
-      "~1,200 Nano Banana images",
-      "~52s Seedance 2.5 video (720p)",
+      "2,500 credits / month",
+      "~1,250 images (fast models)",
+      "~54s Seedance 2.5 video (720p)",
       "Up to 1080p",
       "Priority queue",
       "Commercial license",
@@ -113,7 +131,7 @@ export const TIER_INFO: Record<
   studio: {
     label: "Studio",
     priceMonthly: 49,
-    monthlyCredits: 2450,
+    monthlyCredits: 5000,
     // Only tier allowed to spend credits on 4K (Seedance 2.0) generations.
     maxResolution: "4k",
     maxDurationSeconds: 30,
@@ -125,10 +143,10 @@ export const TIER_INFO: Record<
     priorityQueue: true,
     apiAccess: true,
     features: [
-      "2,450 credits / month",
-      "~2,450 Nano Banana images",
-      "~106s Seedance 2.5 video (720p)",
-      "~31s Seedance 2.0 video (4K, exclusive)",
+      "5,000 credits / month",
+      "~2,500 images (fast models)",
+      "~108s Seedance 2.5 video (720p)",
+      "~32s Seedance 2.0 video (4K, exclusive)",
       "Commercial license",
       "API access",
       "3 team seats",
@@ -141,21 +159,27 @@ export type TierInfo = (typeof TIER_INFO)[Tier];
 // Display-only annual-billing prices ("1 month free" ≈ 8.3% off monthly,
 // pay 11 months for 12) — payments are simulated in this build, so this
 // isn't wired to any real billing cycle. Kept intentionally more modest than
-// a typical 17-20% annual discount: at the recalibrated monthlyCredits
-// above, a deeper discount would push net margin below 40% (see "Plan
-// Tarifaire Créateur v2").
+// a typical 17-20% annual discount: an annual discount cuts the price but
+// not the credits, so it comes straight out of margin — at ~50% gross, a
+// 20% discount would leave well under 30% net.
 export const ANNUAL_PRICE_MONTHLY: Partial<Record<Tier, number>> = {
   starter: 9.16,
   creator: 22,
   studio: 44.92,
 };
 
-// Pay-per-use top-ups — credits never expire (see grantRecharge in
-// aiVideo-backend's credits.ts), unlike the monthly plan grants above.
+// Pay-per-use top-ups — priced at exactly CREDIT_VALUE_USD, same as the
+// plans (2026-08-30): a credit costs a cent wherever you buy it. They used
+// to carry a ~70% premium ($0.017/credit), which stopped making sense once
+// plan credits were repriced to $0.01. Note pack_5000 grants the same 5,000
+// credits as Studio for the same $49 — the plan's draw is its features (4K,
+// API, seats, priority), not a better credit rate. These credits never
+// expire (see grantRecharge in aiVideo-backend's credits.ts), unlike the
+// monthly plan grants above.
 export const RECHARGE_PACKS = [
-  { id: "pack_500", credits: 500, priceUsd: 8.49 },
-  { id: "pack_2000", credits: 2000, priceUsd: 33.49 },
-  { id: "pack_5000", credits: 5000, priceUsd: 83.49 },
+  { id: "pack_500", credits: 500, priceUsd: 4.99 },
+  { id: "pack_2000", credits: 2000, priceUsd: 19.99 },
+  { id: "pack_5000", credits: 5000, priceUsd: 49 },
 ] as const;
 export type RechargePackId = (typeof RECHARGE_PACKS)[number]["id"];
 

@@ -1,123 +1,163 @@
-// DUPLIQUÉ dans aiVideo-backend/src/lib/credit-estimate.ts — garder synchronisé.
-import { SEEDANCE_MODEL_ID, SEEDANCE2_MODEL_ID, SEEDANCE_DURATION_MIN, type GenerationType, type VideoResolution } from "@/lib/constants";
-
+// DUPLIQUÉ dans aiVideo-backend/supabase/functions/api/lib/credit-estimate.ts
+// — garder synchronisé.
 // Pure cost-estimation logic — imported client-side too (e.g. for a live
 // "estimated cost" readout in the generate forms), no network round-trip.
 
-// Per-second credit rates by model, keyed by resolution since tiers differ
-// per model (e.g. Seedance offers 480p/720p, not 720p/1080p).
+import {
+  CREDIT_VALUE_USD,
+  SEEDANCE_MODEL_ID,
+  SEEDANCE2_MODEL_ID,
+  SEEDANCE_DURATION_MIN,
+  type GenerationType,
+  type VideoResolution,
+} from "@/lib/constants";
+
+// ── The pricing rule, stated once ────────────────────────────────────────
+// Everything below is a table of *real provider cost in USD*. Credit prices
+// are derived from it, never hand-written, so the margin can be retuned in
+// one place instead of by re-multiplying every model.
 //
-// bytedance/seedance-2.5 and bytedance/seedance-2.0 are priced straight from
-// the "Plan Tarifaire Créateur" pricing artifact's real per-second Seedance
-// cost table (2026-08-22), converted 1:1 at CREDIT_VALUE_USD ($0.01/credit,
-// see constants.ts) — credits/s = round(rateUsd * 100), no markup:
-//   2.0 text→video   480p $0.070/s, 720p $0.150/s, 1080p $0.370/s, 4k $0.780/s
-//   2.0 video→video  480p $0.172/s, 720p $0.372/s, 1080p $0.914/s, 4k $1.866/s
-//   2.5 text→video   480p $0.103/s, 720p $0.231/s (no 1080p/4k — see usesKieAi below)
-// `videoRates` (2.0 only) applies when a reference video/image is attached —
-// unlike 2.5, Seedance 2.0 never routes to kie.ai, so its higher
-// reference-conditioned cost is priced directly here instead of via the
-// SEEDANCE25_KIE_AI_RATE table below. minCredits/minCreditsVideo are the
-// floor cost of the shortest supported clip (SEEDANCE_DURATION_MIN /
-// SEEDANCE2_DURATION_MIN) at the model's cheapest resolution.
+// A credit SELLS for CREDIT_VALUE_USD ($0.01 — see constants.ts, where
+// every plan and pack is priced at that rate). TARGET_GROSS_MARGIN is the
+// cut of that we keep, so a credit may only buy COST_USD_PER_CREDIT =
+// $0.005 of provider compute:
 //
-// Every other entry below has no real per-model pricing to draw on, so it's
-// still an *estimate* — scaled proportionally off the real
-// bytedance/seedance-2.0 text→video rates above, using the same relative
-// multiplier each model previously had (documented per-entry below). Their
-// minCredits is the cost of a 3s clip (the shortest of the generic
-// VIDEO_DURATIONS) at the model's cheapest resolution.
-const LIVE_VIDEO_RATE: Record<
+//   credits = round(seconds × usdPerSecond / COST_USD_PER_CREDIT)
+//
+// Before 2026-08-30 credits were sold and spent at par ($0.01 of compute
+// per $0.01 credit) and the margin came entirely from tiers granting fewer
+// credits than their price would buy. That stopped working once the plans
+// were repriced to a flat 1000/2500/5000 credits — at par those grant more
+// compute than they cost — so the markup now lives on the generation side,
+// where it scales with actual usage instead of with the grant.
+const TARGET_GROSS_MARGIN = 0.5;
+const COST_USD_PER_CREDIT = CREDIT_VALUE_USD * (1 - TARGET_GROSS_MARGIN);
+
+function creditsFor(seconds: number, usdPerSecond: number): number {
+  return Math.round((seconds * usdPerSecond) / COST_USD_PER_CREDIT);
+}
+
+// Real provider cost per second of output, keyed by resolution since the
+// tiers genuinely differ per model (Seedance 2.5 offers 480p/720p, not
+// 720p/1080p).
+//
+// bytedance/seedance-2.5 and bytedance/seedance-2.0 come straight from the
+// "Plan Tarifaire Créateur" pricing artifact's measured per-second Seedance
+// cost table (2026-08-22). `withReferenceVideo` (2.0 only) applies when a
+// reference video/image is attached — the model genuinely costs more in
+// that mode.
+//
+// Every other entry has no published per-second cost to draw on, so it is
+// still an *estimate*: the same relative multiplier off bytedance/
+// seedance-2.0's text→video cost that each model has always carried,
+// documented per-entry below.
+//
+// `minSeconds` is the shortest clip the model accepts — the floor cost is
+// that many seconds at the model's cheapest resolution, so a request can
+// never be quoted below what the provider will actually bill us for.
+const VIDEO_COST_USD: Record<
   string,
-  { rates: Record<string, number>; videoRates?: Record<string, number>; minCredits: number; minCreditsVideo?: number }
+  {
+    perSecond: Record<string, number>;
+    withReferenceVideo?: Record<string, number>;
+    minSeconds: number;
+    /** Floor for the withReferenceVideo table, when it differs. */
+    minSecondsWithReferenceVideo?: number;
+  }
 > = {
-  "bytedance/seedance-2.5": { rates: { "480p": 10, "720p": 23 }, minCredits: 40 },
+  "bytedance/seedance-2.5": {
+    perSecond: { "480p": 0.103, "720p": 0.231 },
+    minSeconds: 4,
+  },
   "bytedance/seedance-2.0": {
-    rates: { "480p": 7, "720p": 15, "1080p": 37, "4k": 78 },
-    videoRates: { "480p": 17, "720p": 37, "1080p": 91, "4k": 187 },
-    minCredits: 28,
-    minCreditsVideo: 68,
+    perSecond: { "480p": 0.07, "720p": 0.15, "1080p": 0.37, "4k": 0.78 },
+    withReferenceVideo: { "480p": 0.172, "720p": 0.372, "1080p": 0.914, "4k": 1.866 },
+    minSeconds: 4,
+    minSecondsWithReferenceVideo: 4,
   },
   // 0.75x (480p/720p) / 0.8x (1080p) of Seedance 2.0.
   "bytedance/seedance-2.0-mini": {
-    rates: { "480p": 5.25, "720p": 11.25, "1080p": 29.6 },
-    minCredits: 16,
+    perSecond: { "480p": 0.0525, "720p": 0.1125, "1080p": 0.296 },
+    minSeconds: 3,
   },
   // 1.33x (720p) / 1.3x (1080p) of Seedance 2.0.
   "black-forest-labs/flux-3-video": {
-    rates: { "720p": 19.95, "1080p": 48.1 },
-    minCredits: 60,
+    perSecond: { "720p": 0.1995, "1080p": 0.481 },
+    minSeconds: 3,
   },
   // 1.25x (480p) / 1.17x (720p) of Seedance 2.0.
   "xai/grok-imagine-video": {
-    rates: { "480p": 8.75, "720p": 17.55 },
-    minCredits: 26,
+    perSecond: { "480p": 0.0875, "720p": 0.1755 },
+    minSeconds: 3,
   },
   // 1.5x (both) of Seedance 2.0.
   "xai/grok-imagine-video-1.5-preview": {
-    rates: { "480p": 10.5, "720p": 22.5 },
-    minCredits: 32,
+    perSecond: { "480p": 0.105, "720p": 0.225 },
+    minSeconds: 3,
   },
   // 0.83x (720p) / 0.8x (1080p) of Seedance 2.0.
   "alibaba/hh1.1-i2v": {
-    rates: { "720p": 12.45, "1080p": 29.6 },
-    minCredits: 37,
+    perSecond: { "720p": 0.1245, "1080p": 0.296 },
+    minSeconds: 3,
   },
   "alibaba/wan-2.7-i2v": {
-    rates: { "720p": 12.45, "1080p": 29.6 },
-    minCredits: 37,
+    perSecond: { "720p": 0.1245, "1080p": 0.296 },
+    minSeconds: 3,
   },
   // Google's flagship video model, native audio — 1.67x (720p) / 1.6x
   // (1080p) of Seedance 2.0, the priciest tier here, reflecting that
   // positioning.
   "google/veo-3.1": {
-    rates: { "720p": 25.05, "1080p": 59.2 },
-    minCredits: 75,
+    perSecond: { "720p": 0.2505, "1080p": 0.592 },
+    minSeconds: 3,
   },
   // 1.17x (720p) / 1.1x (1080p) of Seedance 2.0.
   "google/veo-3.1-fast": {
-    rates: { "720p": 17.55, "1080p": 40.7 },
-    minCredits: 53,
+    perSecond: { "720p": 0.1755, "1080p": 0.407 },
+    minSeconds: 3,
   },
-  // MiniMax Hailuo 2.3 — 1.2x (768p) / 1.08x (1080p) of Seedance 2.0. Its
-  // shortest clip is 6s (there is no 3s option), so the floor is 6s @ 768p.
   // Vidu Q3 — estimates, no published per-second cost. Pro at 1.33x and
-  // Turbo at 0.75x of Seedance 2.0's 720p/1080p rates, with 540p carried
-  // down proportionally. Both allow 1s clips, so the floor is 1s @ 540p.
+  // Turbo at 0.75x of Seedance 2.0's 720p/1080p cost, with 540p carried
+  // down proportionally. Both allow 1s clips.
   "vidu/q3-pro": {
-    rates: { "540p": 9.3, "720p": 20, "1080p": 49 },
-    minCredits: 9,
+    perSecond: { "540p": 0.093, "720p": 0.2, "1080p": 0.49 },
+    minSeconds: 1,
   },
   "vidu/q3-turbo": {
-    rates: { "540p": 5.25, "720p": 11.25, "1080p": 27.75 },
-    minCredits: 5,
+    perSecond: { "540p": 0.0525, "720p": 0.1125, "1080p": 0.2775 },
+    minSeconds: 1,
   },
   // Pruna P-Video — no published per-second cost to scale from, so this is
-  // parity with Seedance 2.0's 720p/1080p rates as a placeholder until real
-  // numbers exist. Its floor is a 1s clip at 720p (it allows durations down
-  // to 1s, unlike everything else here). NOTE: the rate tables key on
-  // resolution only, so a 48fps clip bills the same as 24fps despite
-  // rendering twice the frames.
+  // parity with Seedance 2.0's 720p/1080p cost as a placeholder until real
+  // numbers exist. It allows durations down to 1s, unlike everything else
+  // here. NOTE: the tables key on resolution only, so a 48fps clip bills
+  // the same as 24fps despite rendering twice the frames.
   "pruna/p-video": {
-    rates: { "720p": 15, "1080p": 37 },
-    minCredits: 15,
+    perSecond: { "720p": 0.15, "1080p": 0.37 },
+    minSeconds: 1,
   },
+  // MiniMax Hailuo 2.3 — 1.2x (768p) / 1.08x (1080p) of Seedance 2.0. Its
+  // shortest clip is 6s (there is no 3s option).
   "minimax/hailuo-2.3": {
-    rates: { "768p": 18, "1080p": 40 },
-    minCredits: 108,
+    perSecond: { "768p": 0.18, "1080p": 0.4 },
+    minSeconds: 6,
   },
 };
+
 // duration=-1 ("automatic") doesn't tell us the real output length ahead of
 // time, so cost estimation assumes this many seconds for that case. Only
 // Seedance 2.5 supports auto duration — 2.0 always sends a real 4-12s value.
 const LIVE_VIDEO_AUTO_DURATION_ESTIMATE = 8;
 
-// The artifact's 2-bucket image pricing: a "quality" model catalog id costs
-// 5 credits, every other (fast) model costs 1 — judgment call mapping this
-// app's actual Cloudflare catalog (cloudflare-models.ts) onto the artifact's
-// illustrative Flux-Schnell/Dev/Pro/Imagen/Nano-Banana examples, none of
-// which are in this catalog: the three ids below are the only ones whose own
-// label/description says "pro"/flagship/"quality".
+// Two-bucket image pricing: a "quality" catalog id is priced off a $0.05
+// provider cost, every other (fast) model off $0.01 — a judgment call
+// mapping this app's actual Cloudflare catalog (cloudflare-models.ts) onto
+// the pricing artifact's illustrative Flux-Schnell/Dev/Pro/Imagen/
+// Nano-Banana examples, none of which are in this catalog: the ids below
+// are the ones whose own label/description says "pro"/flagship/"quality".
+// These two buckets are the least-grounded numbers in this file — if a real
+// per-image cost ever lands, split them per model like the video table
+// above rather than nudging the buckets.
 const QUALITY_IMAGE_MODELS = new Set([
   "recraft/recraftv4-1-pro",
   "bytedance/seedream-5-pro",
@@ -125,25 +165,20 @@ const QUALITY_IMAGE_MODELS = new Set([
   "openai/gpt-image-2",
   "google/nano-banana-pro",
 ]);
-const FAST_IMAGE_CREDITS = 1;
-const QUALITY_IMAGE_CREDITS = 5;
+const FAST_IMAGE_COST_USD = 0.01;
+const QUALITY_IMAGE_COST_USD = 0.05;
 
-// Seedance 2.5 at 1080p, or with a reference video attached, routes to
-// kie.ai instead of Cloudflare — Cloudflare's integration can't serve
-// either case. Real kie.ai per-second cost (dashboard, 2026-08-18),
-// converted 1:1 at CREDIT_VALUE_USD like the tables above (no markup):
-//   with reference video: 480p $0.085/s, 720p $0.190/s, 1080p $0.3425/s
-//   1080p, no reference video: $0.570/s (720p/480p without a reference
-//   video never reach kie.ai — those stay on Cloudflare, see usesKieAi below)
-// Counterintuitively cheaper *with* a reference video at every resolution —
-// confirmed against the dashboard rather than assumed to be a typo.
-const SEEDANCE25_KIE_AI_RATE = {
-  withVideo: { "480p": 8.5, "720p": 19, "1080p": 34.25 } as Record<string, number>,
-  noVideo1080p: 57,
-};
-const SEEDANCE25_KIE_AI_MIN_CREDITS = Math.round(
-  SEEDANCE_DURATION_MIN * SEEDANCE25_KIE_AI_RATE.withVideo["480p"],
-);
+// Seedance 2.5 at 1080p routes to kie.ai instead of Cloudflare — Cloudflare's
+// integration can't serve it. Real kie.ai per-second cost (dashboard,
+// 2026-08-18): 1080p, no reference video, $0.570/s. Every other Seedance 2.5
+// request stays on Cloudflare and uses the table above — this branch must
+// keep matching usesKieAi() in generation-runner.ts, which routes on
+// resolution alone, or we'd quote against a provider we don't actually use.
+const SEEDANCE25_KIE_AI_1080P_COST_USD = 0.57;
+
+function cheapestPerSecond(rates: Record<string, number>): number {
+  return Math.min(...Object.values(rates));
+}
 
 export function estimateVideoCredits(
   model: string,
@@ -151,28 +186,38 @@ export function estimateVideoCredits(
   resolution: VideoResolution | string,
   options: { hasReferenceVideo?: boolean } = {},
 ) {
-  const usesKieAi =
-    model === SEEDANCE_MODEL_ID && (resolution === "1080p" || options.hasReferenceVideo);
   const effectiveDuration =
     durationSeconds === -1 ? LIVE_VIDEO_AUTO_DURATION_ESTIMATE : durationSeconds;
 
-  if (usesKieAi) {
-    const perSecond = options.hasReferenceVideo
-      ? (SEEDANCE25_KIE_AI_RATE.withVideo[resolution] ?? SEEDANCE25_KIE_AI_RATE.withVideo["1080p"])
-      : SEEDANCE25_KIE_AI_RATE.noVideo1080p;
-    return Math.max(SEEDANCE25_KIE_AI_MIN_CREDITS, Math.round(effectiveDuration * perSecond));
+  if (model === SEEDANCE_MODEL_ID && resolution === "1080p") {
+    return Math.max(
+      creditsFor(SEEDANCE_DURATION_MIN, SEEDANCE25_KIE_AI_1080P_COST_USD),
+      creditsFor(effectiveDuration, SEEDANCE25_KIE_AI_1080P_COST_USD),
+    );
   }
 
-  const entry = LIVE_VIDEO_RATE[model] ?? LIVE_VIDEO_RATE[SEEDANCE2_MODEL_ID];
-  const useVideoRates = options.hasReferenceVideo && entry.videoRates;
-  const rates = useVideoRates ? entry.videoRates! : entry.rates;
-  const minCredits = useVideoRates ? (entry.minCreditsVideo ?? entry.minCredits) : entry.minCredits;
+  // A model in the catalog but missing from VIDEO_COST_USD used to throw
+  // here ("cannot read properties of undefined"), which surfaced as a 500 on
+  // the generate endpoints and blocked the model entirely rather than just
+  // mispricing it. Fall back to the Seedance 2.0 table — the reference costs
+  // every other entry is scaled from — so a pricing gap can't take a model
+  // offline again.
+  const entry = VIDEO_COST_USD[model] ?? VIDEO_COST_USD[SEEDANCE2_MODEL_ID];
+  const useVideoRates = options.hasReferenceVideo && entry.withReferenceVideo;
+  const rates = useVideoRates ? entry.withReferenceVideo! : entry.perSecond;
+  const minSeconds = useVideoRates
+    ? (entry.minSecondsWithReferenceVideo ?? entry.minSeconds)
+    : entry.minSeconds;
   const perSecond = rates[resolution] ?? Math.max(...Object.values(rates));
-  return Math.max(minCredits, Math.round(effectiveDuration * perSecond));
+  return Math.max(
+    creditsFor(minSeconds, cheapestPerSecond(rates)),
+    creditsFor(effectiveDuration, perSecond),
+  );
 }
 
 export function estimateImageCredits(model: string) {
-  return QUALITY_IMAGE_MODELS.has(model) ? QUALITY_IMAGE_CREDITS : FAST_IMAGE_CREDITS;
+  const costUsd = QUALITY_IMAGE_MODELS.has(model) ? QUALITY_IMAGE_COST_USD : FAST_IMAGE_COST_USD;
+  return creditsFor(1, costUsd);
 }
 
 export function estimateCreditsForRequest(input: {
