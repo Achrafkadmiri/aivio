@@ -12,6 +12,7 @@ import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useMe } from "@/hooks/use-me";
 import { GalleryGrid } from "./gallery-grid";
 import { AddToCollectionModal } from "./add-to-collection-modal";
+import { ShareIdentityModal } from "./share-identity-modal";
 import type { GalleryItem } from "./generation-card";
 import { GENERATION_TYPES, GENERATION_STATUSES } from "@/lib/constants";
 import { apiFetch } from "@/lib/api-client";
@@ -30,6 +31,9 @@ export function MyGalleryClient() {
   // same list, and it composes with the type/status/search filters.
   const [likedOnly, setLikedOnly] = useState(false);
   const [collectionTarget, setCollectionTarget] = useState<string | null>(null);
+  // The generation waiting on an identity choice — set when someone shares,
+  // cleared once they confirm or cancel.
+  const [shareTarget, setShareTarget] = useState<GalleryItem | null>(null);
   const debouncedSearch = useDebouncedValue(search, 400);
 
   const filters = { type, status, search: debouncedSearch, likedOnly };
@@ -82,15 +86,34 @@ export function MyGalleryClient() {
   });
 
   const togglePublicMutation = useMutation({
-    mutationFn: async ({ id, isPublic }: { id: string; isPublic: boolean }) => {
+    mutationFn: async ({
+      id,
+      isPublic,
+      shareAsNickname,
+    }: {
+      id: string;
+      isPublic: boolean;
+      // Omitted when unsharing — taking something down says nothing about
+      // whose name it would carry if it went back up.
+      shareAsNickname?: boolean;
+    }) => {
       const res = await apiFetch(`/api/generations/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ isPublic }),
+        body: JSON.stringify(
+          shareAsNickname === undefined ? { isPublic } : { isPublic, shareAsNickname },
+        ),
       });
       if (!res.ok) throw new Error("Failed to update");
     },
-    onSuccess: () => invalidate(),
+    onSuccess: (_data, variables) => {
+      invalidate();
+      setShareTarget(null);
+      toast({
+        title: variables.isPublic ? "Shared to the community" : "Removed from the community",
+        variant: "success",
+      });
+    },
   });
 
   const items = query.data?.pages.flatMap((page) => page.items) ?? [];
@@ -159,7 +182,11 @@ export function MyGalleryClient() {
               onAddToCollection={(id) => setCollectionTarget(id)}
               onTogglePublic={(id) => {
                 const item = items.find((i) => i.id === id);
-                if (item) togglePublicMutation.mutate({ id, isPublic: !item.isPublic });
+                if (!item) return;
+                // Going public is the one direction that needs an answer
+                // first; unsharing is unambiguous.
+                if (item.isPublic) togglePublicMutation.mutate({ id, isPublic: false });
+                else setShareTarget(item);
               }}
             />
             {query.hasNextPage && (
@@ -176,6 +203,21 @@ export function MyGalleryClient() {
           </>
         )}
       </div>
+
+      <ShareIdentityModal
+        // Remount per generation so the pre-selected identity is the one
+        // stored on THIS item rather than whatever the last dialog left.
+        key={shareTarget?.id ?? "none"}
+        open={shareTarget !== null}
+        onOpenChange={(open) => !open && setShareTarget(null)}
+        defaultAsNickname={shareTarget?.shareAsNickname ?? false}
+        pending={togglePublicMutation.isPending}
+        onConfirm={(shareAsNickname) => {
+          if (shareTarget) {
+            togglePublicMutation.mutate({ id: shareTarget.id, isPublic: true, shareAsNickname });
+          }
+        }}
+      />
 
       <AddToCollectionModal generationId={collectionTarget} onClose={() => setCollectionTarget(null)} />
     </div>

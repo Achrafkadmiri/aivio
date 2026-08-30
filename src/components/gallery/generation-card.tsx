@@ -87,6 +87,9 @@ export type GalleryItem = {
   resultUrl: string | null;
   thumbnailUrl: string | null;
   isPublic: boolean;
+  /** Which identity the community gallery credits for this one — chosen at
+   *  share time, see ShareIdentityModal. */
+  shareAsNickname?: boolean;
   // Likes, from the API (see lib/likes.ts in the backend). Optional for the
   // handful of local call sites that build GalleryItems by hand; an item
   // without them reads as "nobody has liked this", which is the right

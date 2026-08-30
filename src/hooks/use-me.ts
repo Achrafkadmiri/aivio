@@ -8,6 +8,10 @@ export type Me = {
   email: string;
   name: string;
   avatarUrl: string | null;
+  /** Community pen name. Null until the first time they share anonymously —
+   *  it's minted on demand, not at signup. */
+  nickname: string | null;
+  nicknameAvatarUrl: string | null;
   tier: string;
   createdAt: string;
 };

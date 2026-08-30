@@ -2,8 +2,6 @@
 
 import { useState } from "react";
 import { useToggleLike } from "@/hooks/use-generation-likes";
-import { useMe } from "@/hooks/use-me";
-import { useToast } from "@/components/ui/toast";
 import { GenerationCard, type GalleryItem } from "./generation-card";
 import { PreviewModal, type PreviewAuthor } from "./preview-modal";
 
@@ -37,10 +35,11 @@ export function GalleryGrid({
 }) {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
   const openItem = openIndex === null ? null : items[openIndex];
-  const { toast } = useToast();
-  // Liking writes to the server, so it needs an account. `me` fails (and
-  // stays undefined) for a signed-out visitor on the public feed.
-  const { data: me } = useMe();
+  // Deliberately not gated on a "who am I" query: that query is still in
+  // flight on first paint, so a click landing before it resolved was
+  // treated as signed-out and dropped — the like never fired and nothing
+  // on screen changed. The server already answers this question, and its
+  // 401 drives the sign-in prompt (see useToggleLike).
   const toggleLike = useToggleLike();
 
   return (
@@ -52,14 +51,7 @@ export function GalleryGrid({
             item={item}
             onOpen={() => setOpenIndex(i)}
             showAuthor={showAuthor}
-            onToggleLike={() =>
-              me
-                ? toggleLike.mutate({ item })
-                : toast({
-                    title: "Sign in to like",
-                    description: "Likes are saved to your account.",
-                  })
-            }
+            onToggleLike={() => toggleLike.mutate({ item })}
           />
         ))}
       </div>
