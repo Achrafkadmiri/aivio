@@ -292,13 +292,27 @@ export const IMAGE_RESOLUTIONS = [
 ] as const;
 export type ImageResolution = (typeof IMAGE_RESOLUTIONS)[number];
 export const IMAGE_ASPECT_RATIOS = ["1:1", "4:3", "16:9", "21:9"] as const;
+// Prompt-side style presets offered by the image composer. They are not
+// model parameters (the backend builds those strictly from the registry) —
+// each one appends a medium/treatment fragment to the prompt, which is the
+// only notion of "style" all nine image models read the same way. The
+// per-preset wording lives frontend-side in image-styles.ts; this list is the
+// shared vocabulary, and the legacy text-to-image schema validates against it.
 export const IMAGE_STYLE_PRESETS = [
   "Photorealistic",
+  "Cinematic",
+  "Product Photo",
   "Oil Painting",
+  "Watercolor",
   "Anime",
+  "Comic Book",
   "Cartoon",
   "3D Render",
+  "Isometric",
+  "Pixel Art",
+  "Line Art",
   "Sketch",
+  "Concept Art",
 ] as const;
 
 export const MOTION_INTENSITIES = ["low", "medium", "high"] as const;

@@ -2,7 +2,13 @@
 
 import { type ReactNode } from "react";
 import { Check, ChevronDown, Lock, SlidersHorizontal, type LucideIcon } from "lucide-react";
-import { DropdownRoot, DropdownTrigger, DropdownContent, DropdownItem } from "@/components/ui/dropdown";
+import {
+  DropdownRoot,
+  DropdownTrigger,
+  DropdownContent,
+  DropdownItem,
+  DropdownLabel,
+} from "@/components/ui/dropdown";
 import { Slider } from "@/components/ui/slider";
 import { Tooltip } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
@@ -39,9 +45,11 @@ export function DisabledPillHint({ hint, children }: { hint?: string; children: 
 /** A pill that opens a single-select list — duration, resolution, aspect ratio, ... */
 export function PillSelect<T extends string | number>({
   icon: Icon,
+  label,
   value,
   options,
   renderLabel,
+  renderHint,
   onChange,
   disabled,
   disabledHint,
@@ -49,9 +57,16 @@ export function PillSelect<T extends string | number>({
   lockedHint,
 }: {
   icon: LucideIcon;
+  /** Field name, shown as the list's header. The pill itself only has room
+   * for the current value, so without this a bare "2K" or "16:9" leaves you
+   * guessing which setting you just opened. */
+  label?: string;
   value: T;
   options: readonly T[];
   renderLabel?: (v: T) => string;
+  /** Plain-language gloss for a raw provider value ("Full HD" for "fhd") -
+   * see valueHint in composer-fields.ts. */
+  renderHint?: (v: T) => string | undefined;
   onChange: (v: T) => void;
   disabled?: boolean;
   disabledHint?: string;
@@ -62,12 +77,12 @@ export function PillSelect<T extends string | number>({
   /** Tooltip text for a locked option, e.g. "Upgrade to Starter to unlock 720p." */
   lockedHint?: (v: T) => string;
 }) {
-  const label = renderLabel ? renderLabel(value) : String(value);
+  const display = renderLabel ? renderLabel(value) : String(value);
   const trigger = (
     <DropdownTrigger asChild>
       <button type="button" disabled={disabled} className={pillClass}>
         <Icon className="size-3.5 text-muted" aria-hidden="true" />
-        <span className="font-medium">{label}</span>
+        <span className="font-medium">{display}</span>
         <ChevronDown className="size-3 text-muted" aria-hidden="true" />
       </button>
     </DropdownTrigger>
@@ -79,9 +94,11 @@ export function PillSelect<T extends string | number>({
       ) : (
         trigger
       )}
-      <DropdownContent align="start" className="max-h-72 w-44 overflow-y-auto">
+      <DropdownContent align="start" className="max-h-72 w-56 overflow-y-auto">
+        {label && <DropdownLabel>{label}</DropdownLabel>}
         {options.map((opt) => {
           const locked = isOptionLocked?.(opt) ?? false;
+          const hint = renderHint?.(opt);
           const item = (
             <DropdownItem
               key={String(opt)}
@@ -94,7 +111,7 @@ export function PillSelect<T extends string | number>({
                 onChange(opt);
               }}
               className={cn(
-                "flex items-center gap-2",
+                "flex items-center gap-2 py-2.5",
                 locked && "cursor-not-allowed opacity-50 data-[highlighted]:bg-transparent data-[highlighted]:text-ink-soft",
               )}
             >
@@ -102,7 +119,10 @@ export function PillSelect<T extends string | number>({
                 className={cn("size-3.5 shrink-0", opt === value ? "text-brand" : "text-transparent")}
                 aria-hidden="true"
               />
-              <span className="flex-1">{renderLabel ? renderLabel(opt) : String(opt)}</span>
+              <span className="flex min-w-0 flex-1 items-baseline gap-2">
+                <span className="truncate">{renderLabel ? renderLabel(opt) : String(opt)}</span>
+                {hint && <span className="ml-auto shrink-0 text-caption text-muted">{hint}</span>}
+              </span>
               {locked && <Lock className="size-3.5 shrink-0 text-muted" aria-hidden="true" />}
             </DropdownItem>
           );
@@ -185,8 +205,11 @@ export function SettingsPopover({
           {label && <span className="font-medium">{label}</span>}
         </button>
       </DropdownTrigger>
-      <DropdownContent align="end" className="max-h-[28rem] w-80 space-y-4 overflow-y-auto p-4">
-        {children}
+      <DropdownContent align="end" className="max-h-[28rem] w-80 overflow-y-auto p-4">
+        <p className="mb-3 text-caption font-medium tracking-wide text-muted uppercase">
+          {label ?? "Advanced"}
+        </p>
+        <div className="space-y-4">{children}</div>
       </DropdownContent>
     </DropdownRoot>
   );

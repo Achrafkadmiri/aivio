@@ -5,7 +5,17 @@ import { useMutation } from "@tanstack/react-query";
 import { useInvalidateCredits } from "@/hooks/use-credits";
 import { useForm, Controller, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Clock, Monitor, RectangleHorizontal, ScanFace, SlidersHorizontal, type LucideIcon } from "lucide-react";
+import {
+  Clock,
+  Gauge,
+  Maximize,
+  Monitor,
+  Palette,
+  RectangleHorizontal,
+  ScanFace,
+  SlidersHorizontal,
+  type LucideIcon,
+} from "lucide-react";
 import { FieldError, Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Tooltip } from "@/components/ui/tooltip";
@@ -17,7 +27,14 @@ import { buildDynamicSchema } from "@/lib/validation";
 import type { CloudflareModelConfig } from "@/lib/cloudflare-models";
 import { apiFetch } from "@/lib/api-client";
 import { isResolutionLocked, minTierForResolution, minTierForDuration, upgradeHint } from "@/lib/tier-limits";
-import type { TierInfo } from "@/lib/constants";
+import {
+  TIER_MANAGED_FIELD_KEYS,
+  comparePrimaryFieldKeys,
+  isPrimaryFieldKey,
+  valueHint,
+} from "@/lib/composer-fields";
+import { applyImageStyle } from "@/lib/image-styles";
+import { IMAGE_STYLE_PRESETS, type TierInfo } from "@/lib/constants";
 import {
   ComposerShell,
   ReferenceUploadRow,
@@ -45,7 +62,15 @@ const SELECT_FIELD_ICONS: Record<string, LucideIcon> = {
   aspectRatio: RectangleHorizontal,
   resolution: Monitor,
   duration: Clock,
+  size: Maximize,
+  imageSize: Maximize,
+  quality: Gauge,
 };
+
+/** "None" first so the pill can express "no style applied" without a
+ * separate clear affordance. */
+const STYLE_OPTIONS = ["None", ...IMAGE_STYLE_PRESETS] as const;
+type StyleOption = (typeof STYLE_OPTIONS)[number];
 
 /**
  * One form, driven by a CloudflareModelConfig (see cloudflare-models.ts),
@@ -89,6 +114,11 @@ export function DynamicModelForm<T extends string>({
   const [preview, setPreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
+  // Image style is a composer-level control, not a model field: it folds into
+  // the prompt on submit (see applyImageStyle) rather than travelling as a
+  // parameter, because the backend builds parameters strictly from the model
+  // registry and no image model here takes a generic style argument.
+  const [style, setStyle] = useState<StyleOption>("None");
 
   const defaultValues: Record<string, unknown> = { prompt: initialPrompt };
   for (const field of config.fields) {
@@ -158,19 +188,33 @@ export function DynamicModelForm<T extends string>({
     },
   });
 
-  const submit = handleSubmit((data) => mutation.mutate(data));
-
   const imageRequired = config.image === "required";
   const hasImage = config.image !== "none";
   const isVideoModel = config.category !== "text-to-image";
+  const isImageModel = !isVideoModel;
+
+  const submit = handleSubmit((data) =>
+    mutation.mutate(
+      isImageModel && style !== "None"
+        ? { ...data, prompt: applyImageStyle(String(data.prompt ?? ""), style) }
+        : data,
+    ),
+  );
 
   const durationField = config.fields.find(
     (f) => f.key === "duration" && f.type === "number" && f.min !== undefined && f.max !== undefined,
   );
-  const pillFields = config.fields.filter(
-    (f) => f.type === "select" || f.key === durationField?.key,
-  );
-  const panelFields = config.fields.filter((f) => !pillFields.includes(f));
+  // The toolbar carries only the choices that change the result (and the
+  // price); everything else stays one click away under Settings. Before this
+  // every select became a pill, so an output-format picker sat next to the
+  // resolution and the row's shape changed completely from model to model.
+  // TIER_MANAGED_FIELD_KEYS drops what the plan decides rather than the user
+  // (watermark) - its default still reaches the provider, see composer-fields.ts.
+  const visibleFields = config.fields.filter((f) => !TIER_MANAGED_FIELD_KEYS.has(f.key));
+  const pillFields = visibleFields
+    .filter((f) => (f.type === "select" || f.key === durationField?.key) && isPrimaryFieldKey(f.key))
+    .sort((a, b) => comparePrimaryFieldKeys(a.key, b.key));
+  const panelFields = visibleFields.filter((f) => !pillFields.includes(f));
 
   // Clamps the duration slider to the current plan's limit (undefined
   // tierInfo — still loading — leaves the model's own max in place).
@@ -253,6 +297,18 @@ export function DynamicModelForm<T extends string>({
             <ProviderModelPicker models={models} value={model} onChange={onModelChange} />
           </MobileFieldRow>
 
+          {isImageModel && (
+            <MobileFieldRow label="Style" description="Added to your prompt when you generate.">
+              <PillSelect
+                icon={Palette}
+                label="Style"
+                value={style}
+                options={STYLE_OPTIONS}
+                onChange={setStyle}
+              />
+            </MobileFieldRow>
+          )}
+
           {isVideoModel && (
             <MobileFieldRow label="Characters" description="Coming soon — character consistency isn't wired up yet.">
               <ScanFace className="size-4 text-muted" aria-hidden="true" />
@@ -284,8 +340,10 @@ export function DynamicModelForm<T extends string>({
               <MobileFieldRow key={field.key} label={field.label}>
                 <PillSelect
                   icon={SELECT_FIELD_ICONS[field.key] ?? SlidersHorizontal}
+                  label={field.label}
                   value={(watch(field.key) as string) ?? field.options?.[0] ?? ""}
                   options={field.options ?? []}
+                  renderHint={valueHint}
                   onChange={(v) => setValue(field.key, v, { shouldValidate: true })}
                   isOptionLocked={
                     field.key === "resolution" && isVideoModel ? (v) => isResolutionLocked(v, tierInfo) : undefined
@@ -347,6 +405,16 @@ export function DynamicModelForm<T extends string>({
         <div className="flex flex-1 items-center gap-2 overflow-x-auto">
           <ProviderModelPicker models={models} value={model} onChange={onModelChange} />
 
+          {isImageModel && (
+            <PillSelect
+              icon={Palette}
+              label="Style"
+              value={style}
+              options={STYLE_OPTIONS}
+              onChange={setStyle}
+            />
+          )}
+
           {isVideoModel && (
             <Tooltip content="Coming soon — character consistency isn't wired up yet.">
               <span className="inline-flex" tabIndex={0}>
@@ -382,8 +450,10 @@ export function DynamicModelForm<T extends string>({
               <PillSelect
                 key={field.key}
                 icon={SELECT_FIELD_ICONS[field.key] ?? SlidersHorizontal}
+                label={field.label}
                 value={(watch(field.key) as string) ?? field.options?.[0] ?? ""}
                 options={field.options ?? []}
+                renderHint={valueHint}
                 onChange={(v) => setValue(field.key, v, { shouldValidate: true })}
                 isOptionLocked={
                   field.key === "resolution" && isVideoModel ? (v) => isResolutionLocked(v, tierInfo) : undefined

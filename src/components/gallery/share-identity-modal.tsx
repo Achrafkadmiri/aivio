@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { Check, Globe, VenetianMask } from "lucide-react";
+import { Check, Globe, RotateCcw, VenetianMask } from "lucide-react";
 import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
@@ -121,7 +121,11 @@ export function ShareIdentityModal({
   });
 
   useEffect(() => {
-    if (open && !identity && !ensureNickname.isPending) ensureNickname.mutate();
+    // isError guards the retry: without it a failing endpoint would be
+    // re-called on every render for as long as the dialog stayed open.
+    if (open && !identity && !ensureNickname.isPending && !ensureNickname.isError) {
+      ensureNickname.mutate();
+    }
     // ensureNickname is a stable mutation object; re-running on it would loop.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, identity]);
@@ -144,20 +148,37 @@ export function ShareIdentityModal({
         />
 
         <IdentityOption
+          // Selecting this while it failed retries instead of doing nothing:
+          // the pen name is fetched, so a bad deploy or a dropped connection
+          // used to leave this row spinning forever with no way out.
           selected={asNickname}
-          onSelect={() => setAsNickname(true)}
+          onSelect={() => {
+            if (ensureNickname.isError) ensureNickname.reset();
+            else setAsNickname(true);
+          }}
           avatar={
             identity ? (
               <Avatar src={identity.nicknameAvatarUrl || null} fallback="?" />
             ) : (
               <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-surface-3">
-                <Spinner size={16} />
+                {ensureNickname.isError ? (
+                  <RotateCcw className="size-4 text-muted" aria-hidden="true" />
+                ) : (
+                  <Spinner size={16} />
+                )}
               </span>
             )
           }
           icon={<VenetianMask className="size-3.5 text-muted" aria-hidden="true" />}
-          label={identity?.nickname ?? "Preparing a pen name…"}
-          hint="Your real name and profile stay private"
+          label={
+            identity?.nickname ??
+            (ensureNickname.isError ? "Pen name unavailable" : "Preparing a pen name…")
+          }
+          hint={
+            ensureNickname.isError && !identity
+              ? "Couldn't reach the server — tap to try again"
+              : "Your real name and profile stay private"
+          }
         />
       </div>
 
