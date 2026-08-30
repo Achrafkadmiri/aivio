@@ -111,6 +111,14 @@ export const CLOUDFLARE_MODELS: CloudflareModelConfig[] = [
   // Verified field list: prompt, size, style, substyle, controls.colors,
   // controls.background_color.rgb. There is NO `image` param — the previous
   // entry advertised image-to-image support that 400s.
+  //
+  // size/style/substyle stay free text on purpose. Re-probed 2026-08-30 with
+  // a deliberately invalid value on each: unlike the xAI and ByteDance models,
+  // Cloudflare accepted all three without complaint, so it does not validate
+  // them and there is no enum to read off the API. Recraft's own API does have
+  // one, but writing it from memory or from docs is exactly what this file
+  // forbids — turning these into selects needs values obtained from the
+  // provider, not guessed.
   {
     id: "recraft/recraftv4-1",
     label: "Recraft v4.1",
@@ -233,14 +241,28 @@ export const CLOUDFLARE_MODELS: CloudflareModelConfig[] = [
     image: "none",
     fields: [
       { key: "n", cfParam: "n", label: "Number of images", type: "number", defaultValue: 1, min: 1, max: 4 },
-      { key: "aspectRatio", cfParam: "aspect_ratio", label: "Aspect ratio", type: "text", helperText: "e.g. 16:9" },
-      { key: "resolution", cfParam: "resolution", label: "Resolution", type: "text", helperText: "e.g. 1024x1024" },
+      { key: "aspectRatio", cfParam: "aspect_ratio", label: "Aspect ratio", type: "select", options: ["1:1", "3:4", "4:3", "9:16", "16:9", "2:3", "3:2", "9:19.5", "19.5:9", "9:20", "20:9", "1:2", "2:1", "auto"], defaultValue: "16:9" },
+      { key: "resolution", cfParam: "resolution", label: "Resolution", type: "select", options: ["1k", "2k"], defaultValue: "1k" },
     ],
     staticParams: { response_format: "url" },
     outputPath: ["image"],
     fallbackOutputPath: ["images", "0"],
     outputKind: "url",
   },
+  // Re-probed 2026-08-30. Both xAI image models share one schema, and three
+  // of its fields were wrong here: aspect_ratio and resolution are real enums
+  // (resolution is "1k"|"2k", NOT a WIDTHxHEIGHT string — the old helper text
+  // suggested "1024x1024", which the API rejects outright), and there is a
+  // `quality` field ("low"|"medium"|"high") that was not exposed at all. It is
+  // wired up on the Quality variant only, pinned to "high": adding it to the
+  // fast variant would change what that model costs us while it stays in the
+  // cheap image bucket in credit-estimate.ts.
+  //
+  // The probe also reports `n` accepts up to 10, not 4 — but see the note on
+  // seedream-4.5 below: this pipeline persists exactly one result URL, so any
+  // n > 1 bills for images that are then dropped. Left at its existing bounds
+  // rather than widened.
+  //
   // Its schema names the image field `image.url`, i.e. a nested { url }
   // object — a bare string 400s.
   {
@@ -255,8 +277,9 @@ export const CLOUDFLARE_MODELS: CloudflareModelConfig[] = [
     imageParamShape: "urlObject",
     fields: [
       { key: "n", cfParam: "n", label: "Number of images", type: "number", defaultValue: 1, min: 1, max: 4 },
-      { key: "aspectRatio", cfParam: "aspect_ratio", label: "Aspect ratio", type: "text", helperText: "e.g. 16:9" },
-      { key: "resolution", cfParam: "resolution", label: "Resolution", type: "text", defaultValue: "2k", helperText: "e.g. 2k" },
+      { key: "quality", cfParam: "quality", label: "Quality", type: "select", options: ["low", "medium", "high"], defaultValue: "high" },
+      { key: "aspectRatio", cfParam: "aspect_ratio", label: "Aspect ratio", type: "select", options: ["1:1", "3:4", "4:3", "9:16", "16:9", "2:3", "3:2", "9:19.5", "19.5:9", "9:20", "20:9", "1:2", "2:1", "auto"], defaultValue: "16:9" },
+      { key: "resolution", cfParam: "resolution", label: "Resolution", type: "select", options: ["1k", "2k"], defaultValue: "2k" },
     ],
     staticParams: { response_format: "url" },
     outputPath: ["image"],
@@ -274,13 +297,13 @@ export const CLOUDFLARE_MODELS: CloudflareModelConfig[] = [
     id: "bytedance/seedream-5-pro",
     label: "Seedream 5 Pro",
     provider: "ByteDance",
-    description: "ByteDance's flagship image model, 1K/2K or custom size",
+    description: "ByteDance's flagship image model at 1K or 2K",
     category: "text-to-image",
     promptRequired: true,
     image: "optional",
     imageCfParam: "image",
     fields: [
-      { key: "size", cfParam: "size", label: "Size", type: "text", defaultValue: "2K", helperText: "1K, 2K, or WIDTHxHEIGHT" },
+      { key: "size", cfParam: "size", label: "Size", type: "select", options: ["1K", "2K"], defaultValue: "2K" },
       { key: "watermark", cfParam: "watermark", label: "Watermark", type: "switch", defaultValue: false },
     ],
     outputPath: ["images", "0"],
@@ -347,7 +370,7 @@ export const CLOUDFLARE_MODELS: CloudflareModelConfig[] = [
       { key: "resolution", cfParam: "resolution", label: "Resolution", type: "select", options: ["480p", "720p"], defaultValue: "720p" },
       { key: "aspectRatio", cfParam: "aspect_ratio", label: "Aspect ratio", type: "select", options: ["16:9", "4:3", "1:1", "3:4", "9:16", "21:9", "9:21"], defaultValue: "16:9" },
       { key: "cameraFixed", cfParam: "camera_fixed", label: "Fix camera position", type: "switch", defaultValue: false },
-      { key: "generateAudio", cfParam: "generate_audio", label: "Generate audio", type: "switch", defaultValue: false },
+      { key: "generateAudio", cfParam: "generate_audio", label: "Generate audio", type: "switch", defaultValue: true },
       { key: "watermark", cfParam: "watermark", label: "Watermark", type: "switch", defaultValue: false },
       { key: "useVirtualAvatar", cfParam: "use_virtual_avatar", label: "Virtual avatar mode", type: "switch", defaultValue: false },
       { key: "seed", cfParam: "seed", label: "Seed", type: "number" },

@@ -20,7 +20,6 @@ import {
   isDurationLocked,
   minTierForResolution,
   minTierForDuration,
-  minTierWithoutForcedWatermark,
   upgradeHint,
 } from "@/lib/tier-limits";
 import {
@@ -110,6 +109,7 @@ export function Seedance2VideoForm({
       resolution: initialParams?.resolution ?? "720p",
       aspectRatio: initialParams?.aspectRatio ?? "16:9",
       cameraFixed: false,
+      generateAudio: true,
       watermark: false,
       useVirtualAvatar: false,
     },
@@ -122,7 +122,6 @@ export function Seedance2VideoForm({
   const image = watch("image");
   const hasReference = Boolean(image);
   const estimatedCredits = estimateVideoCredits(SEEDANCE2_MODEL_ID, duration, resolution);
-  const watermarkForced = tierInfo?.videoWatermark ?? false;
 
   async function handleFile(file: File) {
     setUploading(true);
@@ -329,26 +328,8 @@ export function Seedance2VideoForm({
             <Controller
               control={control}
               name="generateAudio"
-              render={({ field }) => <Switch checked={field.value ?? false} onCheckedChange={field.onChange} />}
+              render={({ field }) => <Switch checked={field.value ?? true} onCheckedChange={field.onChange} />}
             />
-          </MobileFieldRow>
-          <MobileFieldRow
-            label="Watermark"
-            description={watermarkForced ? "Included on your plan — upgrade to remove it." : "Add a visible watermark to the output."}
-          >
-            {watermarkForced ? (
-              <Tooltip content={upgradeHint(minTierWithoutForcedWatermark(), "watermark-free video")}>
-                <span className="inline-flex" tabIndex={0}>
-                  <Switch checked disabled />
-                </span>
-              </Tooltip>
-            ) : (
-              <Controller
-                control={control}
-                name="watermark"
-                render={({ field }) => <Switch checked={field.value} onCheckedChange={field.onChange} />}
-              />
-            )}
           </MobileFieldRow>
           <MobileFieldRow
             label="Virtual avatar mode"
@@ -432,27 +413,9 @@ export function Seedance2VideoForm({
                 control={control}
                 name="generateAudio"
                 render={({ field }) => (
-                  <Switch checked={field.value ?? false} onCheckedChange={field.onChange} />
+                  <Switch checked={field.value ?? true} onCheckedChange={field.onChange} />
                 )}
               />
-            </SettingRow>
-            <SettingRow
-              title="Watermark"
-              description={watermarkForced ? "Included on your plan — upgrade to remove it." : "Add a visible watermark to the output."}
-            >
-              {watermarkForced ? (
-                <Tooltip content={upgradeHint(minTierWithoutForcedWatermark(), "watermark-free video")}>
-                  <span className="inline-flex" tabIndex={0}>
-                    <Switch checked disabled />
-                  </span>
-                </Tooltip>
-              ) : (
-                <Controller
-                  control={control}
-                  name="watermark"
-                  render={({ field }) => <Switch checked={field.value} onCheckedChange={field.onChange} />}
-                />
-              )}
             </SettingRow>
             <SettingRow
               title="Virtual avatar mode"

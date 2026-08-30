@@ -23,7 +23,6 @@ import {
   isDurationLocked,
   minTierForResolution,
   minTierForDuration,
-  minTierWithoutForcedWatermark,
   upgradeHint,
 } from "@/lib/tier-limits";
 import {
@@ -71,7 +70,7 @@ export function SeedanceVideoForm({
   onCreated: (jobId: string) => void;
   busy: boolean;
   /** Current plan's limits — undefined while still loading. Gates
-   * resolution/duration/watermark controls client-side so a locked pick is
+   * resolution and duration controls client-side so a locked pick is
    * discoverable before hitting the server's 403 (see aiVideo-backend's
    * generations.ts, the actual source of truth for these limits). */
   tierInfo?: TierInfo;
@@ -101,6 +100,7 @@ export function SeedanceVideoForm({
       duration: 5,
       resolution: "720p",
       aspectRatio: "adaptive",
+      generateAudio: true,
       watermark: false,
       useVirtualAvatar: false,
       outputFormat: "mp4",
@@ -124,7 +124,6 @@ export function SeedanceVideoForm({
   const autoLocked = isDurationLocked(8, tierInfo);
   const durationCap = tierInfo ? Math.min(SEEDANCE_DURATION_MAX, tierInfo.maxDurationSeconds) : SEEDANCE_DURATION_MAX;
   const durationCapped = durationCap < SEEDANCE_DURATION_MAX;
-  const watermarkForced = tierInfo?.videoWatermark ?? false;
 
   async function handleFile(file: File) {
     setUploading(true);
@@ -413,26 +412,8 @@ export function SeedanceVideoForm({
             <Controller
               control={control}
               name="generateAudio"
-              render={({ field }) => <Switch checked={field.value ?? false} onCheckedChange={field.onChange} />}
+              render={({ field }) => <Switch checked={field.value ?? true} onCheckedChange={field.onChange} />}
             />
-          </MobileFieldRow>
-          <MobileFieldRow
-            label="Watermark"
-            description={watermarkForced ? "Included on your plan — upgrade to remove it." : "Add a visible watermark to the output."}
-          >
-            {watermarkForced ? (
-              <Tooltip content={upgradeHint(minTierWithoutForcedWatermark(), "watermark-free video")}>
-                <span className="inline-flex" tabIndex={0}>
-                  <Switch checked disabled />
-                </span>
-              </Tooltip>
-            ) : (
-              <Controller
-                control={control}
-                name="watermark"
-                render={({ field }) => <Switch checked={field.value} onCheckedChange={field.onChange} />}
-              />
-            )}
           </MobileFieldRow>
           <MobileFieldRow
             label="Virtual avatar mode"
@@ -556,27 +537,9 @@ export function SeedanceVideoForm({
                 control={control}
                 name="generateAudio"
                 render={({ field }) => (
-                  <Switch checked={field.value ?? false} onCheckedChange={field.onChange} />
+                  <Switch checked={field.value ?? true} onCheckedChange={field.onChange} />
                 )}
               />
-            </SettingRow>
-            <SettingRow
-              title="Watermark"
-              description={watermarkForced ? "Included on your plan — upgrade to remove it." : "Add a visible watermark to the output."}
-            >
-              {watermarkForced ? (
-                <Tooltip content={upgradeHint(minTierWithoutForcedWatermark(), "watermark-free video")}>
-                  <span className="inline-flex" tabIndex={0}>
-                    <Switch checked disabled />
-                  </span>
-                </Tooltip>
-              ) : (
-                <Controller
-                  control={control}
-                  name="watermark"
-                  render={({ field }) => <Switch checked={field.value} onCheckedChange={field.onChange} />}
-                />
-              )}
             </SettingRow>
             <SettingRow
               title="Virtual avatar mode"
