@@ -220,6 +220,7 @@ function CollectionEditor({
         <GalleryGrid
           items={collection.items}
           author={me ? { name: me.name, avatarUrl: me.avatarUrl } : undefined}
+          viewerIsOwner
           onRemoveFromCollection={onRemoveItem}
         />
       )}

@@ -129,6 +129,7 @@ export function MyGalleryClient() {
             <GalleryGrid
               items={items}
               author={me ? { name: me.name, avatarUrl: me.avatarUrl } : undefined}
+              viewerIsOwner
               onDelete={(id) => deleteMutation.mutate(id)}
               onDuplicate={(id) => duplicateMutation.mutate(id)}
               onAddToCollection={(id) => setCollectionTarget(id)}

@@ -8,6 +8,7 @@ import { PreviewModal, type PreviewAuthor } from "./preview-modal";
 export function GalleryGrid({
   items,
   author,
+  viewerIsOwner = false,
   onDelete,
   onDuplicate,
   onAddToCollection,
@@ -15,11 +16,13 @@ export function GalleryGrid({
   onTogglePublic,
 }: {
   items: GalleryItem[];
-  /** Shown in the preview modal's header. Pass it only where the viewer is
-   *  known to be the owner (my gallery, dashboard, own collections) — the
-   *  public gallery has no author data, and guessing "you" there would
-   *  credit the wrong person. */
+  /** Who made these. The public gallery has no author data, and guessing
+   *  "you" there would credit the wrong person, so it passes nothing. */
   author?: PreviewAuthor;
+  /** True on the owner's own surfaces (my gallery, dashboard, own
+   *  collections). Switches the preview's header from a byline to the
+   *  creator's own view — see PreviewBody. */
+  viewerIsOwner?: boolean;
   onDelete?: (id: string) => void;
   onDuplicate?: (id: string) => void;
   onAddToCollection?: (id: string) => void;
@@ -47,6 +50,7 @@ export function GalleryGrid({
         items={items}
         index={openIndex}
         author={author}
+        viewerIsOwner={viewerIsOwner}
         onClose={() => setOpenIndex(null)}
         onNavigate={setOpenIndex}
         onDelete={onDelete && openItem ? () => onDelete(openItem.id) : undefined}
