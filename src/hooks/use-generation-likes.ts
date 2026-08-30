@@ -2,6 +2,7 @@
 
 import { useMutation, useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api-client";
+import { useToast } from "@/components/ui/toast";
 import type { GalleryItem } from "@/components/gallery/generation-card";
 
 // Likes are server state now (they used to live in localStorage, private to
@@ -21,6 +22,14 @@ const GENERATION_QUERY_KEYS = [
 ] as const;
 
 type LikeState = { likedByMe: boolean; likeCount: number };
+
+/** Carries the HTTP status so onError can tell "you're signed out" (the one
+ *  failure with a useful next step) from anything else. */
+class LikeError extends Error {
+  constructor(readonly status: number) {
+    super(`Like request failed with ${status}`);
+  }
+}
 
 /**
  * Applies a like to whichever generation-shaped payload this cache holds.
@@ -76,6 +85,7 @@ function patchEverywhere(queryClient: QueryClient, id: string, next: LikeState) 
  */
 export function useToggleLike() {
   const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   return useMutation({
     // One like at a time, app-wide. Toggling fast otherwise races a PUT
@@ -88,13 +98,7 @@ export function useToggleLike() {
       const res = await apiFetch(`/api/generations/${item.id}/like`, {
         method: item.likedByMe ? "DELETE" : "PUT",
       });
-      if (!res.ok) {
-        throw new Error(
-          res.status === 401
-            ? "Sign in to like generations."
-            : "Could not save that like.",
-        );
-      }
+      if (!res.ok) throw new LikeError(res.status);
       return (await res.json()) as { liked: boolean; likeCount: number };
     },
 
@@ -112,10 +116,21 @@ export function useToggleLike() {
       return { snapshots };
     },
 
-    onError: (_error, _variables, context) => {
+    onError: (error, _variables, context) => {
       for (const [key, data] of context?.snapshots ?? []) {
         queryClient.setQueryData(key, data);
       }
+      // A like that silently rolls back looks identical to a like that never
+      // registered, so every failure says something. 401 is the one worth a
+      // specific message: it's the only one the viewer can act on.
+      const signedOut = error instanceof LikeError && error.status === 401;
+      toast({
+        title: signedOut ? "Sign in to like" : "Couldn't save that like",
+        description: signedOut
+          ? "Likes are saved to your account."
+          : "Something went wrong — please try again.",
+        variant: signedOut ? "default" : "error",
+      });
     },
 
     onSuccess: (result, { item }) => {
