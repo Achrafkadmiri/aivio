@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Image from "next/image";
 import { AlertCircle, Heart } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
@@ -107,12 +106,19 @@ export function GenerationCard({
           isVideo ? (
             <LazyVideoTile src={item.resultUrl} alt={item.prompt} />
           ) : (
-            <Image
+            // Plain <img>, not next/image: results are served from R2 behind
+            // the Edge Function, and the optimizer fetches them server-side
+            // with no session cookie, so every tile came back broken while
+            // the same URL loads fine in the browser (which is why the video
+            // tiles above and the lightbox's <img> always worked). Same
+            // reason the preview modal and avatars skip next/image too.
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
               src={item.resultUrl}
               alt={item.prompt}
-              fill
-              sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
-              className="object-cover"
+              loading="lazy"
+              decoding="async"
+              className="absolute inset-0 size-full object-cover"
             />
           )
         ) : item.status === "failed" ? (
