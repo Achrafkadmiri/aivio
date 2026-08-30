@@ -68,6 +68,15 @@ export type GalleryItem = {
   resultUrl: string | null;
   thumbnailUrl: string | null;
   isPublic: boolean;
+  // Likes, from the API (see lib/likes.ts in the backend). Optional for the
+  // handful of local call sites that build GalleryItems by hand; an item
+  // without them reads as "nobody has liked this", which is the right
+  // default for something that doesn't exist server-side yet.
+  likeCount?: number;
+  likedByMe?: boolean;
+  /** Only sent by the public feed and shared collections — the surfaces
+   *  where the viewer might not be the creator. */
+  author?: { name: string; avatarUrl: string | null } | null;
   // Everything below is already on every serialized generation the API
   // returns (see serializeGeneration in the backend) — optional here only
   // because a few local call sites build GalleryItems by hand. The preview
@@ -84,15 +93,19 @@ export type GalleryItem = {
 export function GenerationCard({
   item,
   onOpen,
-  liked = false,
   onToggleLike,
+  showAuthor = false,
 }: {
   item: GalleryItem;
   onOpen: () => void;
-  liked?: boolean;
   onToggleLike?: () => void;
+  /** Credits the creator on the tile — the public feed and shared
+   *  collections, where the viewer generally isn't the person who made it. */
+  showAuthor?: boolean;
 }) {
   const isVideo = item.type !== "text-to-image";
+  const liked = item.likedByMe ?? false;
+  const likeCount = item.likeCount ?? 0;
 
   return (
     <div className="group relative aspect-square overflow-hidden rounded-2xl border border-line bg-surface-2 shadow-card transition-[border-color,box-shadow,transform] duration-300 ease-out hover:-translate-y-1 hover:border-border-strong hover:shadow-glow-sm">
@@ -146,14 +159,42 @@ export function GenerationCard({
           aria-pressed={liked}
           aria-label={liked ? "Unlike" : "Like"}
           className={cn(
-            "absolute top-2.5 right-2.5 flex size-9 items-center justify-center rounded-full",
+            "absolute top-2.5 right-2.5 flex h-9 items-center gap-1.5 rounded-full px-2.5",
             "bg-black/40 text-white backdrop-blur-sm transition-[opacity,transform,background-color] duration-200",
             "hover:bg-black/60 active:scale-90",
-            liked ? "opacity-100" : "sm:opacity-0 sm:group-hover:opacity-100 sm:focus-visible:opacity-100",
+            // A liked tile, or one carrying a count, keeps its heart on at
+            // every size — the count is information, not chrome, and a
+            // hover-only reveal would hide it from touch devices entirely.
+            liked || likeCount > 0
+              ? "opacity-100"
+              : "sm:opacity-0 sm:group-hover:opacity-100 sm:focus-visible:opacity-100",
           )}
         >
           <Heart className={cn("size-4.5", liked && "fill-brand text-brand")} aria-hidden="true" />
+          {likeCount > 0 && (
+            <span className="text-caption font-semibold tabular-nums">{likeCount}</span>
+          )}
         </button>
+      )}
+
+      {/* Byline, bottom-left. Sits under its own scrim rather than over the
+        * image directly, so a light result doesn't swallow the name. */}
+      {showAuthor && item.author && (
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center gap-2 bg-black/45 px-3 py-2 backdrop-blur-sm">
+          {item.author.avatarUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={item.author.avatarUrl}
+              alt=""
+              className="size-5 shrink-0 rounded-full object-cover"
+            />
+          ) : (
+            <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-white/20 text-[10px] font-semibold text-white">
+              {item.author.name.charAt(0).toUpperCase()}
+            </span>
+          )}
+          <span className="truncate text-caption font-medium text-white">{item.author.name}</span>
+        </div>
       )}
 
     </div>

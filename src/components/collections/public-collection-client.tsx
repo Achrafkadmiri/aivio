@@ -49,7 +49,7 @@ export function PublicCollectionClient({ token }: { token: string }) {
               {data.items.length === 0 ? (
                 <p className="text-body-sm text-muted">This collection is empty.</p>
               ) : (
-                <GalleryGrid items={data.items} />
+                <GalleryGrid items={data.items} showAuthor />
               )}
             </div>
           </>

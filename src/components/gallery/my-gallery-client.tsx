@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Heart } from "lucide-react";
 import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { SearchInput } from "@/components/ui/search-input";
 import { Select } from "@/components/ui/input";
@@ -14,6 +15,7 @@ import { AddToCollectionModal } from "./add-to-collection-modal";
 import type { GalleryItem } from "./generation-card";
 import { GENERATION_TYPES, GENERATION_STATUSES } from "@/lib/constants";
 import { apiFetch } from "@/lib/api-client";
+import { cn } from "@/lib/utils";
 
 type GenerationsResponse = { items: GalleryItem[]; nextCursor: string | null; hasMore: boolean };
 
@@ -24,10 +26,13 @@ export function MyGalleryClient() {
   const [type, setType] = useState("");
   const [status, setStatus] = useState("");
   const [search, setSearch] = useState("");
+  // Liked is a toggle rather than another Select: it's a yes/no view of the
+  // same list, and it composes with the type/status/search filters.
+  const [likedOnly, setLikedOnly] = useState(false);
   const [collectionTarget, setCollectionTarget] = useState<string | null>(null);
   const debouncedSearch = useDebouncedValue(search, 400);
 
-  const filters = { type, status, search: debouncedSearch };
+  const filters = { type, status, search: debouncedSearch, likedOnly };
 
   const query = useInfiniteQuery({
     queryKey: ["generations", filters],
@@ -36,6 +41,7 @@ export function MyGalleryClient() {
       if (filters.type) params.set("type", filters.type);
       if (filters.status) params.set("status", filters.status);
       if (filters.search) params.set("search", filters.search);
+      if (filters.likedOnly) params.set("liked", "true");
       if (pageParam) params.set("cursor", pageParam);
       const res = await apiFetch(`/api/generations?${params.toString()}`);
       if (!res.ok) throw new Error("Failed to load generations");
@@ -115,6 +121,20 @@ export function MyGalleryClient() {
             </option>
           ))}
         </Select>
+        <button
+          type="button"
+          onClick={() => setLikedOnly((v) => !v)}
+          aria-pressed={likedOnly}
+          className={cn(
+            "flex h-11 shrink-0 items-center gap-2 rounded-xl border px-4 text-label font-medium transition-colors",
+            likedOnly
+              ? "border-brand bg-brand/10 text-brand"
+              : "border-line bg-surface-dark text-muted hover:text-ink-soft",
+          )}
+        >
+          <Heart className={cn("size-4", likedOnly && "fill-brand")} aria-hidden="true" />
+          Liked
+        </button>
       </div>
 
       <div className="mt-6">
@@ -123,7 +143,11 @@ export function MyGalleryClient() {
             <Spinner size={28} />
           </div>
         ) : items.length === 0 ? (
-          <p className="py-16 text-center text-body-sm text-muted">No generations match these filters.</p>
+          <p className="py-16 text-center text-body-sm text-muted">
+            {likedOnly
+              ? "You haven't liked anything yet."
+              : "No generations match these filters."}
+          </p>
         ) : (
           <>
             <GalleryGrid

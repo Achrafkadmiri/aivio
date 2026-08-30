@@ -41,7 +41,7 @@ export function PublicGalleryClient() {
             Nothing shared publicly yet — check back soon.
           </p>
         ) : (
-          <GalleryGrid items={generations} />
+          <GalleryGrid items={generations} showAuthor />
         )}
       </div>
     </div>
