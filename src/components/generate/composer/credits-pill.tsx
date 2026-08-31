@@ -63,7 +63,7 @@ export function CreditsSubmitPill({
           disabled={disabled || loading || blocked}
           aria-label={hint}
           className={cn(
-            "inline-flex shrink-0 items-center gap-2 bg-brand text-label font-semibold text-white shadow-glow-sm",
+            "inline-flex shrink-0 items-center gap-2 bg-brand text-label font-semibold text-on-brand shadow-glow-sm",
             fullWidth
               ? "w-full justify-center rounded-xl px-4 py-3"
               : "rounded-full px-3.5 py-2",
@@ -80,7 +80,7 @@ export function CreditsSubmitPill({
           {fullWidth ? (
             <>
               Generate
-              <span className="font-normal text-white/80">
+              <span className="font-normal text-on-brand/70">
                 · {credits} {unit}
               </span>
             </>

@@ -71,7 +71,7 @@ export function CapabilitiesGrid() {
                     CHIP_COLORS[index % CHIP_COLORS.length],
                   )}
                 >
-                  <reason.icon className="size-6 text-white" aria-hidden="true" />
+                  <reason.icon className="size-6 text-on-brand" aria-hidden="true" />
                 </span>
 
                 <div>

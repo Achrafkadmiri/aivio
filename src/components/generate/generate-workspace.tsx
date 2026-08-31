@@ -195,14 +195,16 @@ export function GenerateStudio({ type }: { type: GenerationType }) {
               className="group relative flex h-full min-h-[24rem] flex-col items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-brand/15 bg-surface-2/20 p-10 text-center"
             >
               {/* Ambient drifting glow at rest — crossfades out for the
-                  cursor spotlight below once hovered. */}
+                  cursor spotlight below once hovered. Kept faint: gold is
+                  a light tone, so the alpha that read as a warm ember bloom
+                  under the old palette reads as a brown haze here. */}
               <div
-                className="pointer-events-none absolute -top-24 left-1/2 size-[34rem] -translate-x-1/2 bg-brand opacity-25 blur-3xl transition-opacity duration-300 animate-blob-float group-hover:opacity-0"
+                className="pointer-events-none absolute -top-24 left-1/2 size-[34rem] -translate-x-1/2 bg-brand opacity-[0.12] blur-3xl transition-opacity duration-300 animate-blob-float group-hover:opacity-0"
                 aria-hidden="true"
               />
               {/* Cursor spotlight — see use-spotlight.ts. */}
               <div
-                className="pointer-events-none absolute size-[34rem] -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand opacity-0 blur-3xl transition-opacity duration-300 group-hover:opacity-25"
+                className="pointer-events-none absolute size-[34rem] -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand opacity-0 blur-3xl transition-opacity duration-300 group-hover:opacity-[0.14]"
                 style={{ left: "var(--spot-x, 50%)", top: "var(--spot-y, 0%)" }}
                 aria-hidden="true"
               />
@@ -211,11 +213,11 @@ export function GenerateStudio({ type }: { type: GenerationType }) {
                 {/* Soft pulsing halo behind the badge — a small sign of life
                     on an otherwise static empty state. */}
                 <span
-                  className="absolute inset-0 -m-2 animate-pulse rounded-2xl bg-brand opacity-30 blur-lg"
+                  className="absolute inset-0 -m-2 animate-pulse rounded-2xl bg-brand opacity-20 blur-lg"
                   aria-hidden="true"
                 />
                 <span className="relative flex size-16 items-center justify-center rounded-2xl bg-brand shadow-glow-md">
-                  <Sparkles className="size-7 text-white" aria-hidden="true" />
+                  <Sparkles className="size-7 text-on-brand" aria-hidden="true" />
                 </span>
               </span>
               <h2 className="relative text-heading font-bold text-ink">{active.heroTitle}</h2>

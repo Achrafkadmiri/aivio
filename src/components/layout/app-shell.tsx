@@ -321,7 +321,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                   type="button"
                   className="flex items-center gap-2.5 rounded-full border border-line bg-surface-2 py-1.5 pr-3 pl-1.5 transition-colors hover:border-border-strong hover:bg-surface-3"
                 >
-                  <span className="flex size-7 items-center justify-center rounded-full bg-brand text-caption font-semibold text-white">
+                  <span className="flex size-7 items-center justify-center rounded-full bg-brand text-caption font-semibold text-on-brand">
                     {initial}
                   </span>
                   <span className="hidden text-label text-ink-soft sm:inline">{user?.name}</span>

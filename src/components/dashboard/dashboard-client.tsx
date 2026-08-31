@@ -87,7 +87,7 @@ export function DashboardClient() {
           {/* Ambient corner glow at rest — crossfades out for the cursor
               spotlight below once hovered. */}
           <div
-            className="pointer-events-none absolute -top-24 -right-24 size-64 rounded-full bg-brand opacity-40 blur-3xl transition-opacity duration-300 group-hover:opacity-0"
+            className="pointer-events-none absolute -top-24 -right-24 size-64 rounded-full bg-brand opacity-20 blur-3xl transition-opacity duration-300 group-hover:opacity-0"
             aria-hidden="true"
           />
           {/* Cursor spotlight — same blurred-solid technique as the glow
@@ -96,7 +96,7 @@ export function DashboardClient() {
               corner, so it reads as the same glow "picked up" and following
               the pointer rather than a second, different effect. */}
           <div
-            className="pointer-events-none absolute size-72 -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand opacity-0 blur-3xl transition-opacity duration-300 group-hover:opacity-40"
+            className="pointer-events-none absolute size-72 -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand opacity-0 blur-3xl transition-opacity duration-300 group-hover:opacity-20"
             style={{ left: "var(--spot-x, 50%)", top: "var(--spot-y, 0%)" }}
             aria-hidden="true"
           />

@@ -62,7 +62,7 @@ export function HowItWorks() {
           {STEPS.map((step) => (
             <div key={step.title} className="flex justify-center">
               <div className="relative z-10 flex size-12 items-center justify-center rounded-full bg-brand shadow-glow-sm">
-                <step.icon className="size-5 text-black" aria-hidden="true" />
+                <step.icon className="size-5 text-on-brand" aria-hidden="true" />
               </div>
             </div>
           ))}
@@ -72,7 +72,7 @@ export function HowItWorks() {
           {STEPS.map((step, index) => (
             <Reveal key={step.title} delayMs={index * 150}>
               <div className="flex size-12 items-center justify-center rounded-full bg-brand shadow-glow-sm sm:hidden">
-                <step.icon className="size-5 text-black" aria-hidden="true" />
+                <step.icon className="size-5 text-on-brand" aria-hidden="true" />
               </div>
               <span
                 className={cn(

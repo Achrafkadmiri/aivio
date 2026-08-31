@@ -50,15 +50,15 @@ export function UsageChart({ data }: { data: { date: string; count: number }[] }
         <AreaChart data={data} margin={{ top: 8, right: 4, left: -24, bottom: 0 }}>
           <defs>
             <linearGradient id="usageFill" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#ff4d23" stopOpacity={0.35} />
-              <stop offset="100%" stopColor="#ff4d23" stopOpacity={0} />
+              <stop offset="0%" stopColor="#d4a052" stopOpacity={0.35} />
+              <stop offset="100%" stopColor="#d4a052" stopOpacity={0} />
             </linearGradient>
           </defs>
           <CartesianGrid stroke="rgba(255,255,255,0.1)" strokeDasharray="3 3" vertical={false} />
           <XAxis
             dataKey="date"
             tickFormatter={formatTick}
-            stroke="#9c9ca3"
+            stroke="#9b968c"
             fontSize={12}
             tickLine={false}
             axisLine={false}
@@ -66,7 +66,7 @@ export function UsageChart({ data }: { data: { date: string; count: number }[] }
             minTickGap={isMobile ? 16 : 8}
           />
           <YAxis
-            stroke="#9c9ca3"
+            stroke="#9b968c"
             fontSize={12}
             tickLine={false}
             axisLine={false}
@@ -76,18 +76,18 @@ export function UsageChart({ data }: { data: { date: string; count: number }[] }
           <Tooltip
             labelFormatter={formatTick}
             contentStyle={{
-              background: "#1d1d20",
+              background: "#1b1b1e",
               border: "1px solid rgba(255,255,255,0.1)",
               borderRadius: 12,
               fontSize: 12,
             }}
-            labelStyle={{ color: "#fafaf9" }}
-            itemStyle={{ color: "#ff4d23" }}
+            labelStyle={{ color: "#f6f4f0" }}
+            itemStyle={{ color: "#d4a052" }}
           />
           <Area
             type="monotone"
             dataKey="count"
-            stroke="#ff4d23"
+            stroke="#d4a052"
             strokeWidth={2}
             fill="url(#usageFill)"
           />

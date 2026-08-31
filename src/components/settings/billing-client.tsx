@@ -66,12 +66,12 @@ export function BillingClient() {
         {/* Ambient corner glow at rest — crossfades out for the cursor
             spotlight below once hovered. */}
         <div
-          className="pointer-events-none absolute -top-20 -right-20 size-56 rounded-full bg-brand opacity-30 blur-3xl transition-opacity duration-300 group-hover:opacity-0"
+          className="pointer-events-none absolute -top-20 -right-20 size-56 rounded-full bg-brand opacity-[0.18] blur-3xl transition-opacity duration-300 group-hover:opacity-0"
           aria-hidden="true"
         />
         {/* Cursor spotlight — see use-spotlight.ts. */}
         <div
-          className="pointer-events-none absolute size-56 -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand opacity-0 blur-3xl transition-opacity duration-300 group-hover:opacity-30"
+          className="pointer-events-none absolute size-56 -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand opacity-0 blur-3xl transition-opacity duration-300 group-hover:opacity-[0.18]"
           style={{ left: "var(--spot-x, 100%)", top: "var(--spot-y, 0%)" }}
           aria-hidden="true"
         />

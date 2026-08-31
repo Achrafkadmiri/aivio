@@ -63,7 +63,7 @@ export function FeaturesGrid() {
                     CHIP_COLORS[index % CHIP_COLORS.length],
                   )}
                 >
-                  <feature.icon className="size-6 text-white" aria-hidden="true" />
+                  <feature.icon className="size-6 text-on-brand" aria-hidden="true" />
                 </span>
                 <h3 className="mt-5 text-feature-title font-semibold text-ink">
                   {feature.title}

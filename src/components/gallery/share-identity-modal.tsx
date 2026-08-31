@@ -75,7 +75,7 @@ function IdentityOption({
       <span
         className={cn(
           "flex size-5 shrink-0 items-center justify-center rounded-full border",
-          selected ? "border-brand bg-brand text-white" : "border-line",
+          selected ? "border-brand bg-brand text-on-brand" : "border-line",
         )}
         aria-hidden="true"
       >

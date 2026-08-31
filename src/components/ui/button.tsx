@@ -14,16 +14,18 @@ const base =
   "font-display inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-full text-label font-semibold " +
   "transition-[background-color,border-color,box-shadow,transform] duration-300 ease-out disabled:pointer-events-none disabled:opacity-40";
 
-// primary = solid white pill, black text — brand-ember never fills a
+// primary = solid white pill, black text — brand-gold never fills a
 // button, it's reserved for text/badge/link accents (see globals.css) so
 // it stays legible as emphasis rather than becoming the default chrome.
 // secondary = ghost pill: transparent + translucent white border.
 // accent = the one deliberate exception to "brand never fills a button":
 // reserved for the single highest-emphasis CTA on a screen (hero, generate
 // submit, upgrade/recharge) so it doesn't compete with the white primary
-// pill. Solid ember, not a gradient blend — was a two-hue gradient fill
-// (ember→teal) until that got retired app-wide as the generic-AI-SaaS tell
-// it is; a confident flat color reads more deliberate than a blend anyway.
+// pill. Solid gold, not a gradient blend — was a two-hue gradient fill
+// until that got retired app-wide as the generic-AI-SaaS tell it is; a
+// confident flat color reads more deliberate than a blend anyway. Its
+// label is text-on-brand (near-black), not white: the brand is a light
+// metal now, so white-on-gold would be illegible — see --color-on-brand.
 const variants: Record<ButtonVariant, string> = {
   primary:
     "border-0 bg-white text-black shadow-[0_0_20px_rgb(255_255_255_/_0.1)] hover:bg-white/90 hover:shadow-[0_0_30px_rgb(255_255_255_/_0.15)] hover:scale-[1.02] active:scale-[0.98] disabled:bg-line disabled:text-muted disabled:shadow-none disabled:hover:scale-100",
@@ -34,7 +36,7 @@ const variants: Record<ButtonVariant, string> = {
   circular:
     "border-0 rounded-full bg-white/5 text-muted hover:bg-white/10 hover:text-ink-soft active:scale-95",
   accent:
-    "border-0 bg-brand text-white shadow-glow-md hover:bg-brand-hover hover:shadow-glow-lg hover:scale-[1.02] active:scale-[0.98] active:bg-brand-active disabled:opacity-40 disabled:hover:scale-100",
+    "border-0 bg-brand text-on-brand shadow-glow-md hover:bg-brand-hover hover:shadow-glow-lg hover:scale-[1.02] active:scale-[0.98] active:bg-brand-active disabled:opacity-40 disabled:hover:scale-100",
   // Frosted "liquid glass" pill — see .btn-glass in globals.css for the
   // gradient-reflection border. Used where a CTA needs to sit directly on
   // top of busy media (hero) rather than a flat surface, without competing

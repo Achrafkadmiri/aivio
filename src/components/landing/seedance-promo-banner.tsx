@@ -19,16 +19,16 @@ export function SeedancePromoBanner() {
           href={`/generate?model=${encodeURIComponent(SEEDANCE_MODEL_ID)}`}
           className="group relative block overflow-hidden rounded-[28px] border border-line bg-surface-2 p-8 transition-[transform,box-shadow] hover:-translate-y-0.5 hover:shadow-glow-sm sm:p-12"
         >
-          {/* Halftone dot texture, teal radial glow, and a large abstract
+          {/* Halftone dot texture, jade radial glow, and a large abstract
               "S" ribbon watermark — all decorative, no text. Keyed to
-              --color-accent-teal (#2fe8d0, the cool half of the ember/teal
-              brand pair) instead of the brand-ember used in the hero right
+              --color-accent-teal (#6cc5b4, the cool half of the gold/jade
+              brand pair) instead of the brand gold used in the hero right
               above it, so this banner reads as the same family's cool
               counterpoint rather than a repeat. */}
           <div
             className="pointer-events-none absolute inset-0 opacity-40"
             style={{
-              backgroundImage: "radial-gradient(rgb(47 232 208 / 0.5) 1px, transparent 1px)",
+              backgroundImage: "radial-gradient(rgb(108 197 180 / 0.5) 1px, transparent 1px)",
               backgroundSize: "14px 14px",
               maskImage: "radial-gradient(ellipse 70% 100% at 0% 50%, black, transparent)",
             }}
@@ -38,7 +38,7 @@ export function SeedancePromoBanner() {
             className="pointer-events-none absolute inset-0"
             style={{
               background:
-                "radial-gradient(ellipse 60% 80% at 5% 40%, rgb(47 232 208 / 0.18), transparent 70%)",
+                "radial-gradient(ellipse 60% 80% at 5% 40%, rgb(108 197 180 / 0.18), transparent 70%)",
             }}
             aria-hidden="true"
           />
@@ -58,7 +58,7 @@ export function SeedancePromoBanner() {
 
           <div className="relative">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="rounded-md bg-brand px-2.5 py-1 text-caption font-black tracking-wide text-white uppercase">
+              <span className="rounded-md bg-brand px-2.5 py-1 text-caption font-black tracking-wide text-on-brand uppercase">
                 Exclusive access
               </span>
               <span className="rounded-md border border-accent-teal/40 bg-accent-teal/15 px-2.5 py-1 text-caption font-black tracking-wide text-accent-teal uppercase">
