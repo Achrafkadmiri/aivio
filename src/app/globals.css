@@ -4,10 +4,12 @@
  * Design tokens for Vixerra's own identity — deliberately moved off the
  * violet→pink "AI SaaS" gradient (what this file used to be, modeled on
  * leonardo.ai) toward a palette that actually means something for a video
- * tool: black, white and brushed silver, on true near-black rather than a
- * colored-tinted black. Hue is rationed to the few places that genuinely
- * carry meaning — status, and one decorative accent — so read the
- * "occasional color" note below before introducing any new one.
+ * tool: a black/white/silver base broken by four saturated signal colors
+ * (lime, amber, orange, hot magenta). The base carries every structural
+ * surface; the four are confined to things that DO something or MEAN
+ * something — actions, credits, categories, announcements. Read the
+ * "signal set" note below before reaching for one, and before adding a
+ * fifth.
  *
  * Single source of truth for color/type/radius/shadow values — components
  * should always reach for a Tailwind utility generated from one of these
@@ -60,65 +62,66 @@
   --color-border-subtle: rgb(255 255 255 / 0.06); /* Subtle dividers */
   --color-border-strong: rgb(255 255 255 / 0.16); /* Focus rings, active borders */
 
-  /* Brand — Silver. The app is deliberately monochrome: black ground,
-     white type, and a brushed platinum as the one "accent". No hue at all
-     is the most premium register there is — it's where Runway, Sora and
-     every serious piece of hardware live — and it sidesteps the whole
-     problem of picking an AI-tool color, since violet, blue, lime and
-     orange are each already someone else's.
-     Pitched below pure white on purpose: --color-ink is #f7f8fa, and an
-     accent that sits at the same value as body text stops being an accent.
-     This is far enough down the ramp to read as a distinct material next
-     to white, and still ~11:1 against the ground.
-     Used for text accents, badges, links, focus/active states and icon
-     fills — the primary button itself stays a solid white pill (see
-     button.tsx), never a brand-filled one, so the accent reads as
-     deliberate emphasis rather than default chrome. */
-  --color-brand: #bfc7d2;
-  --color-brand-hover: #d8dee6;
-  --color-brand-active: #a3abb8;
+  /* Silver — the base metal. Everything structural (surfaces, type,
+     borders) is black/white/grey, and this is the neutral accent that
+     belongs to that base rather than to the signal set below: identity
+     marks and any chrome that should read as material, not as an action.
+     Pitched below pure white on purpose — an accent sitting at the same
+     value as body text (#f7f8fa) stops being an accent. */
+  --color-silver: #bfc7d2;
 
-  /* Text/glyphs sitting ON a solid brand (or brand-family) fill. The
-     accent is a LIGHT color, so white-on-brand — what this app used back
-     when the brand was a dark hot orange — is unreadable. Everything that
-     fills with an accent and carries a label or icon pairs it with this:
-     black type on silver is both the accessible choice (~12:1 vs ~1.4:1)
-     and, on a metal, the only one that looks intentional. */
+  /* ---- The signal set ------------------------------------------------
+     Four saturated colors that break the monochrome. The base stays black
+     and white; these are the interruptions, and they earn their loudness
+     by being confined to things that DO something or mean something —
+     actions, value, categories, one-off announcements. Nothing structural
+     ever takes one.
+     Each is assigned a job below rather than being used interchangeably:
+     a screen where every accent is a different color for no reason reads
+     as chaos, not as energy. All four are bright enough to carry black
+     glyphs (13.4:1 lime, 14.7:1 amber, 9.2:1 orange, 5.4:1 hot), and all
+     four clear 5:1 as text on the ground, so any of them can be a label
+     or a fill without a contrast exception. */
+
+  /* Lime — primary action. The default accent: buttons, active states,
+     focus rings, sliders, links, accent text. It is the loudest thing on
+     a black screen and the one color the eye should follow to find "what
+     do I press". */
+  --color-brand: #bbdc12;
+  --color-brand-hover: #cbe93a;
+  --color-brand-active: #a3c30d;
+
+  /* Ink for glyphs and labels sitting ON any light accent fill — all four
+     signal colors and silver. Every one of them is a LIGHT color, so
+     white-on-accent is unreadable (as low as 1.4:1); black is between 5:1
+     and 15:1 on all of them, and on a saturated fill it is also the only
+     choice that looks deliberate rather than washed. */
   --color-on-brand: #050506;
 
-  /* Silver family — two solid tonal siblings of --color-brand, used for
-     categorical coding (e.g. the sidebar/dashboard's per-section icon
-     colors). In a colored palette these would be neighbouring hues; here
-     they are steps of the same metal, which is what keeps the categories
-     legible without introducing color the design doesn't want. Both stay
-     light enough to carry --color-on-brand glyphs. */
-  --color-brand-soft: #e8ebf0; /* bright chrome — Gallery/Library */
-  --color-brand-deep: #878e9b; /* graphite — Collections */
+  /* Amber — value. Reserved for credits: the balance chips, the Zap
+     glyphs, the cost on the generate button. Money-adjacent UI reads
+     faster with a color of its own, and keeping it off the action color
+     means "what this costs" never gets confused with "what to press". */
+  --color-accent-amber: #ffd400;
 
-  /* ---- The occasional color ----------------------------------------
-     Everything above is black/white/silver. Real hue is rationed, and
-     only appears where it is carrying information the monochrome ramp
-     genuinely cannot:
-       1. status (below) — a warning has to look like a warning;
-       2. this one decorative accent, for the rare moment that needs to
-          feel like an event rather than another silver panel (the
-          Seedance promo banner, one dashboard chip, the section beam).
-     Because it shows up so rarely against an otherwise colorless app, it
-     lands much harder than it did when the whole UI was tinted — which is
-     the entire point of rationing it. Anything not on this list stays
-     monochrome; adding a hue "just to brighten it up" is what turns this
-     palette back into a generic dark theme. */
-  --color-accent-teal: #63c7cd;
-  --color-accent-teal-soft: #a2dee2;
+  /* Orange — the third categorical slot (per-section icons, chip
+     rotations). Sits between lime and hot in temperature, so a row of all
+     four still reads as a deliberate sequence. */
+  --color-accent-orange: #ff8f00;
 
-  /* Status — the other sanctioned color. These matter more here than in a
-     colored palette: against an all-silver UI they are the only saturated
-     things on screen, so a warning or an error is unmissable and needs no
-     extra weight to compete. Warning is free to sit at a natural amber
-     again now that the brand is not itself a gold. */
+  /* Hot magenta — announcements. The loudest of the four and the most
+     rationed: exclusives, "new", the promo banner, the section beam.
+     Against an otherwise black-and-white page a single hot panel lands
+     without needing any extra size or weight. */
+  --color-accent-hot: #ff0052;
+
+  /* Status — separate from the signal set above, and deliberately so:
+     these mean something fixed, and must never be mistaken for
+     decoration. Warning is the one to watch — it sits closest to amber,
+     so it is kept clearly deeper and less acid than the credits color. */
   --color-success: #3fbe80;
-  --color-warning: #e8a33c;
-  --color-accent: #ef5468; /* error/destructive */
+  --color-warning: #d99a20; /* deeper + duller than accent-amber/-orange */
+  --color-accent: #e8404f; /* error — a true red, not the hot's magenta */
   --color-info: #56a8e8;
 
   /* Fonts (next/font variables set on <html> in layout.tsx). Three roles
@@ -144,22 +147,22 @@
   --radius-2xl: 32px;
   --radius-full: 9999px;
 
-  /* Shadows — plain black depth shadows + a soft localized silver bloom.
-     The glow alphas are the lowest they have ever been in this file, and
-     have to be: a near-white glow has nowhere to go but blown-out. At
-     these values it reads as light catching an edge, which is what a
-     metal palette wants; at the alphas a colored glow could carry it
-     would look like a smeared white haze over the whole component. */
+  /* Shadows — plain black depth shadows + a soft localized brand bloom.
+     Now that the brand is a saturated lime rather than a near-white
+     metal, the glows can carry a little more alpha again without turning
+     into haze: a coloured glow reads as a halo at a strength where a
+     white one would just look like fog. Still restrained — the point is
+     that a lime button looks lit from behind, not that it flares. */
   --shadow-raised: 0 1px 2px 0 rgb(0 0 0 / 0.3);
   --shadow-floating: 0 8px 30px -4px rgb(0 0 0 / 0.5);
   --shadow-modal: 0 20px 60px -12px rgb(0 0 0 / 0.6);
   --shadow-inset: inset 0 1px 0 0 rgb(255 255 255 / 0.05);
   --shadow-card: 0 4px 12px rgb(0 0 0 / 0.4), inset 0 1px 0 0 rgb(255 255 255 / 0.05);
-  --shadow-glow-sm: 0 0 20px rgb(191 199 210 / 0.10);
-  --shadow-glow-md: 0 0 40px rgb(191 199 210 / 0.13);
-  --shadow-glow-lg: 0 0 80px rgb(191 199 210 / 0.11);
-  --shadow-glow-teal-sm: 0 0 20px rgb(99 199 205 / 0.16);
-  --shadow-glow-teal-md: 0 0 40px rgb(99 199 205 / 0.2);
+  --shadow-glow-sm: 0 0 20px rgb(187 220 18 / 0.16);
+  --shadow-glow-md: 0 0 40px rgb(187 220 18 / 0.2);
+  --shadow-glow-lg: 0 0 80px rgb(187 220 18 / 0.16);
+  --shadow-glow-hot-sm: 0 0 20px rgb(255 0 82 / 0.18);
+  --shadow-glow-hot-md: 0 0 40px rgb(255 0 82 / 0.24);
   --shadow-glow-white: 0 0 30px rgb(255 255 255 / 0.05);
 
   /* No gradient() fills anywhere in this system, full stop — a two-hue
@@ -167,12 +170,12 @@
      even the single-hue radial glow this token used to hold, read as
      exactly the generic-AI-SaaS tell this palette was rebuilt to move away
      from. Every surface below picks ONE flat, solid color from the palette
-     instead (--color-brand / -brand-soft / -brand-deep / -accent-teal) —
+     instead (--color-brand / -accent-amber / -accent-orange / -accent-hot) —
      see buttonVariants' "accent" variant (was "gradient"), app-shell's
      per-section nav colors, and the dashboard's icon chips.
      --gradient-hero-glow is now a flat solid tint too (kept the old name
      since call sites still consume it as a plain `background` value). */
-  --gradient-hero-glow: rgb(191 199 210 / 0.05);
+  --gradient-hero-glow: rgb(187 220 18 / 0.06);
 
   /* Type scale: each pairs font-size with its line-height (and, where
      useful, letter-spacing) in a single utility. Font-family is NOT
@@ -422,7 +425,7 @@
   /* Custom scrollbar — the default OS scrollbar (light gray, ~15-17px) reads
      as unstyled chrome against this app's near-black surfaces. Thin,
      translucent-white by default (echoes --color-line's translucent-white
-     border treatment rather than an opaque gray), brand-silver on hover —
+     border treatment rather than an opaque gray), brand-lime on hover —
      the same "brand reserved for focus/active states" rule already used for
      :focus-visible above. Applied to `*` (not just html/body) since
      ::-webkit-scrollbar doesn't inherit — every internal scroll container
@@ -454,7 +457,7 @@
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background-color: rgb(191 199 210 / 0.55);
+    background-color: rgb(187 220 18 / 0.55);
   }
 
   ::-webkit-scrollbar-corner {
@@ -503,7 +506,7 @@
   }
 
   /* Accent text — used for hero accent words, stat numbers, wordmarks.
-     Solid silver, never gradient-clipped — this app doesn't use blended
+     Solid lime, never gradient-clipped — this app doesn't use blended
      gradient fills anywhere (see the note above --gradient-hero-glow). */
   .text-gradient {
     color: var(--color-brand);
@@ -584,7 +587,7 @@
       to right,
       transparent,
       var(--color-brand) 35%,
-      var(--color-accent-teal) 65%,
+      var(--color-accent-hot) 65%,
       transparent
     );
     opacity: 0.8;

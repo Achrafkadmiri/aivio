@@ -33,7 +33,7 @@ function Sparks() {
           key={spark.d}
           d={spark.d}
           fill="currentColor"
-          className="text-brand-soft motion-safe:animate-sparkle-twinkle"
+          className="text-accent-amber motion-safe:animate-sparkle-twinkle"
           style={{
             animationDelay: `${spark.delay}ms`,
             // SVG children scale from the user-space origin by default, which

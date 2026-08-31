@@ -87,7 +87,7 @@ export function BillingClient() {
 
         <div className="relative mt-6 flex items-baseline justify-between">
           <p className="text-caption text-muted">Credit balance</p>
-          <p className="text-subheading font-bold text-ink">
+          <p className="text-subheading font-bold text-accent-amber">
             {formatCredits(credit_balance)}
             <CreditValue credits={credit_balance} className="ml-2 text-caption font-normal text-muted" />
           </p>

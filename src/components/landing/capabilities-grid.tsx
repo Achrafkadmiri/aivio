@@ -6,9 +6,9 @@ import { gridContainerVariants, gridItemVariants } from "@/lib/animations";
 import { TiltCard } from "@/components/marketing/tilt-card";
 import { cn } from "@/lib/utils";
 
-// Same four-fill rotation as features-grid.tsx (platinum/cyan/chrome/
-// graphite) instead of every icon badge sharing one gradient fill.
-const CHIP_COLORS = ["bg-brand", "bg-accent-teal", "bg-brand-soft", "bg-brand-deep"];
+// Same four-fill rotation as features-grid.tsx (lime/hot/amber/orange)
+// instead of every icon badge sharing one gradient fill.
+const CHIP_COLORS = ["bg-brand", "bg-accent-hot", "bg-accent-amber", "bg-accent-orange"];
 
 // "Why creatives choose Vixerra" — plain icon + copy cards. No per-card
 // video/image sample here: the page's real output examples are kept to the

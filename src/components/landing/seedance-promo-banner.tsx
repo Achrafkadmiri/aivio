@@ -30,7 +30,7 @@ export function SeedancePromoBanner() {
           <div
             className="pointer-events-none absolute inset-0 opacity-40"
             style={{
-              backgroundImage: "radial-gradient(rgb(99 199 205 / 0.5) 1px, transparent 1px)",
+              backgroundImage: "radial-gradient(rgb(255 0 82 / 0.5) 1px, transparent 1px)",
               backgroundSize: "14px 14px",
               maskImage: "radial-gradient(ellipse 70% 100% at 0% 50%, black, transparent)",
             }}
@@ -40,7 +40,7 @@ export function SeedancePromoBanner() {
             className="pointer-events-none absolute inset-0"
             style={{
               background:
-                "radial-gradient(ellipse 60% 80% at 5% 40%, rgb(99 199 205 / 0.2), transparent 70%)",
+                "radial-gradient(ellipse 60% 80% at 5% 40%, rgb(255 0 82 / 0.2), transparent 70%)",
             }}
             aria-hidden="true"
           />
@@ -63,13 +63,13 @@ export function SeedancePromoBanner() {
               <span className="rounded-md bg-brand px-2.5 py-1 text-caption font-black tracking-wide text-on-brand uppercase">
                 Exclusive access
               </span>
-              <span className="rounded-md border border-accent-teal/40 bg-accent-teal/15 px-2.5 py-1 text-caption font-black tracking-wide text-accent-teal uppercase">
+              <span className="rounded-md border border-accent-hot/40 bg-accent-hot/15 px-2.5 py-1 text-caption font-black tracking-wide text-accent-hot uppercase">
                 Seedance 2.5 at 720p
               </span>
             </div>
 
             <h2 className="mt-4 text-heading leading-[1.05] font-black tracking-tight uppercase sm:text-display">
-              <span className="block text-accent-teal">Exclusive Seedance 2.5</span>
+              <span className="block text-accent-hot">Exclusive Seedance 2.5</span>
               <span className="block text-ink">Reference control & native audio</span>
             </h2>
 

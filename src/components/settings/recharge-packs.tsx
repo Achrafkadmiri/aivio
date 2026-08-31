@@ -56,10 +56,12 @@ export function RechargePacks() {
             variant="compact"
             className="flex flex-col items-center text-center transition-[border-color,transform] hover:-translate-y-1 hover:border-border-strong"
           >
-            <span className="flex size-10 items-center justify-center rounded-full bg-brand shadow-glow-sm">
+            {/* Amber, not the lime action color — this pack tile is about
+                value; the lime lives on its buy Button below. */}
+            <span className="flex size-10 items-center justify-center rounded-full bg-accent-amber">
               <Zap className="size-4.5 text-on-brand" aria-hidden="true" />
             </span>
-            <p className="mt-3 text-subheading font-bold text-ink">{formatCredits(pack.credits)}</p>
+            <p className="mt-3 text-subheading font-bold text-accent-amber">{formatCredits(pack.credits)}</p>
             <p className="text-caption text-muted">credits</p>
             <Button
               variant="accent"

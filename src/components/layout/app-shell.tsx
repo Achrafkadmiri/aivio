@@ -54,8 +54,11 @@ function CreditsBadge() {
       className="flex items-center gap-1.5 rounded-full border border-line bg-surface-2 px-3 py-1.5 text-label text-ink-soft transition-colors hover:border-border-strong"
       title="Credits remaining"
     >
-      <Zap className="size-3.5 text-brand" aria-hidden="true" />
-      <span className="font-semibold">{formatCredits(data.credit_balance)}</span>
+      {/* Credits are amber everywhere they appear — see --color-accent-amber.
+          Keeping value off the lime action color means "what you have"
+          never reads as "what to press". */}
+      <Zap className="size-3.5 text-accent-amber" aria-hidden="true" />
+      <span className="font-semibold text-accent-amber">{formatCredits(data.credit_balance)}</span>
       <span className="hidden text-muted sm:inline">credits</span>
     </Link>
   );

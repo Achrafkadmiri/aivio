@@ -4,13 +4,13 @@ import { Reveal } from "@/components/marketing/reveal";
 import { TiltCard } from "@/components/marketing/tilt-card";
 import { cn } from "@/lib/utils";
 
-// Each card's icon chip cycles through four solid fills — three steps of
-// the silver family plus the one sanctioned accent (platinum → cyan →
-// chrome → graphite, see globals.css) — instead of every chip being the
-// same fill. Same trick ArtCraft uses to tell its tool cards apart at a
-// glance; in a monochrome palette it runs on value rather than hue, which
-// is why three of the four are metals and only one carries colour.
-const CHIP_COLORS = ["bg-brand", "bg-accent-teal", "bg-brand-soft", "bg-brand-deep"];
+// Each card's icon chip takes one of the four signal colors in order
+// (lime → hot → amber → orange, see globals.css) instead of every chip
+// being the same fill — same trick ArtCraft uses to tell its tool cards
+// apart at a glance. This is the one place the whole set appears at once,
+// which is what makes it read as a deliberate palette rather than four
+// unrelated accents scattered across the app.
+const CHIP_COLORS = ["bg-brand", "bg-accent-hot", "bg-accent-amber", "bg-accent-orange"];
 
 const FEATURES = [
   {

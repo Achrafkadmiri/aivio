@@ -166,8 +166,10 @@ export function GenerateStudio({ type }: { type: GenerationType }) {
 
           {usageQuery.data && (
             <div className="ml-auto flex shrink-0 items-center gap-1.5 rounded-full border border-line bg-surface-2 px-3 py-1.5 text-body-sm text-ink-soft">
-              <Zap className="size-4 text-brand" aria-hidden="true" />
-              <span className="font-semibold">{formatCredits(usageQuery.data.credit_balance)}</span>
+              <Zap className="size-4 text-accent-amber" aria-hidden="true" />
+              <span className="font-semibold text-accent-amber">
+                {formatCredits(usageQuery.data.credit_balance)}
+              </span>
               <span className="text-muted">credits remaining</span>
             </div>
           )}
@@ -195,16 +197,18 @@ export function GenerateStudio({ type }: { type: GenerationType }) {
               className="group relative flex h-full min-h-[24rem] flex-col items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-brand/15 bg-surface-2/20 p-10 text-center"
             >
               {/* Ambient drifting glow at rest — crossfades out for the
-                  cursor spotlight below once hovered. Kept faint: silver is
-                  near-white, so anything stronger stops reading as a bloom
-                  and starts reading as fog over the canvas. */}
+                  cursor spotlight below once hovered. Kept faint on
+                  purpose: spread across a 34rem blob, lime stops reading
+                  as a glow and turns the whole canvas olive. The tight
+                  halo on the badge below is where the colour should
+                  actually register. */}
               <div
-                className="pointer-events-none absolute -top-24 left-1/2 size-[34rem] -translate-x-1/2 bg-brand opacity-[0.12] blur-3xl transition-opacity duration-300 animate-blob-float group-hover:opacity-0"
+                className="pointer-events-none absolute -top-24 left-1/2 size-[34rem] -translate-x-1/2 bg-brand opacity-[0.06] blur-3xl transition-opacity duration-300 animate-blob-float group-hover:opacity-0"
                 aria-hidden="true"
               />
               {/* Cursor spotlight — see use-spotlight.ts. */}
               <div
-                className="pointer-events-none absolute size-[34rem] -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand opacity-0 blur-3xl transition-opacity duration-300 group-hover:opacity-[0.14]"
+                className="pointer-events-none absolute size-[34rem] -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand opacity-0 blur-3xl transition-opacity duration-300 group-hover:opacity-[0.09]"
                 style={{ left: "var(--spot-x, 50%)", top: "var(--spot-y, 0%)" }}
                 aria-hidden="true"
               />

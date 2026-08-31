@@ -101,10 +101,12 @@ export function DashboardClient() {
             aria-hidden="true"
           />
           <div className="relative flex items-center gap-2 text-caption text-muted">
-            <Zap className="size-3.5 text-brand" aria-hidden="true" />
+            <Zap className="size-3.5 text-accent-amber" aria-hidden="true" />
             Credits remaining
           </div>
-          <p className="font-display relative mt-2 text-heading font-bold tracking-tight text-ink sm:text-display">
+          {/* The balance is the one number this card exists for, so it takes
+              the amber outright rather than just an amber icon beside it. */}
+          <p className="font-display relative mt-2 text-heading font-bold tracking-tight text-accent-amber sm:text-display">
             {formatCredits(creditBalance)}
           </p>
           <p className="relative mt-1 text-body-sm text-muted">
@@ -125,8 +127,8 @@ export function DashboardClient() {
 
         <div className="flex flex-col gap-4">
           <Card variant="compact" className="flex-1">
-            <span className="flex size-9 items-center justify-center rounded-lg bg-accent-teal/15">
-              <TrendingUp className="size-4 text-accent-teal" aria-hidden="true" />
+            <span className="flex size-9 items-center justify-center rounded-lg bg-accent-hot/15">
+              <TrendingUp className="size-4 text-accent-hot" aria-hidden="true" />
             </span>
             <p className="mt-3 text-caption text-muted">Generations this month</p>
             <p className="mt-1 text-subheading font-bold text-ink">{usage.generationsCount}</p>
@@ -136,8 +138,8 @@ export function DashboardClient() {
             href="/settings/billing"
             className="group flex flex-1 items-center gap-3 rounded-2xl border border-border-subtle bg-surface-2 p-6 transition-colors hover:border-border-strong hover:bg-surface-3"
           >
-            <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-brand-soft/15">
-              <CreditCard className="size-4 text-brand-soft" aria-hidden="true" />
+            <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-accent-amber/15">
+              <CreditCard className="size-4 text-accent-amber" aria-hidden="true" />
             </span>
             <span className="flex-1 text-label text-ink-soft">Manage plan &amp; billing</span>
             <ArrowUpRight

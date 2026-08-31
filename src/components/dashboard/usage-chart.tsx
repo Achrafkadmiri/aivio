@@ -50,8 +50,8 @@ export function UsageChart({ data }: { data: { date: string; count: number }[] }
         <AreaChart data={data} margin={{ top: 8, right: 4, left: -24, bottom: 0 }}>
           <defs>
             <linearGradient id="usageFill" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#bfc7d2" stopOpacity={0.35} />
-              <stop offset="100%" stopColor="#bfc7d2" stopOpacity={0} />
+              <stop offset="0%" stopColor="#bbdc12" stopOpacity={0.35} />
+              <stop offset="100%" stopColor="#bbdc12" stopOpacity={0} />
             </linearGradient>
           </defs>
           <CartesianGrid stroke="rgba(255,255,255,0.1)" strokeDasharray="3 3" vertical={false} />
@@ -82,12 +82,12 @@ export function UsageChart({ data }: { data: { date: string; count: number }[] }
               fontSize: 12,
             }}
             labelStyle={{ color: "#f7f8fa" }}
-            itemStyle={{ color: "#bfc7d2" }}
+            itemStyle={{ color: "#bbdc12" }}
           />
           <Area
             type="monotone"
             dataKey="count"
-            stroke="#bfc7d2"
+            stroke="#bbdc12"
             strokeWidth={2}
             fill="url(#usageFill)"
           />

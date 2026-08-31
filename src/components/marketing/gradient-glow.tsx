@@ -32,7 +32,7 @@ export function GradientGlow({
     >
       <div className="absolute -top-32 left-1/4 size-[32rem] bg-brand/8 blur-[110px] motion-safe:animate-blob-float" />
       <div
-        className="absolute top-1/3 -right-24 size-[26rem] bg-accent-teal/6 blur-[110px] motion-safe:animate-blob-float"
+        className="absolute top-1/3 -right-24 size-[26rem] bg-accent-hot/6 blur-[110px] motion-safe:animate-blob-float"
         style={{ animationDelay: "-6s" }}
       />
       {variant === "hero" && (
