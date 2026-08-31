@@ -19,16 +19,18 @@ export function SeedancePromoBanner() {
           href={`/generate?model=${encodeURIComponent(SEEDANCE_MODEL_ID)}`}
           className="group relative block overflow-hidden rounded-[28px] border border-line bg-surface-2 p-8 transition-[transform,box-shadow] hover:-translate-y-0.5 hover:shadow-glow-sm sm:p-12"
         >
-          {/* Halftone dot texture, jade radial glow, and a large abstract
-              "S" ribbon watermark — all decorative, no text. Keyed to
-              --color-accent-teal (#6cc5b4, the cool half of the gold/jade
-              brand pair) instead of the brand gold used in the hero right
-              above it, so this banner reads as the same family's cool
-              counterpoint rather than a repeat. */}
+          {/* Halftone dot texture, cyan radial glow, and a large abstract
+              "S" ribbon watermark — all decorative, no text. This banner is
+              one of the handful of places allowed real colour in an
+              otherwise black/white/silver app (see the "occasional color"
+              note in globals.css): the whole point of the section is that
+              it should feel like an event, and against a colourless UI a
+              single tinted panel does that on its own, with no extra size
+              or weight needed. */}
           <div
             className="pointer-events-none absolute inset-0 opacity-40"
             style={{
-              backgroundImage: "radial-gradient(rgb(108 197 180 / 0.5) 1px, transparent 1px)",
+              backgroundImage: "radial-gradient(rgb(99 199 205 / 0.5) 1px, transparent 1px)",
               backgroundSize: "14px 14px",
               maskImage: "radial-gradient(ellipse 70% 100% at 0% 50%, black, transparent)",
             }}
@@ -38,7 +40,7 @@ export function SeedancePromoBanner() {
             className="pointer-events-none absolute inset-0"
             style={{
               background:
-                "radial-gradient(ellipse 60% 80% at 5% 40%, rgb(108 197 180 / 0.18), transparent 70%)",
+                "radial-gradient(ellipse 60% 80% at 5% 40%, rgb(99 199 205 / 0.2), transparent 70%)",
             }}
             aria-hidden="true"
           />

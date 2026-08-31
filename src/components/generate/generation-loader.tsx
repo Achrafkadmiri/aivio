@@ -59,7 +59,7 @@ export function GenerationLoader({
 
   return (
     <div className={cn("relative flex items-center justify-center", className)} aria-hidden="true">
-      {/* Soft gold bloom behind the mark — flat colour plus blur, no
+      {/* Soft silver bloom behind the mark — flat colour plus blur, no
         * gradient fill (see the palette note in globals.css). */}
       <span className="pointer-events-none absolute size-24 rounded-full bg-brand opacity-20 blur-2xl" />
 

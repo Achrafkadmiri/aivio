@@ -8,14 +8,15 @@ import { cn } from "@/lib/utils";
  * morph animation. Deliberately not rounded-full circles — the blob-float
  * keyframe drifts each shape's corners over time so these read as liquid
  * forms, not blurred discs, which is most of what makes a page feel
- * "fluid" rather than templated. One gold + one jade blob per instance
- * (was two identical brand-tinted circles) so the pair reads as the same
- * warm/cool brand pair used everywhere else, not a single glow repeated.
+ * "fluid" rather than templated. Two silver blobs plus one faint tinted
+ * one, so the section has depth without the page picking up an overall
+ * colour cast.
  *
- * Alphas are deliberately low. These are light metallic tones now, and a
- * light color spread over half a viewport at blur-[110px] stops reading as
- * "glow" and starts reading as a brown/green haze over the whole page —
- * the single fastest way to make this palette look cheap.
+ * Alphas are deliberately tiny. Silver is near-white, and near-white
+ * spread over half a viewport at blur-[110px] stops reading as "glow" and
+ * starts reading as a grey fog sitting on top of the page — the single
+ * fastest way to make a monochrome palette look washed out rather than
+ * deliberate.
  */
 export function GradientGlow({
   className,

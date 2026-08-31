@@ -8,8 +8,10 @@ const base =
 
 // Doc's badges/pills are deliberately restrained — plain translucent-white
 // tags by default (Rating Badge, Tag Badge), never a gradient fill. `brand`
-// is a soft gold tint for the rare cases that still want emphasis (e.g. a
-// "New" pill), not the loud gradient-fill it used to be.
+// is a soft silver tint for the rare cases that still want emphasis (e.g. a
+// "New" pill), not the loud gradient-fill it used to be. The status
+// variants are the ones carrying actual colour here — see the "occasional
+// color" note in globals.css.
 const variants: Record<BadgeVariant, string> = {
   neutral: "border border-transparent bg-white/5 text-muted",
   success: "border border-success/30 bg-success/15 text-success",

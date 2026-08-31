@@ -4,12 +4,15 @@
  * Design tokens for Vixerra's own identity — deliberately moved off the
  * violet→pink "AI SaaS" gradient (what this file used to be, modeled on
  * leonardo.ai) toward a palette that actually means something for a video
- * tool: gold (warm) × jade (cool) is the classic film color-grading duo,
- * on true near-black rather than a colored-tinted black. Single source of
- * truth for color/type/radius/shadow values — components should always
- * reach for a Tailwind utility generated from one of these tokens
- * (bg-surface, text-muted, rounded-2xl, shadow-glow-md, text-body, ...)
- * rather than hardcoding a hex value or pixel size.
+ * tool: black, white and brushed silver, on true near-black rather than a
+ * colored-tinted black. Hue is rationed to the few places that genuinely
+ * carry meaning — status, and one decorative accent — so read the
+ * "occasional color" note below before introducing any new one.
+ *
+ * Single source of truth for color/type/radius/shadow values — components
+ * should always reach for a Tailwind utility generated from one of these
+ * tokens (bg-surface, text-muted, rounded-2xl, shadow-glow-md, text-body,
+ * ...) rather than hardcoding a hex value or pixel size.
  *
  * Tailwind v4 is CSS-first: every key below auto-generates a matching
  * utility class (no tailwind.config.ts needed). The default numeric
@@ -18,99 +21,105 @@
  * sm(640)/md(768)/lg(1024).
  */
 @theme {
-  /* Surfaces — true near-black, no violet/blue undertone. Higgsfield/
-     ArtCraft/most serious creative tools land here rather than on a
-     colored-tinted "void" — the color budget is spent on the gold/jade
-     accents instead, not on the background itself. Deeper than a typical
-     #111 dark theme on purpose: the richer the black, the more the
-     metallic accents read as light falling on a surface, which is the
-     whole premise of the palette below. */
-  --color-surface: #08080a; /* Background Primary */
-  --color-surface-2: #121214; /* Background Secondary (cards) */
-  --color-surface-3: #1b1b1e; /* Background Tertiary (elevated / card hover) */
-  --color-surface-dark: #0d0d0f; /* Input fields */
-  --color-overlay: #08080a;
-  --color-dropdown-hover: #222225; /* Hover states, dropdowns */
+  /* Surfaces — true near-black with the faintest cool cast, no warm or
+     violet undertone. This palette is monochrome by design (black, white,
+     silver), so every bit of hierarchy has to come from VALUE rather than
+     hue: the ramp below is spaced widely enough that surface / card /
+     elevated stay distinguishable without a single colored tint doing the
+     work. Deeper than a typical #111 dark theme on purpose — the darker
+     the ground, the more silver reads as an actual metal catching light
+     rather than as another gray box. */
+  --color-surface: #050506; /* Background Primary */
+  --color-surface-2: #0f0f11; /* Background Secondary (cards) */
+  --color-surface-3: #17171a; /* Background Tertiary (elevated / card hover) */
+  --color-surface-dark: #0a0a0c; /* Input fields */
+  --color-overlay: #050506;
+  --color-dropdown-hover: #1f1f23; /* Hover states, dropdowns */
 
   /* App-shell background — the authenticated app (dashboard/generate/
      gallery/settings, see AppShell) uses a hair softer near-black than the
      marketing site's pure --color-surface, and the sidebar sits one step
      above that again — closer to ArtCraft's own studio UI (distinct body/
      sidebar/canvas planes) than a single flat tone everywhere. */
-  --color-surface-app: #0e0e10;
-  --color-surface-sidebar: #141416;
+  --color-surface-app: #0b0b0d;
+  --color-surface-sidebar: #101013;
 
-  /* Text — warm neutrals, not the cool blue-grays a default dark theme
-     ships with. Paired with the gold accent below they read as paper and
-     ink under warm light; a blue-gray secondary next to gold reads as two
-     unrelated systems fighting. */
-  --color-ink: #f6f4f0; /* Text Primary — off-white, warm not blue-white */
-  --color-ink-soft: #f6f4f0;
-  --color-ink-softer: #f6f4f0;
-  --color-muted: #9b968c; /* Text Secondary */
-  --color-text-tertiary: #6b675f; /* Labels, captions */
+  /* Text — cool neutrals, matching the silver below. In a monochrome
+     system the text ramp IS most of the design, so these three steps are
+     pulled further apart than they would be in a colored palette: primary
+     near-white, secondary clearly dimmer, tertiary dimmer again. Without
+     a hue to separate them, anything closer collapses into one gray. */
+  --color-ink: #f7f8fa; /* Text Primary — off-white, cool not warm */
+  --color-ink-soft: #f7f8fa;
+  --color-ink-softer: #f7f8fa;
+  --color-muted: #979ca6; /* Text Secondary */
+  --color-text-tertiary: #676c76; /* Labels, captions */
 
   /* Borders — translucent white, not opaque gray */
   --color-line: rgb(255 255 255 / 0.1); /* Default border */
   --color-border-subtle: rgb(255 255 255 / 0.06); /* Subtle dividers */
   --color-border-strong: rgb(255 255 255 / 0.16); /* Focus rings, active borders */
 
-  /* Brand — Aurum. Burnished gold: the warm identity this app has always
-     had, taken off the hot consumer-orange it used to be (#ff4d23) and
-     onto the tone premium film and luxury brands actually use. Reads as
-     golden-hour light, projector warmth, an award — which is exactly the
-     register an AI *video* studio wants — and stays unclaimed by the other
-     big tools (Leonardo/Midjourney-adjacent = violet, ArtCraft = blue,
-     Higgsfield = lime, Kling = electric blue).
-     Deliberately desaturated toward amber rather than a bright yellow-gold:
-     saturated gold reads crypto/casino, muted gold reads expensive.
+  /* Brand — Silver. The app is deliberately monochrome: black ground,
+     white type, and a brushed platinum as the one "accent". No hue at all
+     is the most premium register there is — it's where Runway, Sora and
+     every serious piece of hardware live — and it sidesteps the whole
+     problem of picking an AI-tool color, since violet, blue, lime and
+     orange are each already someone else's.
+     Pitched below pure white on purpose: --color-ink is #f7f8fa, and an
+     accent that sits at the same value as body text stops being an accent.
+     This is far enough down the ramp to read as a distinct material next
+     to white, and still ~11:1 against the ground.
      Used for text accents, badges, links, focus/active states and icon
      fills — the primary button itself stays a solid white pill (see
      button.tsx), never a brand-filled one, so the accent reads as
      deliberate emphasis rather than default chrome. */
-  --color-brand: #d4a052;
-  --color-brand-hover: #e2b672;
-  --color-brand-active: #b9873f;
+  --color-brand: #bfc7d2;
+  --color-brand-hover: #d8dee6;
+  --color-brand-active: #a3abb8;
 
   /* Text/glyphs sitting ON a solid brand (or brand-family) fill. The
-     accent is now a LIGHT color, so white-on-brand — what this app used
-     while the brand was a dark hot orange — is unreadable. Everything that
+     accent is a LIGHT color, so white-on-brand — what this app used back
+     when the brand was a dark hot orange — is unreadable. Everything that
      fills with an accent and carries a label or icon pairs it with this:
-     a gold pill with near-black type is both the accessible choice
-     (~8:1 vs ~2:1) and the more premium-looking one. */
-  --color-on-brand: #08080a;
+     black type on silver is both the accessible choice (~12:1 vs ~1.4:1)
+     and, on a metal, the only one that looks intentional. */
+  --color-on-brand: #050506;
 
-  /* Aurum family — two solid tonal siblings of --color-brand (same warm
-     metal family, shifted lighter and deeper) used for categorical coding
-     — e.g. the sidebar/dashboard's per-section icon colors — as an
-     alternative to inventing unrelated new hues. Solid fills only, never
-     blended together: see the note on gradients below. Both stay light
-     enough to carry --color-on-brand glyphs. */
-  --color-brand-soft: #eccf96; /* champagne, lighter — Gallery/Library */
-  --color-brand-deep: #c07f4a; /* copper, deeper — Collections */
+  /* Silver family — two solid tonal siblings of --color-brand, used for
+     categorical coding (e.g. the sidebar/dashboard's per-section icon
+     colors). In a colored palette these would be neighbouring hues; here
+     they are steps of the same metal, which is what keeps the categories
+     legible without introducing color the design doesn't want. Both stay
+     light enough to carry --color-on-brand glyphs. */
+  --color-brand-soft: #e8ebf0; /* bright chrome — Gallery/Library */
+  --color-brand-deep: #878e9b; /* graphite — Collections */
 
-  /* Secondary accent — jade. Paired with --color-brand as a warm/cool duo
-     (the film-grade "orange & teal", graded down to a mineral pairing
-     rather than a neon one — the old #2fe8d0 mint was the loudest color
-     in the app and the least premium). Each surface gets ONE flat, solid
-     hue from this family — never a blended gradient fill between them
-     (that reads as the exact generic-AI-SaaS look this palette was built
-     to move away from; see buttonVariants' retired "gradient" variant,
-     now "accent"). */
-  --color-accent-teal: #6cc5b4;
-  --color-accent-teal-soft: #a3ddd2;
+  /* ---- The occasional color ----------------------------------------
+     Everything above is black/white/silver. Real hue is rationed, and
+     only appears where it is carrying information the monochrome ramp
+     genuinely cannot:
+       1. status (below) — a warning has to look like a warning;
+       2. this one decorative accent, for the rare moment that needs to
+          feel like an event rather than another silver panel (the
+          Seedance promo banner, one dashboard chip, the section beam).
+     Because it shows up so rarely against an otherwise colorless app, it
+     lands much harder than it did when the whole UI was tinted — which is
+     the entire point of rationing it. Anything not on this list stays
+     monochrome; adding a hue "just to brighten it up" is what turns this
+     palette back into a generic dark theme. */
+  --color-accent-teal: #63c7cd;
+  --color-accent-teal-soft: #a2dee2;
 
-  /* Status — kept clearly separate in hue from the brand so alerts never
-     get mistaken for accent decoration. Warning is the one that has to
-     work hardest now: a gold brand sits right where a warning-yellow
-     normally does, so this is pushed to a saturated orange, far enough in
-     both hue and saturation from the muted gold to never be confused for
-     it. The rest are dialed a step off full neon, matching the restraint
-     the rest of the palette moved to. */
-  --color-success: #34b978;
-  --color-warning: #f0851f;
-  --color-accent: #ef4f6a; /* error/destructive */
-  --color-info: #4b9fe1;
+  /* Status — the other sanctioned color. These matter more here than in a
+     colored palette: against an all-silver UI they are the only saturated
+     things on screen, so a warning or an error is unmissable and needs no
+     extra weight to compete. Warning is free to sit at a natural amber
+     again now that the brand is not itself a gold. */
+  --color-success: #3fbe80;
+  --color-warning: #e8a33c;
+  --color-accent: #ef5468; /* error/destructive */
+  --color-info: #56a8e8;
 
   /* Fonts (next/font variables set on <html> in layout.tsx). Three roles
      instead of one: a geometric grotesk carries display/heading weight
@@ -135,20 +144,22 @@
   --radius-2xl: 32px;
   --radius-full: 9999px;
 
-  /* Shadows — plain black depth shadows + a soft localized gold glow. The
-     glows are pulled a touch dimmer than the old ember ones: gold is a
-     lighter color, so the same alpha reads as a much brighter halo, and a
-     blazing halo is the fastest way to make a premium palette look cheap. */
+  /* Shadows — plain black depth shadows + a soft localized silver bloom.
+     The glow alphas are the lowest they have ever been in this file, and
+     have to be: a near-white glow has nowhere to go but blown-out. At
+     these values it reads as light catching an edge, which is what a
+     metal palette wants; at the alphas a colored glow could carry it
+     would look like a smeared white haze over the whole component. */
   --shadow-raised: 0 1px 2px 0 rgb(0 0 0 / 0.3);
   --shadow-floating: 0 8px 30px -4px rgb(0 0 0 / 0.5);
   --shadow-modal: 0 20px 60px -12px rgb(0 0 0 / 0.6);
   --shadow-inset: inset 0 1px 0 0 rgb(255 255 255 / 0.05);
   --shadow-card: 0 4px 12px rgb(0 0 0 / 0.4), inset 0 1px 0 0 rgb(255 255 255 / 0.05);
-  --shadow-glow-sm: 0 0 20px rgb(212 160 82 / 0.14);
-  --shadow-glow-md: 0 0 40px rgb(212 160 82 / 0.18);
-  --shadow-glow-lg: 0 0 80px rgb(212 160 82 / 0.15);
-  --shadow-glow-teal-sm: 0 0 20px rgb(108 197 180 / 0.14);
-  --shadow-glow-teal-md: 0 0 40px rgb(108 197 180 / 0.18);
+  --shadow-glow-sm: 0 0 20px rgb(191 199 210 / 0.10);
+  --shadow-glow-md: 0 0 40px rgb(191 199 210 / 0.13);
+  --shadow-glow-lg: 0 0 80px rgb(191 199 210 / 0.11);
+  --shadow-glow-teal-sm: 0 0 20px rgb(99 199 205 / 0.16);
+  --shadow-glow-teal-md: 0 0 40px rgb(99 199 205 / 0.2);
   --shadow-glow-white: 0 0 30px rgb(255 255 255 / 0.05);
 
   /* No gradient() fills anywhere in this system, full stop — a two-hue
@@ -161,7 +172,7 @@
      per-section nav colors, and the dashboard's icon chips.
      --gradient-hero-glow is now a flat solid tint too (kept the old name
      since call sites still consume it as a plain `background` value). */
-  --gradient-hero-glow: rgb(212 160 82 / 0.07);
+  --gradient-hero-glow: rgb(191 199 210 / 0.05);
 
   /* Type scale: each pairs font-size with its line-height (and, where
      useful, letter-spacing) in a single utility. Font-family is NOT
@@ -411,7 +422,7 @@
   /* Custom scrollbar — the default OS scrollbar (light gray, ~15-17px) reads
      as unstyled chrome against this app's near-black surfaces. Thin,
      translucent-white by default (echoes --color-line's translucent-white
-     border treatment rather than an opaque gray), brand-gold on hover —
+     border treatment rather than an opaque gray), brand-silver on hover —
      the same "brand reserved for focus/active states" rule already used for
      :focus-visible above. Applied to `*` (not just html/body) since
      ::-webkit-scrollbar doesn't inherit — every internal scroll container
@@ -443,7 +454,7 @@
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background-color: rgb(212 160 82 / 0.5);
+    background-color: rgb(191 199 210 / 0.55);
   }
 
   ::-webkit-scrollbar-corner {
@@ -492,7 +503,7 @@
   }
 
   /* Accent text — used for hero accent words, stat numbers, wordmarks.
-     Solid gold, never gradient-clipped — this app doesn't use blended
+     Solid silver, never gradient-clipped — this app doesn't use blended
      gradient fills anywhere (see the note above --gradient-hero-glow). */
   .text-gradient {
     color: var(--color-brand);
@@ -563,7 +574,7 @@
 
   /* Light-beam section divider — a blurred, multi-stop horizontal band used
      as a dramatic separator (migration brief §3, step 5). Recolored to
-     Vixerra's own gold→jade duo instead of the source's blue→violet→red,
+     Vixerra's own silver→accent pair instead of the source's blue→violet→red,
      consistent with "no unrelated hues" (see --color-brand's own comment
      above). Two layers: a soft wide glow plus a crisp thin line on top. */
   .light-beam {

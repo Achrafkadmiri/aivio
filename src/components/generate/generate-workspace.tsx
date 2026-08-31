@@ -195,9 +195,9 @@ export function GenerateStudio({ type }: { type: GenerationType }) {
               className="group relative flex h-full min-h-[24rem] flex-col items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-brand/15 bg-surface-2/20 p-10 text-center"
             >
               {/* Ambient drifting glow at rest — crossfades out for the
-                  cursor spotlight below once hovered. Kept faint: gold is
-                  a light tone, so the alpha that read as a warm ember bloom
-                  under the old palette reads as a brown haze here. */}
+                  cursor spotlight below once hovered. Kept faint: silver is
+                  near-white, so anything stronger stops reading as a bloom
+                  and starts reading as fog over the canvas. */}
               <div
                 className="pointer-events-none absolute -top-24 left-1/2 size-[34rem] -translate-x-1/2 bg-brand opacity-[0.12] blur-3xl transition-opacity duration-300 animate-blob-float group-hover:opacity-0"
                 aria-hidden="true"

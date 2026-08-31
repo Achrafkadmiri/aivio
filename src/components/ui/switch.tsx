@@ -16,8 +16,8 @@ export function Switch({ className, ...props }: ComponentProps<typeof SwitchPrim
       {...props}
     >
       {/* The thumb flips colour with the track: white reads on the dark
-          unchecked track, but the checked track is now a light gold, where
-          a white thumb nearly disappears — so it takes the dark on-brand
+          unchecked track, but the checked track is a light silver, where a
+          white thumb nearly disappears — so it takes the black on-brand
           ink there instead. */}
       <SwitchPrimitive.Thumb
         className={cn(

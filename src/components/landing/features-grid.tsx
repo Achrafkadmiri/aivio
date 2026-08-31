@@ -4,11 +4,12 @@ import { Reveal } from "@/components/marketing/reveal";
 import { TiltCard } from "@/components/marketing/tilt-card";
 import { cn } from "@/lib/utils";
 
-// Each card's icon chip cycles through the palette's four solid hues
-// (ember → teal → amber → rust, see globals.css) instead of every chip
-// being the same fill — same trick ArtCraft uses to tell its tool cards
-// apart at a glance, done with flat colors from one family rather than a
-// gradient per card.
+// Each card's icon chip cycles through four solid fills — three steps of
+// the silver family plus the one sanctioned accent (platinum → cyan →
+// chrome → graphite, see globals.css) — instead of every chip being the
+// same fill. Same trick ArtCraft uses to tell its tool cards apart at a
+// glance; in a monochrome palette it runs on value rather than hue, which
+// is why three of the four are metals and only one carries colour.
 const CHIP_COLORS = ["bg-brand", "bg-accent-teal", "bg-brand-soft", "bg-brand-deep"];
 
 const FEATURES = [

@@ -3,7 +3,7 @@
 import { motion, useScroll, useSpring, useReducedMotion } from "framer-motion";
 
 /**
- * Thin gold reading-progress bar pinned to the top of the viewport, per the
+ * Thin silver reading-progress bar pinned to the top of the viewport, per the
  * design system's §5.5 "Progress Bar" spec — spring-smoothed scroll
  * fraction instead of the previous raw rAF/scroll-listener version.
  */
