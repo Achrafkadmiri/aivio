@@ -11,22 +11,14 @@ import {
   Maximize,
   Monitor,
   Palette,
+  FileType,
   RectangleHorizontal,
   ScanFace,
   SlidersHorizontal,
+  Timer,
   type LucideIcon,
 } from "lucide-react";
-import {
-  Clock,
-  Gauge,
-  Maximize,
-  Monitor,
-  Palette,
-  RectangleHorizontal,
-  ScanFace,
-  SlidersHorizontal,
-  type LucideIcon,
-} from "lucide-react";
+
 import { FieldError, Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Tooltip } from "@/components/ui/tooltip";
@@ -51,9 +43,11 @@ import {
   upgradeHint,
 } from "@/lib/tier-limits";
 import {
-  TIER_MANAGED_FIELD_KEYS,
-  comparePrimaryFieldKeys,
-  isPrimaryFieldKey,
+  SIZE_FIELD_KEYS,
+  choicesFor,
+  compareToolbarFieldKeys,
+  composerFieldLabel,
+  fieldPlacement,
   valueHint,
 } from "@/lib/composer-fields";
 import { applyImageStyle } from "@/lib/image-styles";
@@ -81,14 +75,26 @@ const ENDPOINTS = {
   "image-to-video": "/api/generations/image-to-video",
 } as const;
 
-const SELECT_FIELD_ICONS: Record<string, LucideIcon> = {
+const FIELD_ICONS: Record<string, LucideIcon> = {
   aspectRatio: RectangleHorizontal,
   resolution: Monitor,
   duration: Clock,
   size: Maximize,
   imageSize: Maximize,
   quality: Gauge,
+  outputFormat: FileType,
+  fps: Timer,
 };
+
+/** How big the output is has three provider spellings (see SIZE_FIELD_KEYS)
+ *  and had three different presentations to match — Monitor + "Resolution"
+ *  on one image model, Maximize + "Size" on the next, for the same choice.
+ *  On an image model they all read as one control; on a video model
+ *  `resolution` keeps the screen icon, where it means exactly that. */
+function fieldIcon(fieldKey: string, isImageModel: boolean): LucideIcon {
+  if (isImageModel && SIZE_FIELD_KEYS.has(fieldKey)) return Maximize;
+  return FIELD_ICONS[fieldKey] ?? SlidersHorizontal;
+}
 
 /** "None" first so the pill can express "no style applied" without a
  * separate clear affordance. */
@@ -341,17 +347,18 @@ export function DynamicModelForm<T extends string>({
     ),
   );
 
-  // The toolbar carries only the choices that change the result (and the
-  // price); everything else stays one click away under Settings. Before this
-  // every select became a pill, so an output-format picker sat next to the
-  // resolution and the row's shape changed completely from model to model.
-  // TIER_MANAGED_FIELD_KEYS drops what the plan decides rather than the user
-  // (watermark) - its default still reaches the provider, see composer-fields.ts.
-  const visibleFields = config.fields.filter((f) => !TIER_MANAGED_FIELD_KEYS.has(f.key));
-  const pillFields = visibleFields
-    .filter((f) => (f.type === "select" || f.key === durationField?.key) && isPrimaryFieldKey(f.key))
-    .sort((a, b) => comparePrimaryFieldKeys(a.key, b.key));
-  const panelFields = visibleFields.filter((f) => !pillFields.includes(f));
+  // Where each field goes is decided in one place — see fieldPlacement.
+  // Everything that can be a pill now is one: the row previously took only
+  // the six primary keys, so a two-option format picker sat behind the
+  // Settings popover while the row it belonged in had room to spare. What is
+  // left in the panel is what a pill genuinely cannot carry (switches, open
+  // numbers, open text), and what is dropped entirely is what the plan owns
+  // or what offers no real choice — both still ship their default.
+  const placement = (f: (typeof config.fields)[number]) => fieldPlacement(f, durationField?.key);
+  const pillFields = config.fields
+    .filter((f) => placement(f) === "toolbar")
+    .sort((a, b) => compareToolbarFieldKeys(a.key, b.key));
+  const panelFields = config.fields.filter((f) => placement(f) === "panel");
 
   // Clamps the duration slider to the current plan's limit (undefined
   // tierInfo — still loading — leaves the model's own max in place).
@@ -458,18 +465,6 @@ export function DynamicModelForm<T extends string>({
             </MobileFieldRow>
           )}
 
-          {isImageModel && (
-            <MobileFieldRow label="Style" description="Added to your prompt when you generate.">
-              <PillSelect
-                icon={Palette}
-                label="Style"
-                value={style}
-                options={STYLE_OPTIONS}
-                onChange={setStyle}
-              />
-            </MobileFieldRow>
-          )}
-
           {isVideoModel && (
             <MobileFieldRow label="Characters" description="Coming soon — character consistency isn't wired up yet.">
               <ScanFace className="size-4 text-muted" aria-hidden="true" />
@@ -498,14 +493,12 @@ export function DynamicModelForm<T extends string>({
                 />
               </MobileFieldRow>
             ) : (
-              <MobileFieldRow key={field.key} label={field.label}>
+              <MobileFieldRow key={field.key} label={composerFieldLabel(field, isImageModel)}>
                 <PillSelect
-                  icon={SELECT_FIELD_ICONS[field.key] ?? SlidersHorizontal}
-                  label={field.label}
-                  label={field.label}
-                  value={(watch(field.key) as string) ?? field.options?.[0] ?? ""}
-                  options={field.options ?? []}
-                  renderHint={valueHint}
+                  icon={fieldIcon(field.key, isImageModel)}
+                  label={composerFieldLabel(field, isImageModel)}
+                  value={(watch(field.key) as string) ?? choicesFor(field)[0] ?? ""}
+                  options={choicesFor(field)}
                   renderHint={valueHint}
                   onChange={(v) => setValue(field.key, v, { shouldValidate: true })}
                   isOptionLocked={optionLock(field.key)}
@@ -572,16 +565,6 @@ export function DynamicModelForm<T extends string>({
             />
           )}
 
-          {isImageModel && (
-            <PillSelect
-              icon={Palette}
-              label="Style"
-              value={style}
-              options={STYLE_OPTIONS}
-              onChange={setStyle}
-            />
-          )}
-
           {isVideoModel && (
             <Tooltip content="Coming soon — character consistency isn't wired up yet.">
               <span className="inline-flex" tabIndex={0}>
@@ -616,12 +599,10 @@ export function DynamicModelForm<T extends string>({
             ) : (
               <PillSelect
                 key={field.key}
-                icon={SELECT_FIELD_ICONS[field.key] ?? SlidersHorizontal}
-                label={field.label}
-                label={field.label}
-                value={(watch(field.key) as string) ?? field.options?.[0] ?? ""}
-                options={field.options ?? []}
-                renderHint={valueHint}
+                icon={fieldIcon(field.key, isImageModel)}
+                label={composerFieldLabel(field, isImageModel)}
+                value={(watch(field.key) as string) ?? choicesFor(field)[0] ?? ""}
+                options={choicesFor(field)}
                 renderHint={valueHint}
                 onChange={(v) => setValue(field.key, v, { shouldValidate: true })}
                 isOptionLocked={optionLock(field.key)}

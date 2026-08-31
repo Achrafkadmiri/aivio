@@ -4,9 +4,11 @@
 // model accepts, and the composer used to render all of them as equals — so
 // an output-format picker sat next to the resolution, and a 15-model catalog
 // meant the pill row's contents changed shape completely between models. This
-// ranks them instead: a short, predictable set of pills carries the decisions
-// that actually change the result (and the price), everything else falls
-// through to the Settings panel where it stays reachable.
+// ranks them instead: the decisions that change the result (and the price)
+// lead the row, the rest follow it, and only the controls that can't be
+// expressed as a pill fall through to the Settings panel.
+
+import type { DynamicField } from "@/lib/cloudflare-models";
 
 /**
  * Never rendered. The plan decides these, not the user.
@@ -21,10 +23,19 @@
 export const TIER_MANAGED_FIELD_KEYS: ReadonlySet<string> = new Set(["watermark"]);
 
 /**
- * Fields promoted to toolbar pills, in the order they appear there. A field
- * only qualifies if it is also a fixed enum (or the duration range) — a
- * free-text `size` stays a text input in the panel, since a pill can't offer
- * a list it doesn't have.
+ * The three spellings providers use for one idea: how big the output is.
+ * Recraft/OpenAI/ByteDance call it `size`, Google `imageSize`, xAI
+ * `resolution`. The registry keeps each provider's own key (it mirrors the
+ * wire), but the composer showed them as three different controls — "Size"
+ * under one icon on one model, "Resolution" under another icon on the next —
+ * for a setting the user experiences as the same choice, and which prices
+ * identically (see imageSettingsFromParameters in credit-estimate.ts).
+ */
+export const SIZE_FIELD_KEYS: ReadonlySet<string> = new Set(["size", "imageSize", "resolution"]);
+
+/**
+ * Fields promoted to the front of the toolbar, in the order they appear
+ * there. These are the choices that change the result and the price.
  */
 export const PRIMARY_FIELD_KEYS = [
   "duration",
@@ -35,15 +46,73 @@ export const PRIMARY_FIELD_KEYS = [
   "aspectRatio",
 ] as const;
 
+/**
+ * Real choices that follow the primaries rather than leading them — they
+ * change the output without changing what it costs. They used to be
+ * collapsed into the Settings panel purely because they weren't primary,
+ * which buried a two-click format picker behind a popover while the row it
+ * belonged in had room to spare.
+ */
+export const SECONDARY_FIELD_KEYS = ["fps", "outputFormat"] as const;
+
 const PRIMARY_ORDER = new Map(PRIMARY_FIELD_KEYS.map((key, index) => [key as string, index]));
+const SECONDARY_ORDER = new Map(
+  SECONDARY_FIELD_KEYS.map((key, index) => [key as string, PRIMARY_ORDER.size + index]),
+);
 
 export function isPrimaryFieldKey(key: string): boolean {
   return PRIMARY_ORDER.has(key);
 }
 
-/** Sort comparator putting primary fields in PRIMARY_FIELD_KEYS order. */
-export function comparePrimaryFieldKeys(a: string, b: string): number {
-  return (PRIMARY_ORDER.get(a) ?? Number.MAX_SAFE_INTEGER) - (PRIMARY_ORDER.get(b) ?? Number.MAX_SAFE_INTEGER);
+/** Sort comparator putting toolbar fields in PRIMARY then SECONDARY order. */
+export function compareToolbarFieldKeys(a: string, b: string): number {
+  const rank = (k: string) => PRIMARY_ORDER.get(k) ?? SECONDARY_ORDER.get(k) ?? Number.MAX_SAFE_INTEGER;
+  return rank(a) - rank(b);
+}
+
+/**
+ * The values a field can offer as a picker — its probed enum, or the
+ * UI-only shortlist a free-text field carries (see `suggestedValues` in
+ * cloudflare-models.ts).
+ */
+export function choicesFor(field: DynamicField): readonly string[] {
+  if (field.type === "select") return field.options ?? [];
+  return field.suggestedValues ?? [];
+}
+
+export type FieldPlacement = "toolbar" | "panel" | "hidden";
+
+/**
+ * Where a field belongs in the composer.
+ *
+ * - `hidden` — the plan owns it, or it offers no actual choice. A one-option
+ *   select is not a decision, and rendering a dropdown that can only be set
+ *   to what it already is costs a slot in the row and teaches nothing. The
+ *   value still ships: the zod schema defaults it on both sides.
+ * - `toolbar` — anything expressible as a pill: a multi-choice list, or the
+ *   numeric duration range the slider pill handles.
+ * - `panel` — what a pill genuinely can't carry: switches, open numbers
+ *   (seed, image count) and open text (negative prompt, Recraft's style).
+ */
+export function fieldPlacement(field: DynamicField, durationSliderKey?: string): FieldPlacement {
+  if (TIER_MANAGED_FIELD_KEYS.has(field.key)) return "hidden";
+  if (field.key === durationSliderKey) return "toolbar";
+  const choices = choicesFor(field);
+  if (choices.length > 0) return choices.length > 1 ? "toolbar" : "hidden";
+  // A select that somehow arrived with no options at all can't render either.
+  if (field.type === "select") return "hidden";
+  return "panel";
+}
+
+/**
+ * What to call a field in the composer. The registry keeps the provider's own
+ * label because it mirrors the wire; this is the user-facing one, which
+ * normalises the size/resolution trio onto a single name so the same choice
+ * doesn't get two names across two models.
+ */
+export function composerFieldLabel(field: DynamicField, isImageModel: boolean): string {
+  if (isImageModel && SIZE_FIELD_KEYS.has(field.key)) return "Resolution";
+  return field.label;
 }
 
 /**
@@ -75,16 +144,26 @@ const VALUE_HINTS: Record<string, string> = {
   "4K": "~4096px",
   "512x512": "Square, fastest",
   "768x768": "Square",
-  "1024x1024": "Square",
+  "1024x1024": "Square, 1K",
   "1024x1536": "Portrait",
   "1536x1024": "Landscape",
   "1536x1536": "Square, largest",
-  "2048x2048": "Square, largest",
+  "2048x2048": "Square, 2K",
   // Quality / effort.
   low: "Fastest",
   medium: "Balanced",
   high: "Best quality",
   auto: "Model decides",
+  // Output formats.
+  mp4: "Video",
+  mov: "Video, ProRes-friendly",
+  png: "Lossless",
+  jpg: "Smaller file",
+  jpeg: "Smaller file",
+  webp: "Smallest file",
+  // Frame rates.
+  "24": "Cinematic",
+  "48": "Extra smooth",
   // Aspect ratios worth naming.
   "16:9": "Landscape",
   "9:16": "Vertical",

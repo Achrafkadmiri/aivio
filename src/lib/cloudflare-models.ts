@@ -41,6 +41,19 @@ export type DynamicField = {
   type: DynamicFieldType;
   /** For "select" fields. */
   options?: readonly string[];
+  /**
+   * UI-only shortlist for a free-text field: values we have actually run
+   * against the model, offered as a picker so the composer never has to ask
+   * anyone to type a parameter by hand.
+   *
+   * Deliberately NOT `options`. `options` is a probed enum and the only
+   * thing the provider accepts, so it is enforced by buildDynamicSchema.
+   * This makes no such claim — the field stays free text on the wire and in
+   * the schema, so a value outside the list is still perfectly valid. It
+   * exists so "we know these work" can be expressed without inventing an
+   * enum, which this file forbids.
+   */
+  suggestedValues?: readonly string[];
   defaultValue?: string | number | boolean;
   /** For "number" fields. */
   min?: number;
@@ -119,6 +132,16 @@ export const CLOUDFLARE_MODELS: CloudflareModelConfig[] = [
   // one, but writing it from memory or from docs is exactly what this file
   // forbids — turning these into selects needs values obtained from the
   // provider, not guessed.
+  //
+  // That non-validation is also why `size` carries `suggestedValues`: a typo
+  // here is NOT rejected the way it would be on a model with a real enum, it
+  // just travels on to Recraft, so asking anyone to type "1024x1024" by hand
+  // was the worst place in the catalog to do it. The two listed values are
+  // the ones this trio already ships as its own defaults — no enum is claimed
+  // or invented, and the field stays free text, so a probe that turns up the
+  // real list can widen it (or promote it to `options`) without anything else
+  // having to change. style/substyle stay open text: they have no shortlist
+  // to draw on that would not be a guess.
   {
     id: "recraft/recraftv4-1",
     label: "Recraft v4.1",
@@ -128,7 +151,7 @@ export const CLOUDFLARE_MODELS: CloudflareModelConfig[] = [
     promptRequired: true,
     image: "none",
     fields: [
-      { key: "size", cfParam: "size", label: "Size", type: "text", defaultValue: "1024x1024", helperText: "e.g. 1024x1024" },
+      { key: "size", cfParam: "size", label: "Size", type: "text", defaultValue: "1024x1024", suggestedValues: ["1024x1024", "2048x2048"] },
       { key: "style", cfParam: "style", label: "Style", type: "text", helperText: "Optional visual style" },
       { key: "substyle", cfParam: "substyle", label: "Substyle", type: "text", helperText: "Optional sub-style variant" },
     ],
@@ -144,7 +167,7 @@ export const CLOUDFLARE_MODELS: CloudflareModelConfig[] = [
     promptRequired: true,
     image: "none",
     fields: [
-      { key: "size", cfParam: "size", label: "Size", type: "text", defaultValue: "2048x2048", helperText: "e.g. 2048x2048" },
+      { key: "size", cfParam: "size", label: "Size", type: "text", defaultValue: "2048x2048", suggestedValues: ["1024x1024", "2048x2048"] },
       { key: "style", cfParam: "style", label: "Style", type: "text", helperText: "Optional visual style" },
       { key: "substyle", cfParam: "substyle", label: "Substyle", type: "text", helperText: "Optional sub-style variant" },
     ],
@@ -160,7 +183,7 @@ export const CLOUDFLARE_MODELS: CloudflareModelConfig[] = [
     promptRequired: true,
     image: "none",
     fields: [
-      { key: "size", cfParam: "size", label: "Size", type: "text", defaultValue: "1024x1024", helperText: "e.g. 1024x1024" },
+      { key: "size", cfParam: "size", label: "Size", type: "text", defaultValue: "1024x1024", suggestedValues: ["1024x1024", "2048x2048"] },
       { key: "style", cfParam: "style", label: "Style", type: "text", helperText: "Optional visual style" },
       { key: "substyle", cfParam: "substyle", label: "Substyle", type: "text", helperText: "Optional sub-style variant" },
     ],

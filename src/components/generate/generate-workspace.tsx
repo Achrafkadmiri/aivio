@@ -23,11 +23,15 @@ import {
   type GenerationType,
 } from "@/lib/constants";
 
-// Keep in sync with the literal "[zoom:0.7]" class on the hero/result column
-// below — Tailwind arbitrary-value classes have to stay string literals for
-// its build-time scanner to pick them up, so this can't be derived from one
-// shared source.
-const HERO_ZOOM = 0.7;
+// The whole studio renders at 70%: the hero/result column and the composer
+// docked under it. The composer used to be the one thing left at full size,
+// which made the form the biggest element on a page whose actual subject —
+// the thing being generated — was drawn at 0.7.
+//
+// Keep in sync with the literal "[zoom:0.7]" / "sm:[zoom:0.7]" classes below:
+// Tailwind arbitrary-value classes have to stay string literals for its
+// build-time scanner to pick them up, so neither can be derived from this.
+const STUDIO_ZOOM = 0.7;
 
 export function GenerateStudio({ type }: { type: GenerationType }) {
   const [activeJobId, setActiveJobId] = useState<string | null>(null);
@@ -38,7 +42,7 @@ export function GenerateStudio({ type }: { type: GenerationType }) {
   // The empty-state canvas this drives lives inside the [zoom:0.7] wrapper
   // below, so the cursor offset needs the same zoom correction as
   // composerHeight's padding math — see use-spotlight.ts.
-  const spotlight = useSpotlight<HTMLDivElement>(HERO_ZOOM);
+  const spotlight = useSpotlight<HTMLDivElement>(STUDIO_ZOOM);
 
   // The composer's pill row (model, duration, resolution, aspect ratio,
   // format, settings, submit) wraps onto more lines the narrower the
@@ -104,12 +108,13 @@ export function GenerateStudio({ type }: { type: GenerationType }) {
   }
 
   return (
-    // The fixed composer bar below is deliberately OUTSIDE this [zoom:0.7]
-    // wrapper: zoom scales an element's own box model (padding included),
-    // so the bar's lg:pl-64 sidebar clearance would itself shrink
-    // if it were a zoomed descendant, overlapping the (unzoomed, real
-    // 240px-wide) sidebar. Keeping it a sibling means its own positioning
-    // math stays true-scale regardless of the hero/result column's zoom.
+    // The composer bar below is zoomed to match this column, but the two
+    // wrappers stay separate: zoom scales an element's own box model,
+    // padding included, so a bar whose lg:pl-64 sidebar clearance sat inside
+    // a zoomed context would shrink that clearance too and slide under the
+    // (unzoomed, real 240px-wide) sidebar. The fix is to split the two jobs —
+    // the bar's POSITIONING stays true-scale, and the zoom goes on the
+    // content inside it. See the composer's own comment below.
     <>
       <div className="flex h-full flex-col [zoom:0.7]">
         <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -160,7 +165,7 @@ export function GenerateStudio({ type }: { type: GenerationType }) {
             first paint before ResizeObserver reports a real height. */}
         <div
           className={cn("mt-6 flex-1 overflow-y-auto", !composerHeight && "pb-56")}
-          style={composerHeight ? { paddingBottom: (composerHeight + 32) / HERO_ZOOM } : undefined}
+          style={composerHeight ? { paddingBottom: (composerHeight + 32) / STUDIO_ZOOM } : undefined}
         >
           {hasJob ? (
             // h-full hands the card the exact height left above the docked
@@ -220,9 +225,10 @@ export function GenerateStudio({ type }: { type: GenerationType }) {
       {/* Docked to the bottom of the viewport rather than sitting inline in
           a two-column layout — matches ArtCraft's floating prompt bar, but
           full-width rather than a centered column: it spans the whole
-          bottom edge (minus px-4 breathing room). Deliberately a sibling of
-          the [zoom:0.7] div above, not a child — see the comment on the
-          return's opening fragment.
+          bottom edge (minus px-4 breathing room). A sibling of the hero's
+          [zoom:0.7] div rather than a child, so the positioning below stays
+          true-scale — see the comment on the return's opening fragment, and
+          the inner zoom wrapper that scales the forms themselves.
 
           Being `fixed` means it's positioned against the viewport, not the
           flex layout AppShell's <main> sits in, so it can't just inherit
@@ -240,25 +246,42 @@ export function GenerateStudio({ type }: { type: GenerationType }) {
           sidebarCollapsed ? "lg:pl-24" : "lg:pl-64",
         )}
       >
+        {/* The zoom starts at sm: on purpose. The composer is the primary
+            touch surface on a phone, and 0.7 takes its controls down to
+            19-28px tall — the Settings trigger measures 20x26 on a 375px
+            viewport, well under a usable tap target. Below sm: it also
+            collapses to three controls (modality, options, generate) rather
+            than the full pill row, so it is not what looks oversized next to
+            the hero there anyway.
+
+            composerRef sits on the UNZOOMED wrapper on purpose: the scroll
+            container above reserves room for this bar out of its measured
+            height, and it needs that in real screen pixels. A zoomed element
+            reports its own coordinate space to ResizeObserver, so measuring
+            inside the zoom would over-report by 1/0.7 and reserve half a bar
+            too much. Measuring the wrapper around it gives the true rendered
+            height, which is what the `/ STUDIO_ZOOM` correction there expects. */}
         <div ref={composerRef} className="pointer-events-auto w-full">
-          {type === "text-to-video" && (
-            <TextToVideoForm
-              onCreated={handleCreated(true)}
-              busy={busy}
-              initialModel={initialModel}
-              initialPrompt={initialPrompt}
-              initialParams={initialParams}
-              tierInfo={usageQuery.data?.tier_info}
-            />
-          )}
-          {type === "text-to-image" && (
-            <TextToImageForm
-              onCreated={handleCreated(false)}
-              busy={busy}
-              initialModel={initialImageModel}
-              initialPrompt={initialPrompt}
-            />
-          )}
+          <div className="sm:[zoom:0.7]">
+            {type === "text-to-video" && (
+              <TextToVideoForm
+                onCreated={handleCreated(true)}
+                busy={busy}
+                initialModel={initialModel}
+                initialPrompt={initialPrompt}
+                initialParams={initialParams}
+                tierInfo={usageQuery.data?.tier_info}
+              />
+            )}
+            {type === "text-to-image" && (
+              <TextToImageForm
+                onCreated={handleCreated(false)}
+                busy={busy}
+                initialModel={initialImageModel}
+                initialPrompt={initialPrompt}
+              />
+            )}
+          </div>
         </div>
       </div>
     </>

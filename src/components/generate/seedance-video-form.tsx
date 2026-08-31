@@ -103,7 +103,6 @@ export function SeedanceVideoForm({
       resolution: "720p",
       aspectRatio: "adaptive",
       generateAudio: true,
-      generateAudio: true,
       watermark: false,
       useVirtualAvatar: false,
       outputFormat: "mp4",
@@ -391,8 +390,7 @@ export function SeedanceVideoForm({
               control={control}
               name="generateAudio"
               render={({ field }) => <Switch checked={field.value ?? true} onCheckedChange={field.onChange} />}
-              render={({ field }) => <Switch checked={field.value ?? true} onCheckedChange={field.onChange} />}
-            />
+                  />
           </MobileFieldRow>
           <MobileFieldRow
             label="Virtual avatar mode"
@@ -516,7 +514,6 @@ export function SeedanceVideoForm({
                 control={control}
                 name="generateAudio"
                 render={({ field }) => (
-                  <Switch checked={field.value ?? true} onCheckedChange={field.onChange} />
                   <Switch checked={field.value ?? true} onCheckedChange={field.onChange} />
                 )}
               />

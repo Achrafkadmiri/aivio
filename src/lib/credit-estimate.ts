@@ -240,6 +240,13 @@ const IMAGE_QUALITY_FACTOR: Record<string, number> = {
 // either has no size control at all (lucid-origin, nano-banana-2-lite) or a
 // free-text one we can't enumerate (the Recraft trio), and stays flat.
 const IMAGE_REFERENCE_SETTINGS: Record<string, { size?: string; quality?: string }> = {
+  // The Recraft trio spells its size as raw pixels and used to be a free-text
+  // box, so there was no bounded set of values to price against. Now that it
+  // offers a picker (suggestedValues in cloudflare-models.ts) it prices like
+  // every other size control.
+  "recraft/recraftv4-1": { size: "1024x1024" },
+  "recraft/recraftv4-1-pro": { size: "2048x2048" },
+  "recraft/recraftv4-1-vector": { size: "1024x1024" },
   "google/nano-banana-pro": { size: "2K" },
   "openai/gpt-image-2": { size: "1024x1024", quality: "medium" },
   "xai/grok-imagine-image": { size: "1k" },
