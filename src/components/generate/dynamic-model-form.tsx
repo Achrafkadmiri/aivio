@@ -16,6 +16,17 @@ import {
   SlidersHorizontal,
   type LucideIcon,
 } from "lucide-react";
+import {
+  Clock,
+  Gauge,
+  Maximize,
+  Monitor,
+  Palette,
+  RectangleHorizontal,
+  ScanFace,
+  SlidersHorizontal,
+  type LucideIcon,
+} from "lucide-react";
 import { FieldError, Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Tooltip } from "@/components/ui/tooltip";
@@ -447,6 +458,18 @@ export function DynamicModelForm<T extends string>({
             </MobileFieldRow>
           )}
 
+          {isImageModel && (
+            <MobileFieldRow label="Style" description="Added to your prompt when you generate.">
+              <PillSelect
+                icon={Palette}
+                label="Style"
+                value={style}
+                options={STYLE_OPTIONS}
+                onChange={setStyle}
+              />
+            </MobileFieldRow>
+          )}
+
           {isVideoModel && (
             <MobileFieldRow label="Characters" description="Coming soon — character consistency isn't wired up yet.">
               <ScanFace className="size-4 text-muted" aria-hidden="true" />
@@ -479,8 +502,10 @@ export function DynamicModelForm<T extends string>({
                 <PillSelect
                   icon={SELECT_FIELD_ICONS[field.key] ?? SlidersHorizontal}
                   label={field.label}
+                  label={field.label}
                   value={(watch(field.key) as string) ?? field.options?.[0] ?? ""}
                   options={field.options ?? []}
+                  renderHint={valueHint}
                   renderHint={valueHint}
                   onChange={(v) => setValue(field.key, v, { shouldValidate: true })}
                   isOptionLocked={optionLock(field.key)}
@@ -547,6 +572,16 @@ export function DynamicModelForm<T extends string>({
             />
           )}
 
+          {isImageModel && (
+            <PillSelect
+              icon={Palette}
+              label="Style"
+              value={style}
+              options={STYLE_OPTIONS}
+              onChange={setStyle}
+            />
+          )}
+
           {isVideoModel && (
             <Tooltip content="Coming soon — character consistency isn't wired up yet.">
               <span className="inline-flex" tabIndex={0}>
@@ -583,8 +618,10 @@ export function DynamicModelForm<T extends string>({
                 key={field.key}
                 icon={SELECT_FIELD_ICONS[field.key] ?? SlidersHorizontal}
                 label={field.label}
+                label={field.label}
                 value={(watch(field.key) as string) ?? field.options?.[0] ?? ""}
                 options={field.options ?? []}
+                renderHint={valueHint}
                 renderHint={valueHint}
                 onChange={(v) => setValue(field.key, v, { shouldValidate: true })}
                 isOptionLocked={optionLock(field.key)}

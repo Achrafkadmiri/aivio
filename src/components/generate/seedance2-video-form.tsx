@@ -114,6 +114,7 @@ export function Seedance2VideoForm({
       aspectRatio: initialParams?.aspectRatio ?? "16:9",
       cameraFixed: false,
       generateAudio: true,
+      generateAudio: true,
       watermark: false,
       useVirtualAvatar: false,
     },
@@ -357,6 +358,7 @@ export function Seedance2VideoForm({
               control={control}
               name="generateAudio"
               render={({ field }) => <Switch checked={field.value ?? true} onCheckedChange={field.onChange} />}
+              render={({ field }) => <Switch checked={field.value ?? true} onCheckedChange={field.onChange} />}
             />
           </MobileFieldRow>
           <MobileFieldRow
@@ -441,6 +443,7 @@ export function Seedance2VideoForm({
                 control={control}
                 name="generateAudio"
                 render={({ field }) => (
+                  <Switch checked={field.value ?? true} onCheckedChange={field.onChange} />
                   <Switch checked={field.value ?? true} onCheckedChange={field.onChange} />
                 )}
               />

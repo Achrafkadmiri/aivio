@@ -72,6 +72,7 @@ export function SeedanceVideoForm({
   busy: boolean;
   /** Current plan's limits — undefined while still loading. Gates
    * resolution and duration controls client-side so a locked pick is
+   * resolution and duration controls client-side so a locked pick is
    * discoverable before hitting the server's 403 (see aiVideo-backend's
    * generations.ts, the actual source of truth for these limits). */
   tierInfo?: TierInfo;
@@ -101,6 +102,7 @@ export function SeedanceVideoForm({
       duration: 5,
       resolution: "720p",
       aspectRatio: "adaptive",
+      generateAudio: true,
       generateAudio: true,
       watermark: false,
       useVirtualAvatar: false,
@@ -389,6 +391,7 @@ export function SeedanceVideoForm({
               control={control}
               name="generateAudio"
               render={({ field }) => <Switch checked={field.value ?? true} onCheckedChange={field.onChange} />}
+              render={({ field }) => <Switch checked={field.value ?? true} onCheckedChange={field.onChange} />}
             />
           </MobileFieldRow>
           <MobileFieldRow
@@ -513,6 +516,7 @@ export function SeedanceVideoForm({
                 control={control}
                 name="generateAudio"
                 render={({ field }) => (
+                  <Switch checked={field.value ?? true} onCheckedChange={field.onChange} />
                   <Switch checked={field.value ?? true} onCheckedChange={field.onChange} />
                 )}
               />
