@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { useInvalidateCredits } from "@/hooks/use-credits";
+import { useInvalidateCredits, useUsage } from "@/hooks/use-credits";
 import { useForm, Controller, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Clock, Monitor, RectangleHorizontal, ScanFace, Zap } from "lucide-react";
+import { Clock, Monitor, RectangleHorizontal, ScanFace } from "lucide-react";
 import { FieldError, Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/components/ui/toast";
@@ -18,6 +18,8 @@ import { apiFetch } from "@/lib/api-client";
 import {
   isResolutionLocked,
   isDurationLocked,
+  bestAllowedResolution,
+  bestAllowedDuration,
   minTierForResolution,
   minTierForDuration,
   upgradeHint,
@@ -87,6 +89,8 @@ export function Seedance2VideoForm({
 }) {
   const { toast } = useToast();
   const invalidateCredits = useInvalidateCredits();
+  // Cache read on the same ["usage"] key the workspace already fetched.
+  const creditBalance = useUsage().data?.credit_balance;
   const [uploading, setUploading] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
   const [uploadingEndFrame, setUploadingEndFrame] = useState(false);
@@ -122,6 +126,30 @@ export function Seedance2VideoForm({
   const image = watch("image");
   const hasReference = Boolean(image);
   const estimatedCredits = estimateVideoCredits(SEEDANCE2_MODEL_ID, duration, resolution);
+
+  // Defaults are 720p / 5s, and the free plan caps at 480p — so the composer
+  // used to open on a resolution the server would reject, with a 403 after
+  // pressing Generate as the only feedback. tierInfo lands async, after
+  // react-hook-form has taken its defaults, so this corrects it here.
+  useEffect(() => {
+    if (!tierInfo) return;
+    if (isResolutionLocked(resolution, tierInfo)) {
+      const allowed = bestAllowedResolution(SEEDANCE2_RESOLUTIONS, tierInfo);
+      if (allowed) setValue("resolution", allowed as typeof resolution, { shouldValidate: true });
+    }
+    if (isDurationLocked(duration, tierInfo)) {
+      const allowed = bestAllowedDuration(DURATIONS, (d) => d, tierInfo);
+      if (allowed !== undefined) setValue("duration", allowed, { shouldValidate: true });
+    }
+  }, [tierInfo, resolution, duration, setValue]);
+
+  // Both clamps can come up empty — 4K is Studio-only, and a plan could cap
+  // below this model's 4s floor — so say why instead of letting it 403.
+  const blockedReason = isResolutionLocked(resolution, tierInfo)
+    ? upgradeHint(minTierForResolution(resolution), resolution === "4k" ? "4K" : resolution)
+    : isDurationLocked(duration, tierInfo)
+      ? upgradeHint(minTierForDuration(duration), duration + "s clips")
+      : undefined;
 
   async function handleFile(file: File) {
     setUploading(true);
@@ -202,12 +230,7 @@ export function Seedance2VideoForm({
   const submit = handleSubmit((data) => mutation.mutate(data));
 
   return (
-    <form onSubmit={submit} className="space-y-2" noValidate>
-      <p className="flex items-center gap-1.5 px-1 text-caption text-muted">
-        <Zap className="size-3 text-success" aria-hidden="true" />
-        Billed per generation.
-      </p>
-
+    <form onSubmit={submit} noValidate>
       <ComposerShell>
         {/* Stacked on mobile — see seedance-video-form.tsx for the full
             rationale. Desktop keeps them side by side. */}
@@ -274,7 +297,12 @@ export function Seedance2VideoForm({
           <ModalitySwitcherMobile type="text-to-video" />
           <MobileOptionsTrigger onClick={() => setSheetOpen(true)} />
           <div className="ml-auto">
-            <CreditsSubmitPill credits={estimatedCredits} loading={mutation.isPending || busy || uploading} />
+            <CreditsSubmitPill
+              credits={estimatedCredits}
+              loading={mutation.isPending || busy || uploading}
+              balance={creditBalance}
+              blockedReason={blockedReason}
+            />
           </div>
         </div>
 
@@ -443,7 +471,12 @@ export function Seedance2VideoForm({
           </SettingsPopover>
         </div>
 
-          <CreditsSubmitPill credits={estimatedCredits} loading={mutation.isPending || busy || uploading} />
+          <CreditsSubmitPill
+              credits={estimatedCredits}
+              loading={mutation.isPending || busy || uploading}
+              balance={creditBalance}
+              blockedReason={blockedReason}
+            />
         </div>
       </ComposerShell>
     </form>

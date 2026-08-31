@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { useInvalidateCredits } from "@/hooks/use-credits";
+import { useInvalidateCredits, useUsage } from "@/hooks/use-credits";
 import { useForm, Controller, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -22,11 +22,23 @@ import { Tooltip } from "@/components/ui/tooltip";
 import { useToast } from "@/components/ui/toast";
 import { BottomSheet } from "@/components/ui/bottom-sheet";
 import { ModalitySwitcherMobile } from "./modality-switcher";
-import { estimateVideoCredits, estimateImageCredits } from "@/lib/credit-estimate";
+import {
+  estimateVideoCredits,
+  estimateImageCredits,
+  imageSettingsFromParameters,
+} from "@/lib/credit-estimate";
 import { buildDynamicSchema } from "@/lib/validation";
 import type { CloudflareModelConfig } from "@/lib/cloudflare-models";
 import { apiFetch } from "@/lib/api-client";
-import { isResolutionLocked, minTierForResolution, minTierForDuration, upgradeHint } from "@/lib/tier-limits";
+import {
+  isResolutionLocked,
+  isDurationLocked,
+  bestAllowedResolution,
+  bestAllowedDuration,
+  minTierForResolution,
+  minTierForDuration,
+  upgradeHint,
+} from "@/lib/tier-limits";
 import {
   TIER_MANAGED_FIELD_KEYS,
   comparePrimaryFieldKeys,
@@ -72,6 +84,21 @@ const SELECT_FIELD_ICONS: Record<string, LucideIcon> = {
 const STYLE_OPTIONS = ["None", ...IMAGE_STYLE_PRESETS] as const;
 type StyleOption = (typeof STYLE_OPTIONS)[number];
 
+/** Duration is a *select* on some models rather than the numeric range
+ * PillSlider handles — veo-3.1 spells its options "4s"/"6s"/"8s" and
+ * hailuo-2.3 spells them "6"/"10". Both parse the same way, and both need it:
+ * the slider's tier cap never applied to a select, so those options were
+ * freely pickable and then rejected server-side with a 403. */
+function durationOptionSeconds(value: string | number): number {
+  return typeof value === "number" ? value : Number.parseFloat(value);
+}
+
+/** "6" -> "6s", "8s" -> "8s" — for wording an upgrade hint on either spelling. */
+function durationOptionLabel(value: string | number): string {
+  const raw = String(value);
+  return /s$/.test(raw) ? raw : `${raw}s`;
+}
+
 /**
  * One form, driven by a CloudflareModelConfig (see cloudflare-models.ts),
  * that serves every generic-registry live model instead of a bespoke form
@@ -111,6 +138,11 @@ export function DynamicModelForm<T extends string>({
 }) {
   const { toast } = useToast();
   const invalidateCredits = useInvalidateCredits();
+  // Same ["usage"] query the generate workspace already runs, so this is a
+  // cache read, not a second request. Only the balance is taken from it —
+  // plan limits still arrive as the tierInfo prop.
+  const usage = useUsage();
+  const creditBalance = usage.data?.credit_balance;
   const [preview, setPreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -119,6 +151,11 @@ export function DynamicModelForm<T extends string>({
   // parameter, because the backend builds parameters strictly from the model
   // registry and no image model here takes a generic style argument.
   const [style, setStyle] = useState<StyleOption>("None");
+
+  const isVideoModel = config.category !== "text-to-image";
+  const isImageModel = !isVideoModel;
+  const imageRequired = config.image === "required";
+  const hasImage = config.image !== "none";
 
   const defaultValues: Record<string, unknown> = { prompt: initialPrompt };
   for (const field of config.fields) {
@@ -129,6 +166,7 @@ export function DynamicModelForm<T extends string>({
     register,
     handleSubmit,
     control,
+    getValues,
     setValue,
     watch,
     formState: { errors },
@@ -137,18 +175,114 @@ export function DynamicModelForm<T extends string>({
     defaultValues,
   });
 
-  const prompt = (watch("prompt") as string | undefined) ?? "";
-  const duration = watch("duration");
-  const resolution = watch("resolution");
-  const image = watch("image") as string | undefined;
-  const estimatedCredits =
-    config.category === "text-to-image"
-      ? estimateImageCredits(config.id)
-      : estimateVideoCredits(
-          config.id,
-          typeof duration === "number" ? duration : parseInt(String(duration), 10) || 5,
-          (resolution as string) ?? "720p",
-        );
+  // Subscribes to every field at once. The prompt already re-renders this on
+  // each keystroke, so nothing is lost by it, and it lets the image cost below
+  // read whichever key a given model spells its size with using the exact same
+  // rule the server bills by (imageSettingsFromParameters).
+  const values = watch();
+  const prompt = (values.prompt as string | undefined) ?? "";
+  const duration = values.duration;
+  const resolution = values.resolution;
+  const image = values.image as string | undefined;
+
+  // Images used to bill a flat per-model figure, so the Size/Resolution/
+  // Quality pill sat directly beside the cost and the number never moved even
+  // between 1K and 4K. Both sides now scale off the picked settings — see
+  // estimateImageCredits, and createGenerationJob in the backend, which reads
+  // the same keys back out of the saved parameters.
+  const estimatedCredits = isImageModel
+    ? estimateImageCredits(config.id, imageSettingsFromParameters(values))
+    : estimateVideoCredits(
+        config.id,
+        typeof duration === "number" ? duration : durationOptionSeconds(String(duration)) || 5,
+        (resolution as string) ?? "720p",
+      );
+
+  const durationField = config.fields.find(
+    (f) => f.key === "duration" && f.type === "number" && f.min !== undefined && f.max !== undefined,
+  );
+  // Enum options for the two fields a plan can actually gate, when the model
+  // spells them as selects. Memoised so the clamping effect below doesn't see
+  // a fresh array identity on every render.
+  const resolutionOptions = useMemo(
+    () => config.fields.find((f) => f.key === "resolution" && f.type === "select")?.options ?? [],
+    [config],
+  );
+  const durationOptions = useMemo(
+    () => config.fields.find((f) => f.key === "duration" && f.type === "select")?.options ?? [],
+    [config],
+  );
+
+  // Every model in the registry defaults to 720p or above, and several default
+  // to a clip longer than the free plan's 5s cap — so the composer opened
+  // pre-filled with a value the server would reject, and the only feedback was
+  // a 403 after pressing Generate. tierInfo arrives async (it rides the usage
+  // query), well after react-hook-form has taken its defaults, so the
+  // correction happens here rather than in defaultValues.
+  useEffect(() => {
+    if (!isVideoModel || !tierInfo) return;
+    const currentResolution = getValues("resolution");
+    if (typeof currentResolution === "string" && isResolutionLocked(currentResolution, tierInfo)) {
+      const allowed = bestAllowedResolution(resolutionOptions, tierInfo);
+      if (allowed) setValue("resolution", allowed, { shouldValidate: true });
+    }
+    const currentDuration = getValues("duration");
+    if (currentDuration === undefined) return;
+    if (durationOptions.length > 0) {
+      if (isDurationLocked(durationOptionSeconds(currentDuration as string), tierInfo)) {
+        const allowed = bestAllowedDuration(durationOptions, durationOptionSeconds, tierInfo);
+        if (allowed) setValue("duration", allowed, { shouldValidate: true });
+      }
+    } else if (typeof currentDuration === "number" && isDurationLocked(currentDuration, tierInfo)) {
+      // The slider only ever clamped what it DISPLAYED (Math.min(value,
+      // durationCap)) — the form value stayed at the model default, so both
+      // the estimate and the submitted payload could sit above the cap.
+      setValue("duration", tierInfo.maxDurationSeconds, { shouldValidate: true });
+    }
+  }, [tierInfo, isVideoModel, resolutionOptions, durationOptions, getValues, setValue]);
+
+  // A model can offer nothing the plan is allowed to run (Veo 3.1 starts at
+  // 720p; the free plan stops at 480p), in which case the clamp above has no
+  // fallback and the pick stays locked. Say so on the submit button rather
+  // than letting it 403.
+  const lockedResolution =
+    isVideoModel && typeof resolution === "string" && isResolutionLocked(resolution, tierInfo)
+      ? resolution
+      : undefined;
+  const lockedDuration =
+    isVideoModel &&
+    durationOptions.length > 0 &&
+    duration !== undefined &&
+    isDurationLocked(durationOptionSeconds(duration as string), tierInfo)
+      ? duration
+      : undefined;
+  const blockedReason = lockedResolution
+    ? upgradeHint(minTierForResolution(lockedResolution), lockedResolution)
+    : lockedDuration !== undefined
+      ? upgradeHint(
+          minTierForDuration(durationOptionSeconds(lockedDuration as string)),
+          durationOptionLabel(lockedDuration as string) + " clips",
+        )
+      : undefined;
+
+  /** Per-option tier gates. Resolution and duration are the only two fields a
+   *  plan caps; everything else is the model's own business. */
+  function optionLock(fieldKey: string): ((value: string) => boolean) | undefined {
+    if (!isVideoModel) return undefined;
+    if (fieldKey === "resolution") return (v) => isResolutionLocked(v, tierInfo);
+    if (fieldKey === "duration") return (v) => isDurationLocked(durationOptionSeconds(v), tierInfo);
+    return undefined;
+  }
+
+  function optionLockHint(fieldKey: string): ((value: string) => string) | undefined {
+    if (!isVideoModel) return undefined;
+    if (fieldKey === "resolution") return (v) => upgradeHint(minTierForResolution(v), v);
+    if (fieldKey === "duration") {
+      return (v) =>
+        upgradeHint(minTierForDuration(durationOptionSeconds(v)), durationOptionLabel(v) + " clips");
+    }
+    return undefined;
+  }
 
   async function handleFile(file: File) {
     setUploading(true);
@@ -188,11 +322,6 @@ export function DynamicModelForm<T extends string>({
     },
   });
 
-  const imageRequired = config.image === "required";
-  const hasImage = config.image !== "none";
-  const isVideoModel = config.category !== "text-to-image";
-  const isImageModel = !isVideoModel;
-
   const submit = handleSubmit((data) =>
     mutation.mutate(
       isImageModel && style !== "None"
@@ -201,9 +330,6 @@ export function DynamicModelForm<T extends string>({
     ),
   );
 
-  const durationField = config.fields.find(
-    (f) => f.key === "duration" && f.type === "number" && f.min !== undefined && f.max !== undefined,
-  );
   // The toolbar carries only the choices that change the result (and the
   // price); everything else stays one click away under Settings. Before this
   // every select became a pill, so an output-format picker sat next to the
@@ -262,7 +388,13 @@ export function DynamicModelForm<T extends string>({
                       onPromptChange(v);
                     }}
                     onSubmit={submit}
-                    placeholder={imageRequired ? "Describe the motion or scene changes…" : "Describe what to generate…"}
+                    placeholder={
+                      imageRequired
+                        ? "Describe the motion or scene changes…"
+                        : isImageModel
+                          ? "Describe the image you imagine"
+                          : "Describe the scene you imagine"
+                    }
                     maxLength={2000}
                   />
                 )}
@@ -288,11 +420,17 @@ export function DynamicModelForm<T extends string>({
               credits={estimatedCredits}
               loading={mutation.isPending || busy || uploading}
               disabled={imageRequired && !image}
+              balance={creditBalance}
+              blockedReason={blockedReason}
             />
           </div>
         </div>
 
-        <BottomSheet open={sheetOpen} onOpenChange={setSheetOpen} title="Settings">
+        <BottomSheet
+          open={sheetOpen}
+          onOpenChange={setSheetOpen}
+          title={isImageModel ? "Image settings" : "Video settings"}
+        >
           <MobileFieldRow label="Model">
             <ProviderModelPicker models={models} value={model} onChange={onModelChange} />
           </MobileFieldRow>
@@ -345,14 +483,8 @@ export function DynamicModelForm<T extends string>({
                   options={field.options ?? []}
                   renderHint={valueHint}
                   onChange={(v) => setValue(field.key, v, { shouldValidate: true })}
-                  isOptionLocked={
-                    field.key === "resolution" && isVideoModel ? (v) => isResolutionLocked(v, tierInfo) : undefined
-                  }
-                  lockedHint={
-                    field.key === "resolution" && isVideoModel
-                      ? (v) => upgradeHint(minTierForResolution(v), v)
-                      : undefined
-                  }
+                  isOptionLocked={optionLock(field.key)}
+                  lockedHint={optionLockHint(field.key)}
                 />
               </MobileFieldRow>
             ),
@@ -455,14 +587,8 @@ export function DynamicModelForm<T extends string>({
                 options={field.options ?? []}
                 renderHint={valueHint}
                 onChange={(v) => setValue(field.key, v, { shouldValidate: true })}
-                isOptionLocked={
-                  field.key === "resolution" && isVideoModel ? (v) => isResolutionLocked(v, tierInfo) : undefined
-                }
-                lockedHint={
-                  field.key === "resolution" && isVideoModel
-                    ? (v) => upgradeHint(minTierForResolution(v), v)
-                    : undefined
-                }
+                isOptionLocked={optionLock(field.key)}
+                lockedHint={optionLockHint(field.key)}
               />
             ),
           )}
@@ -515,6 +641,8 @@ export function DynamicModelForm<T extends string>({
             credits={estimatedCredits}
             loading={mutation.isPending || busy || uploading}
             disabled={imageRequired && !image}
+            balance={creditBalance}
+            blockedReason={blockedReason}
           />
         </div>
       </ComposerShell>

@@ -5,7 +5,18 @@
 // remains the source of truth; this is UX only.
 import { TIER_INFO, TIERS, type Tier } from "@/lib/constants";
 
-export const RESOLUTION_RANK: Record<string, number> = { "480p": 1, "720p": 2, "1080p": 3, "4k": 4 };
+// Keep every rung in step with VIDEO_RESOLUTION_RANK in aiVideo-backend's
+// generations.ts — a resolution missing from either map compares as
+// undefined and skips the check, which is how Hailuo's 768p and Vidu Q3's
+// 540p used to bypass the plan cap on both sides.
+export const RESOLUTION_RANK: Record<string, number> = {
+  "480p": 1,
+  "540p": 2,
+  "720p": 3,
+  "768p": 4,
+  "1080p": 5,
+  "4k": 6,
+};
 
 type TierLimits = { maxResolution: string; maxDurationSeconds: number; videoWatermark: boolean };
 
@@ -20,6 +31,43 @@ export function isResolutionLocked(resolution: string, tierInfo: TierLimits | un
 export function isDurationLocked(durationSeconds: number, tierInfo: TierLimits | undefined): boolean {
   if (!tierInfo) return false;
   return durationSeconds > tierInfo.maxDurationSeconds;
+}
+
+/**
+ * The best resolution in `options` the plan can actually submit, or
+ * undefined when the plan can't reach any of them.
+ *
+ * Every model in the registry defaults to 720p or above while the free plan
+ * caps at 480p, so the composer used to open pre-filled with a value the
+ * server would reject — the pill showed a locked resolution as the current
+ * pick, and the only feedback was a 403 after hitting Generate. Forms call
+ * this to open on something submittable instead.
+ */
+export function bestAllowedResolution(
+  options: readonly string[],
+  tierInfo: TierLimits | undefined,
+): string | undefined {
+  if (!tierInfo) return undefined;
+  const allowed = options.filter((o) => !isResolutionLocked(o, tierInfo));
+  if (allowed.length === 0) return undefined;
+  // Highest rank wins — an unranked value sorts lowest, since we can't tell
+  // how big it is and would rather not upgrade someone into it silently.
+  return allowed.reduce((best, o) =>
+    (RESOLUTION_RANK[o] ?? 0) > (RESOLUTION_RANK[best] ?? 0) ? o : best,
+  );
+}
+
+/** Same idea for a duration picker whose options are a fixed list rather
+ *  than a slider range (veo-3.1's "4s"/"6s"/"8s", hailuo-2.3's "6"/"10"). */
+export function bestAllowedDuration<T extends string | number>(
+  options: readonly T[],
+  toSeconds: (option: T) => number,
+  tierInfo: TierLimits | undefined,
+): T | undefined {
+  if (!tierInfo) return undefined;
+  const allowed = options.filter((o) => !isDurationLocked(toSeconds(o), tierInfo));
+  if (allowed.length === 0) return undefined;
+  return allowed.reduce((best, o) => (toSeconds(o) > toSeconds(best) ? o : best));
 }
 
 /** The cheapest tier whose maxResolution covers `resolution` — used to word

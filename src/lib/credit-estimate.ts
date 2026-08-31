@@ -177,6 +177,11 @@ const LIVE_VIDEO_AUTO_DURATION_ESTIMATE = 8;
 // per-image cost ever lands, split them per model like the video table
 // above rather than nudging the buckets. Both sell at IMAGE_GROSS_MARGIN
 // (65%), not video's 50%: fast = 3 credits ($0.03), quality = 15 ($0.15).
+//
+// The bucket is the cost at each model's DEFAULT size and quality (see
+// IMAGE_REFERENCE_SETTINGS) — the factors below scale it from there, so a
+// model left on its defaults prices exactly as it did when this was a flat
+// per-model figure.
 const QUALITY_IMAGE_MODELS = new Set([
   "recraft/recraftv4-1-pro",
   "bytedance/seedream-5-pro",
@@ -186,6 +191,99 @@ const QUALITY_IMAGE_MODELS = new Set([
 ]);
 const FAST_IMAGE_COST_USD = 0.01;
 const QUALITY_IMAGE_COST_USD = 0.05;
+
+// ── Image size / quality scaling ─────────────────────────────────────────
+// Until 2026-08-31 an image cost the same whatever size or quality was
+// picked: the composer puts a Resolution/Size/Quality pill directly beside
+// the credit cost, and the number never moved — while a 4K render genuinely
+// costs the provider several times what a 1K one does. These two factor
+// tables put that back.
+//
+// SIZE scales with the image's LINEAR dimension (the square root of its
+// pixel count), not with pixels themselves: 4K has 16x the pixels of 1K and
+// no provider in this catalog charges anything close to 16x for it — Nano
+// Banana Pro, the one model here with a published 1K/2K/4K price, is flat
+// from 1K to 2K and ~1.8x at 4K. Per-pixel would wildly overcharge, flat is
+// the bug being fixed, so linear-dimension sits between the two and is one
+// rule that applies to every model instead of a special case per provider.
+// Keys are the registry's own spellings — ByteDance writes "2K", xAI "2k",
+// and neither is interchangeable (see cloudflare-models.ts).
+const IMAGE_SIZE_FACTOR: Record<string, number> = {
+  "1k": 1,
+  "1K": 1,
+  "2k": 2,
+  "2K": 2,
+  "3k": 3,
+  "3K": 3,
+  "4k": 4,
+  "4K": 4,
+};
+
+// QUALITY is the same idea for the models that expose an effort dial instead
+// of (or alongside) a size. Deliberately a narrower spread than the
+// providers' own — OpenAI's low->high on gpt-image-1 is a ~15x swing —
+// because this rides on top of an already coarse two-bucket base cost, and
+// overstating it would price "high" past what that bucket can justify.
+// "auto" hands the choice to the model, so it bills as the middle option
+// rather than guessing.
+const IMAGE_QUALITY_FACTOR: Record<string, number> = {
+  low: 0.6,
+  medium: 1,
+  high: 1.6,
+  auto: 1,
+};
+
+// The size/quality each model's bucket price above is quoted at — i.e. its
+// `defaultValue` in cloudflare-models.ts. Scaling is always a RATIO against
+// these, which is what keeps every model's default-settings price identical
+// to the flat figure it had before scaling existed. A model missing here
+// either has no size control at all (lucid-origin, nano-banana-2-lite) or a
+// free-text one we can't enumerate (the Recraft trio), and stays flat.
+const IMAGE_REFERENCE_SETTINGS: Record<string, { size?: string; quality?: string }> = {
+  "google/nano-banana-pro": { size: "2K" },
+  "openai/gpt-image-2": { size: "1024x1024", quality: "medium" },
+  "xai/grok-imagine-image": { size: "1k" },
+  "xai/grok-imagine-image-quality": { size: "2k", quality: "high" },
+  "bytedance/seedream-5-pro": { size: "2K" },
+  "bytedance/seedream-4.5": { size: "2K" },
+  "bytedance/seedream-5-lite": { size: "2K" },
+};
+
+// gpt-image-2 spells its sizes as raw pixel dimensions ("1536x1024") rather
+// than a 1K/2K tier, so those are measured instead of looked up — same
+// linear-dimension rule, expressed against a 1024x1024 baseline.
+function pixelSizeFactor(value: string): number | undefined {
+  const match = /^(\d+)x(\d+)$/.exec(value);
+  if (!match) return undefined;
+  return Math.sqrt(Number(match[1]) * Number(match[2])) / 1024;
+}
+
+/** Undefined when the value carries no size information we can price on — an
+ *  unknown spelling, or "auto" (the model picks) — both of which fall back to
+ *  the model's reference size so the ratio comes out at 1. */
+function sizeFactor(value: string | undefined): number | undefined {
+  if (!value || value === "auto") return undefined;
+  return IMAGE_SIZE_FACTOR[value] ?? pixelSizeFactor(value);
+}
+
+function qualityFactor(value: string | undefined): number | undefined {
+  if (!value) return undefined;
+  return IMAGE_QUALITY_FACTOR[value];
+}
+
+/** Scales the base cost by how far a requested setting sits from the model's
+ *  reference one. Either side being unpriceable means "no information", which
+ *  has to read as 1x — never a silent up- or downcharge. */
+function settingRatio(
+  requested: string | undefined,
+  reference: string | undefined,
+  factorOf: (v: string | undefined) => number | undefined,
+): number {
+  const to = factorOf(requested);
+  const from = factorOf(reference);
+  if (to === undefined || from === undefined || from === 0) return 1;
+  return to / from;
+}
 
 // Seedance 2.5 at 1080p routes to kie.ai instead of Cloudflare — Cloudflare's
 // integration can't serve it. Real kie.ai per-second cost (dashboard,
@@ -234,9 +332,41 @@ export function estimateVideoCredits(
   );
 }
 
-export function estimateImageCredits(model: string) {
-  const costUsd = QUALITY_IMAGE_MODELS.has(model) ? QUALITY_IMAGE_COST_USD : FAST_IMAGE_COST_USD;
+/**
+ * `settings` is the size/quality the user actually picked, straight out of
+ * the model's own registry field (`size`, `imageSize` or `resolution` — the
+ * three spellings different providers use for the same idea, see
+ * cloudflare-models.ts). Omit it and every model bills at its default
+ * settings, which is exactly what this returned before size scaling existed.
+ */
+export function estimateImageCredits(
+  model: string,
+  settings: { size?: string; quality?: string } = {},
+) {
+  const baseUsd = QUALITY_IMAGE_MODELS.has(model) ? QUALITY_IMAGE_COST_USD : FAST_IMAGE_COST_USD;
+  const reference = IMAGE_REFERENCE_SETTINGS[model] ?? {};
+  const costUsd =
+    baseUsd *
+    settingRatio(settings.size, reference.size, sizeFactor) *
+    settingRatio(settings.quality, reference.quality, qualityFactor);
   return imageCreditsFor(costUsd);
+}
+
+/**
+ * Pulls the size/quality out of a model's parameter bag. Providers spell the
+ * same idea three different ways in cloudflare-models.ts — Recraft/ByteDance/
+ * OpenAI use `size`, Google `imageSize`, xAI `resolution` — so the caller
+ * shouldn't have to know which one a given model happens to use. First one
+ * present wins; no model defines more than one.
+ */
+export function imageSettingsFromParameters(
+  parameters: Record<string, unknown>,
+): { size?: string; quality?: string } {
+  const str = (v: unknown) => (typeof v === "string" && v !== "" ? v : undefined);
+  return {
+    size: str(parameters.size) ?? str(parameters.imageSize) ?? str(parameters.resolution),
+    quality: str(parameters.quality),
+  };
 }
 
 export function estimateCreditsForRequest(input: {
@@ -245,9 +375,12 @@ export function estimateCreditsForRequest(input: {
   durationSeconds?: number;
   resolution?: string;
   hasReferenceVideo?: boolean;
+  /** Image only — the picked size and quality. See estimateImageCredits. */
+  imageSize?: string;
+  imageQuality?: string;
 }) {
   if (input.type === "text-to-image") {
-    return estimateImageCredits(input.model);
+    return estimateImageCredits(input.model, { size: input.imageSize, quality: input.imageQuality });
   }
   return estimateVideoCredits(
     input.model,

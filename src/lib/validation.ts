@@ -108,7 +108,6 @@ export const seedanceVideoSchema = z
     prompt: z.string().trim().max(2000).optional(),
     image: z.string().min(1).optional(),
     lastFrameImage: z.string().min(1).optional(),
-    referenceVideoUrl: z.string().min(1).optional(),
     duration: z
       .number()
       .refine(

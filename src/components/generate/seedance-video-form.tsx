@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { useInvalidateCredits } from "@/hooks/use-credits";
+import { useInvalidateCredits, useUsage } from "@/hooks/use-credits";
 import { useForm, Controller, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Clock, ChevronDown, FileType, Monitor, RectangleHorizontal, ScanFace, Zap } from "lucide-react";
+import { Clock, ChevronDown, FileType, Monitor, RectangleHorizontal, ScanFace } from "lucide-react";
 import { FieldError, Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
@@ -21,6 +21,7 @@ import { apiFetch } from "@/lib/api-client";
 import {
   isResolutionLocked,
   isDurationLocked,
+  bestAllowedResolution,
   minTierForResolution,
   minTierForDuration,
   upgradeHint,
@@ -77,12 +78,12 @@ export function SeedanceVideoForm({
 }) {
   const { toast } = useToast();
   const invalidateCredits = useInvalidateCredits();
+  // Cache read on the same ["usage"] key the workspace already fetched.
+  const creditBalance = useUsage().data?.credit_balance;
   const [uploading, setUploading] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
   const [uploadingEndFrame, setUploadingEndFrame] = useState(false);
   const [endFramePreview, setEndFramePreview] = useState<string | null>(null);
-  const [uploadingVideo, setUploadingVideo] = useState(false);
-  const [videoPreview, setVideoPreview] = useState<string | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [refMode, setRefMode] = useState<ReferenceMode>("reference");
 
@@ -112,18 +113,31 @@ export function SeedanceVideoForm({
   const resolution = watch("resolution");
   const aspectRatio = watch("aspectRatio");
   const outputFormat = watch("outputFormat");
-  const referenceVideoUrl = watch("referenceVideoUrl");
   const image = watch("image");
   const isAuto = duration === SEEDANCE_DURATION_AUTO;
-  const estimatedCredits = estimateVideoCredits(SEEDANCE_MODEL_ID, duration, resolution, {
-    hasReferenceVideo: Boolean(referenceVideoUrl),
-  });
+  const estimatedCredits = estimateVideoCredits(SEEDANCE_MODEL_ID, duration, resolution);
 
   // "Auto" duration lands around ~8s (see LIVE_VIDEO_AUTO_DURATION_ESTIMATE
   // in credit-estimate.ts) — locked on plans capped below that.
   const autoLocked = isDurationLocked(8, tierInfo);
   const durationCap = tierInfo ? Math.min(SEEDANCE_DURATION_MAX, tierInfo.maxDurationSeconds) : SEEDANCE_DURATION_MAX;
   const durationCapped = durationCap < SEEDANCE_DURATION_MAX;
+
+  // The form defaults to 720p, which the free plan (480p) cannot submit — so
+  // it used to open showing a locked value as the current pick and only said
+  // so via a 403 after pressing Generate. tierInfo lands async, after
+  // react-hook-form has taken its defaults, so this corrects it here.
+  useEffect(() => {
+    if (!tierInfo || !isResolutionLocked(resolution, tierInfo)) return;
+    const allowed = bestAllowedResolution(SEEDANCE_RESOLUTIONS, tierInfo);
+    if (allowed) setValue("resolution", allowed as typeof resolution, { shouldValidate: true });
+  }, [tierInfo, resolution, setValue]);
+
+  // Every Seedance 2.5 resolution is reachable on some plan, so a pick still
+  // locked here means the clamp above had nothing to fall back to.
+  const blockedReason = isResolutionLocked(resolution, tierInfo)
+    ? upgradeHint(minTierForResolution(resolution), resolution)
+    : undefined;
 
   async function handleFile(file: File) {
     setUploading(true);
@@ -163,21 +177,12 @@ export function SeedanceVideoForm({
 
   function handleModeChange(next: ReferenceMode) {
     setRefMode(next);
-    // The three modes are mutually exclusive — leaving "Keyframe" drops
-    // whatever end frame was set (a last frame with no mode that supports
-    // it isn't a valid pairing), and switching to/from "Reference video"
-    // clears whichever of image/video doesn't belong to the new mode so the
-    // request never carries a stale reference from the mode just left.
+    // The two modes are mutually exclusive — leaving "Keyframe" drops
+    // whatever end frame was set, since a last frame with no mode that
+    // supports it is not a valid pairing.
     if (next !== "keyframe") {
       setEndFramePreview(null);
       setValue("lastFrameImage", undefined, { shouldValidate: true });
-    }
-    if (next === "video") {
-      setPreview(null);
-      setValue("image", undefined, { shouldValidate: true });
-    } else {
-      setVideoPreview(null);
-      setValue("referenceVideoUrl", undefined, { shouldValidate: true });
     }
   }
 
@@ -189,24 +194,6 @@ export function SeedanceVideoForm({
     const nextPreview = endFramePreview;
     setEndFramePreview(preview);
     setPreview(nextPreview);
-  }
-
-  async function handleVideoFile(file: File) {
-    setUploadingVideo(true);
-    setVideoPreview(URL.createObjectURL(file));
-    try {
-      const formData = new FormData();
-      formData.append("file", file);
-      const res = await apiFetch("/api/upload", { method: "POST", body: formData });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error ?? "Upload failed.");
-      setValue("referenceVideoUrl", json.url, { shouldValidate: true });
-    } catch (err) {
-      toast({ title: "Upload failed", description: (err as Error).message, variant: "error" });
-      setVideoPreview(null);
-    } finally {
-      setUploadingVideo(false);
-    }
   }
 
   const mutation = useMutation({
@@ -232,14 +219,7 @@ export function SeedanceVideoForm({
   const submit = handleSubmit((data) => mutation.mutate(data));
 
   return (
-    <form onSubmit={submit} className="space-y-2" noValidate>
-      <p className="flex items-center gap-1.5 px-1 text-caption text-muted">
-        <Zap className="size-3 text-success" aria-hidden="true" />
-        {resolution === "1080p" || referenceVideoUrl
-          ? "Billed on your kie.ai account per generation."
-          : "Billed per generation."}
-      </p>
-
+    <form onSubmit={submit} noValidate>
       <ComposerShell>
         {/* Stacked on mobile — the reference-upload tiles and the prompt
             field sharing one row squeezes the textarea down to almost no
@@ -273,15 +253,6 @@ export function SeedanceVideoForm({
               }}
               lastDisabled={!image}
               onSwap={handleSwapFrames}
-              video={{
-                previewUrl: videoPreview,
-                uploading: uploadingVideo,
-                onFile: handleVideoFile,
-                onRemove: () => {
-                  setVideoPreview(null);
-                  setValue("referenceVideoUrl", undefined, { shouldValidate: true });
-                },
-              }}
             />
           </div>
 
@@ -320,7 +291,12 @@ export function SeedanceVideoForm({
           <ModalitySwitcherMobile type="text-to-video" />
           <MobileOptionsTrigger onClick={() => setSheetOpen(true)} />
           <div className="ml-auto">
-            <CreditsSubmitPill credits={estimatedCredits} loading={mutation.isPending || busy || uploading} />
+            <CreditsSubmitPill
+              credits={estimatedCredits}
+              loading={mutation.isPending || busy || uploading}
+              balance={creditBalance}
+              blockedReason={blockedReason}
+            />
           </div>
         </div>
 
@@ -567,7 +543,12 @@ export function SeedanceVideoForm({
           </SettingsPopover>
         </div>
 
-          <CreditsSubmitPill credits={estimatedCredits} loading={mutation.isPending || busy || uploading} />
+          <CreditsSubmitPill
+              credits={estimatedCredits}
+              loading={mutation.isPending || busy || uploading}
+              balance={creditBalance}
+              blockedReason={blockedReason}
+            />
         </div>
       </ComposerShell>
     </form>

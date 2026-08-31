@@ -3,17 +3,16 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useQuery } from "@tanstack/react-query";
 import { Sparkles, Zap } from "lucide-react";
 import { TextToVideoForm } from "./text-to-video-form";
 import { TextToImageForm } from "./text-to-image-form";
 import { JobStatusCard } from "./job-status-card";
 import { MODALITIES } from "./modality-switcher";
 import { useGeneration } from "@/hooks/use-generation";
+import { useUsage } from "@/hooks/use-credits";
 import { useSpotlight } from "@/hooks/use-spotlight";
 import { useSidebarCollapsed } from "@/components/providers/sidebar-provider";
 import { cn, formatCredits } from "@/lib/utils";
-import { apiFetch } from "@/lib/api-client";
 import {
   VIDEO_MODELS,
   IMAGE_MODELS,
@@ -22,10 +21,7 @@ import {
   type VideoModelId,
   type ImageModelId,
   type GenerationType,
-  type TierInfo,
 } from "@/lib/constants";
-
-type UsageResponse = { credit_balance: number; tier_info?: TierInfo };
 
 // Keep in sync with the literal "[zoom:0.7]" class on the hero/result column
 // below — Tailwind arbitrary-value classes have to stay string literals for
@@ -87,14 +83,9 @@ export function GenerateStudio({ type }: { type: GenerationType }) {
       : undefined,
   };
 
-  const usageQuery = useQuery({
-    queryKey: ["usage"],
-    queryFn: async (): Promise<UsageResponse> => {
-      const res = await apiFetch("/api/user/usage");
-      if (!res.ok) throw new Error("Failed to load usage");
-      return res.json();
-    },
-  });
+  // Shared with every composer form's submit button, which prices and gates
+  // itself off the same balance — see useUsage.
+  const usageQuery = useUsage();
 
   const busy = generation.status === "queued" || generation.status === "processing";
   const hasJob = Boolean(activeJobId);

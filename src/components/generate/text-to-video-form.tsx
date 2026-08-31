@@ -1,10 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { GenericVideoForm } from "./generic-video-form";
 import { SeedanceVideoForm } from "./seedance-video-form";
 import { Seedance2VideoForm } from "./seedance2-video-form";
 import { DynamicModelForm } from "./dynamic-model-form";
+import { UnsupportedModelNotice } from "./unsupported-model-notice";
 import { getCloudflareModel } from "@/lib/cloudflare-models";
 import {
   VIDEO_MODELS,
@@ -120,16 +120,9 @@ export function TextToVideoForm({
     );
   }
 
-  return (
-    <GenericVideoForm
-      key={model}
-      models={VIDEO_MODELS}
-      model={model}
-      onModelChange={setModel}
-      initialPrompt={prompt}
-      onPromptChange={setPrompt}
-      onCreated={onCreated}
-      busy={busy}
-    />
-  );
+  // Unreachable today: VIDEO_MODELS is the two Seedance ids plus the
+  // registry itself, so every id it can hold is caught above. It stays as a
+  // visible dead end rather than a crash in case an id is ever added to that
+  // list without a matching registry entry.
+  return <UnsupportedModelNotice modelId={model} />;
 }
