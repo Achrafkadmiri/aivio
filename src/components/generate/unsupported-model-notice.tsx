@@ -1,7 +1,6 @@
 "use client";
 
 import { AlertTriangle } from "lucide-react";
-import { ComposerShell } from "./composer";
 
 /**
  * The composer's dead end, for a model id that has no form to render.
@@ -18,19 +17,17 @@ import { ComposerShell } from "./composer";
  */
 export function UnsupportedModelNotice({ modelId }: { modelId: string }) {
   return (
-    <ComposerShell>
-      <div className="flex items-start gap-3">
-        <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg bg-surface-3">
-          <AlertTriangle className="size-4 text-warning" aria-hidden="true" />
-        </span>
-        <div className="min-w-0">
-          <p className="text-label font-medium text-ink">This model isn&apos;t available yet</p>
-          <p className="mt-1 text-caption text-muted">
-            <span className="font-mono">{modelId}</span> has no composer form. Pick another model to
-            keep going.
-          </p>
-        </div>
+    <div className="flex items-start gap-3 p-4 sm:p-5">
+      <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg bg-surface-3">
+        <AlertTriangle className="size-4 text-warning" aria-hidden="true" />
+      </span>
+      <div className="min-w-0">
+        <p className="text-label font-medium text-ink">This model isn&apos;t available yet</p>
+        <p className="mt-1 text-caption text-muted">
+          <span className="font-mono">{modelId}</span> has no composer form. Pick another model to
+          keep going.
+        </p>
       </div>
-    </ComposerShell>
+    </div>
   );
 }

@@ -13,7 +13,6 @@ import {
   Palette,
   FileType,
   RectangleHorizontal,
-  ScanFace,
   SlidersHorizontal,
   Timer,
   type LucideIcon,
@@ -21,10 +20,8 @@ import {
 
 import { FieldError, Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { Tooltip } from "@/components/ui/tooltip";
+import { Slider } from "@/components/ui/slider";
 import { useToast } from "@/components/ui/toast";
-import { BottomSheet } from "@/components/ui/bottom-sheet";
-import { ModalitySwitcherMobile } from "./modality-switcher";
 import {
   estimateVideoCredits,
   estimateImageCredits,
@@ -53,19 +50,14 @@ import {
 import { applyImageStyle } from "@/lib/image-styles";
 import { IMAGE_STYLE_PRESETS, type TierInfo } from "@/lib/constants";
 import {
-  ComposerShell,
-  ReferenceUploadRow,
-  ReferenceUploadTile,
-  ComposerPromptField,
+  PanelSection,
+  PanelPromptField,
+  PanelFieldList,
+  PanelDropzone,
   ProviderModelPicker,
   PillSelect,
-  PillSlider,
-  SettingsPopover,
-  SettingRow,
-  MobileOptionsTrigger,
-  MobileFieldRow,
+  FieldRow,
   CreditsSubmitPill,
-  pillClass,
   type PickerModel,
 } from "./composer";
 
@@ -101,8 +93,8 @@ function fieldIcon(fieldKey: string, isImageModel: boolean): LucideIcon {
 const STYLE_OPTIONS = ["None", ...IMAGE_STYLE_PRESETS] as const;
 type StyleOption = (typeof STYLE_OPTIONS)[number];
 
-/** Duration is a *select* on some models rather than the numeric range
- * PillSlider handles — veo-3.1 spells its options "4s"/"6s"/"8s" and
+/** Duration is a *select* on some models rather than the numeric range the
+ * slider handles — veo-3.1 spells its options "4s"/"6s"/"8s" and
  * hailuo-2.3 spells them "6"/"10". Both parse the same way, and both need it:
  * the slider's tier cap never applied to a select, so those options were
  * freely pickable and then rejected server-side with a 403. */
@@ -123,9 +115,9 @@ function durationOptionLabel(value: string | number): string {
  * hand-written forms to scale (see Seedance's two bespoke forms, which this
  * deliberately doesn't replicate a third/fourth/fifth time of).
  *
- * Fields render as toolbar pills when they're a fixed "select" enum (or the
- * common "duration" number range); everything else — free text, unbounded
- * numbers, switches — lives inside the Settings pill's panel.
+ * Enum fields ("select", plus the common "duration" number range) render as
+ * rows in the panel's settings list; free text, unbounded numbers and
+ * switches render as their own rows below them.
  */
 export function DynamicModelForm<T extends string>({
   config,
@@ -162,7 +154,6 @@ export function DynamicModelForm<T extends string>({
   const creditBalance = usage.data?.credit_balance;
   const [preview, setPreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
-  const [sheetOpen, setSheetOpen] = useState(false);
   // Image style is a composer-level control, not a model field: it folds into
   // the prompt on submit (see applyImageStyle) rather than travelling as a
   // parameter, because the backend builds parameters strictly from the model
@@ -197,7 +188,6 @@ export function DynamicModelForm<T extends string>({
   // read whichever key a given model spells its size with using the exact same
   // rule the server bills by (imageSettingsFromParameters).
   const values = watch();
-  const prompt = (values.prompt as string | undefined) ?? "";
   const duration = values.duration;
   const resolution = values.resolution;
   const image = values.image as string | undefined;
@@ -348,12 +338,11 @@ export function DynamicModelForm<T extends string>({
   );
 
   // Where each field goes is decided in one place — see fieldPlacement.
-  // Everything that can be a pill now is one: the row previously took only
-  // the six primary keys, so a two-option format picker sat behind the
-  // Settings popover while the row it belonged in had room to spare. What is
-  // left in the panel is what a pill genuinely cannot carry (switches, open
-  // numbers, open text), and what is dropped entirely is what the plan owns
-  // or what offers no real choice — both still ship their default.
+  // "toolbar" fields are the enum picks (plus the duration range); "panel"
+  // fields are what a pill genuinely cannot carry (switches, open numbers,
+  // open text). Both render as rows of the same settings list now, in that
+  // order; what is dropped entirely is what the plan owns or what offers no
+  // real choice — both still ship their default.
   const placement = (f: (typeof config.fields)[number]) => fieldPlacement(f, durationField?.key);
   const pillFields = config.fields
     .filter((f) => placement(f) === "toolbar")
@@ -367,303 +356,181 @@ export function DynamicModelForm<T extends string>({
   const durationCapped = tierInfo ? durationCap < durationModelMax : false;
 
   return (
-    <form onSubmit={submit} noValidate>
-      <ComposerShell>
-        {/* Stacked on mobile — see seedance-video-form.tsx for the full
-            rationale. Desktop keeps them side by side. */}
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
-          {hasImage && (
-            <div className="shrink-0">
-              <ReferenceUploadRow>
-                <ReferenceUploadTile
-                  kind="image"
-                  label={isVideoModel ? "Start Frame" : "Reference"}
-                  shortLabel={isVideoModel ? "Start frame" : "Reference"}
-                  optional={!imageRequired}
-                  previewUrl={preview}
-                  uploading={uploading}
-                  onFile={handleFile}
-                  onRemove={() => {
-                    setPreview(null);
-                    setValue("image", undefined, { shouldValidate: true });
-                  }}
-                  size="lg"
-                />
-              </ReferenceUploadRow>
-            </div>
-          )}
+    // Fills the studio panel: fields scroll in the middle, Generate stays
+    // pinned in the footer — see generate-workspace.tsx for the panel frame.
+    <form onSubmit={submit} noValidate className="flex h-full min-h-0 flex-col">
+      <div className="min-h-0 flex-1 space-y-5 overflow-y-auto p-4 sm:p-5">
+        <PanelSection label="Model">
+          <ProviderModelPicker models={models} value={model} onChange={onModelChange} fullWidth />
+        </PanelSection>
 
-          <div className="flex min-w-0 flex-1 items-start gap-3">
-            <div className="min-w-0 flex-1">
-              <Controller
-                control={control}
-                name="prompt"
-                render={({ field }) => (
-                  <ComposerPromptField
-                    value={(field.value as string) ?? ""}
-                    onChange={(v) => {
-                      field.onChange(v);
-                      onPromptChange(v);
-                    }}
-                    onSubmit={submit}
-                    placeholder={
-                      imageRequired
-                        ? "Describe the motion or scene changes…"
-                        : isImageModel
-                          ? "Describe the image you imagine"
-                          : "Describe the scene you imagine"
-                    }
-                    maxLength={2000}
-                  />
-                )}
-              />
-              {hasImage && (
-                <FieldError>{!image ? (errors.image?.message as string | undefined) : undefined}</FieldError>
-              )}
-              <FieldError>{errors.prompt?.message as string | undefined}</FieldError>
-            </div>
-
-            <span className="mt-3 shrink-0 text-caption text-muted">{prompt.length}/2000</span>
-          </div>
-        </div>
-
-        {/* Mobile: modality switcher + a single "Options" trigger that opens
-            a BottomSheet with every pill/panel field, including the model
-            picker — see seedance-video-form.tsx for the full rationale. */}
-        <div className="mt-3 flex items-center gap-2 sm:hidden">
-          <ModalitySwitcherMobile type={mode} />
-          <MobileOptionsTrigger onClick={() => setSheetOpen(true)} />
-          <div className="ml-auto">
-            <CreditsSubmitPill
-              credits={estimatedCredits}
-              loading={mutation.isPending || busy || uploading}
-              disabled={imageRequired && !image}
-              balance={creditBalance}
-              blockedReason={blockedReason}
+        {hasImage && (
+          <PanelSection
+            label={isVideoModel ? "Upload an image" : "Reference image"}
+            hint={
+              imageRequired
+                ? "Required — JPG, PNG or WEBP. This image becomes the first frame."
+                : "Optional — JPG, PNG or WEBP."
+            }
+          >
+            <PanelDropzone
+              label="Click or drag to upload"
+              sublabel="JPG, PNG or WEBP"
+              previewUrl={preview}
+              uploading={uploading}
+              onFile={handleFile}
+              onRemove={() => {
+                setPreview(null);
+                setValue("image", undefined, { shouldValidate: true });
+              }}
             />
-          </div>
-        </div>
+            <FieldError>{!image ? (errors.image?.message as string | undefined) : undefined}</FieldError>
+          </PanelSection>
+        )}
 
-        <BottomSheet
-          open={sheetOpen}
-          onOpenChange={setSheetOpen}
-          title={isImageModel ? "Image settings" : "Video settings"}
-        >
-          <MobileFieldRow label="Model">
-            <ProviderModelPicker models={models} value={model} onChange={onModelChange} />
-          </MobileFieldRow>
-
-          {isImageModel && (
-            <MobileFieldRow label="Style" description="Added to your prompt when you generate.">
-              <PillSelect
-                icon={Palette}
-                label="Style"
-                value={style}
-                options={STYLE_OPTIONS}
-                onChange={setStyle}
-              />
-            </MobileFieldRow>
-          )}
-
-          {isVideoModel && (
-            <MobileFieldRow label="Characters" description="Coming soon — character consistency isn't wired up yet.">
-              <ScanFace className="size-4 text-muted" aria-hidden="true" />
-            </MobileFieldRow>
-          )}
-
-          {pillFields.map((field) =>
-            field.key === durationField?.key ? (
-              <MobileFieldRow key={field.key} label={field.label}>
-                <PillSlider
-                  icon={Clock}
-                  label={field.label}
-                  value={Math.min(
-                    typeof duration === "number" ? duration : (field.defaultValue as number) ?? field.min!,
-                    durationCap,
-                  )}
-                  min={field.min!}
-                  max={durationCap}
-                  formatValue={(v) => `${v}s`}
-                  onChange={(v) => setValue(field.key, v, { shouldValidate: true })}
-                  helperText={
-                    durationCapped
-                      ? upgradeHint(minTierForDuration(durationModelMax), `up to ${durationModelMax}s`)
-                      : undefined
-                  }
-                />
-              </MobileFieldRow>
-            ) : (
-              <MobileFieldRow key={field.key} label={composerFieldLabel(field, isImageModel)}>
-                <PillSelect
-                  icon={fieldIcon(field.key, isImageModel)}
-                  label={composerFieldLabel(field, isImageModel)}
-                  value={(watch(field.key) as string) ?? choicesFor(field)[0] ?? ""}
-                  options={choicesFor(field)}
-                  renderHint={valueHint}
-                  onChange={(v) => setValue(field.key, v, { shouldValidate: true })}
-                  isOptionLocked={optionLock(field.key)}
-                  lockedHint={optionLockHint(field.key)}
-                />
-              </MobileFieldRow>
-            ),
-          )}
-
-          {panelFields.map((field) =>
-            field.type === "switch" ? (
-              <MobileFieldRow key={field.key} label={field.label} description={field.helperText}>
-                <Controller
-                  control={control}
-                  name={field.key}
-                  render={({ field: controllerField }) => (
-                    <Switch
-                      checked={Boolean(controllerField.value)}
-                      onCheckedChange={controllerField.onChange}
-                    />
-                  )}
-                />
-              </MobileFieldRow>
-            ) : (
-              <div key={field.key} className="py-3.5">
-                <label htmlFor={`dyn-${field.key}-mobile`} className="mb-1.5 block text-label text-ink-soft">
-                  {field.label}
-                </label>
-                {field.type === "number" ? (
-                  <Input
-                    id={`dyn-${field.key}-mobile`}
-                    type="number"
-                    placeholder={field.helperText ?? "Random"}
-                    {...register(field.key, {
-                      setValueAs: (v) => (v === "" ? undefined : Number(v)),
-                    })}
-                  />
-                ) : (
-                  <Input id={`dyn-${field.key}-mobile`} placeholder={field.helperText} {...register(field.key)} />
-                )}
-                {field.helperText && field.type !== "number" && (
-                  <p className="mt-1.5 text-caption text-muted">{field.helperText}</p>
-                )}
-                <FieldError>{errors[field.key]?.message as string | undefined}</FieldError>
-              </div>
-            ),
-          )}
-        </BottomSheet>
-
-        {/* Desktop: full pill row, scrolling horizontally instead of
-            wrapping. Submit stays a sibling of the scroll area so it's
-            always visible. */}
-        <div className="mt-3 hidden items-center gap-2 sm:flex">
-        <div className="flex flex-1 items-center gap-2 overflow-x-auto">
-          <ProviderModelPicker models={models} value={model} onChange={onModelChange} />
-
-          {isImageModel && (
-            <PillSelect
-              icon={Palette}
-              label="Style"
-              value={style}
-              options={STYLE_OPTIONS}
-              onChange={setStyle}
-            />
-          )}
-
-          {isVideoModel && (
-            <Tooltip content="Coming soon — character consistency isn't wired up yet.">
-              <span className="inline-flex" tabIndex={0}>
-                <button type="button" disabled className={pillClass}>
-                  <ScanFace className="size-3.5 text-muted" aria-hidden="true" />
-                  Characters
-                </button>
-              </span>
-            </Tooltip>
-          )}
-
-          {pillFields.map((field) =>
-            field.key === durationField?.key ? (
-              <PillSlider
-                key={field.key}
-                icon={Clock}
-                label={field.label}
-                value={Math.min(
-                  typeof duration === "number" ? duration : (field.defaultValue as number) ?? field.min!,
-                  durationCap,
-                )}
-                min={field.min!}
-                max={durationCap}
-                formatValue={(v) => `${v}s`}
-                onChange={(v) => setValue(field.key, v, { shouldValidate: true })}
-                helperText={
-                  durationCapped
-                    ? upgradeHint(minTierForDuration(durationModelMax), `up to ${durationModelMax}s`)
-                    : undefined
+        <PanelSection label="Prompt">
+          <Controller
+            control={control}
+            name="prompt"
+            render={({ field }) => (
+              <PanelPromptField
+                value={(field.value as string) ?? ""}
+                onChange={(v) => {
+                  field.onChange(v);
+                  onPromptChange(v);
+                }}
+                onSubmit={submit}
+                placeholder={
+                  imageRequired
+                    ? "Describe the motion or scene changes…"
+                    : isImageModel
+                      ? "Describe the image you imagine"
+                      : "Describe the scene you imagine"
                 }
+                maxLength={2000}
               />
-            ) : (
-              <PillSelect
-                key={field.key}
-                icon={fieldIcon(field.key, isImageModel)}
-                label={composerFieldLabel(field, isImageModel)}
-                value={(watch(field.key) as string) ?? choicesFor(field)[0] ?? ""}
-                options={choicesFor(field)}
-                renderHint={valueHint}
-                onChange={(v) => setValue(field.key, v, { shouldValidate: true })}
-                isOptionLocked={optionLock(field.key)}
-                lockedHint={optionLockHint(field.key)}
-              />
-            ),
-          )}
-
-          {panelFields.length > 0 && (
-            <SettingsPopover>
-              {panelFields.map((field) =>
-                field.type === "switch" ? (
-                  <SettingRow key={field.key} title={field.label} description={field.helperText}>
-                    <Controller
-                      control={control}
-                      name={field.key}
-                      render={({ field: controllerField }) => (
-                        <Switch
-                          checked={Boolean(controllerField.value)}
-                          onCheckedChange={controllerField.onChange}
-                        />
-                      )}
-                    />
-                  </SettingRow>
-                ) : (
-                  <div key={field.key}>
-                    <label htmlFor={`dyn-${field.key}`} className="mb-1.5 block text-label text-ink-soft">
-                      {field.label}
-                    </label>
-                    {field.type === "number" ? (
-                      <Input
-                        id={`dyn-${field.key}`}
-                        type="number"
-                        placeholder={field.helperText ?? "Random"}
-                        {...register(field.key, {
-                          setValueAs: (v) => (v === "" ? undefined : Number(v)),
-                        })}
-                      />
-                    ) : (
-                      <Input id={`dyn-${field.key}`} placeholder={field.helperText} {...register(field.key)} />
-                    )}
-                    {field.helperText && field.type !== "number" && (
-                      <p className="mt-1.5 text-caption text-muted">{field.helperText}</p>
-                    )}
-                    <FieldError>{errors[field.key]?.message as string | undefined}</FieldError>
-                  </div>
-                ),
-              )}
-            </SettingsPopover>
-          )}
-        </div>
-
-          <CreditsSubmitPill
-            credits={estimatedCredits}
-            loading={mutation.isPending || busy || uploading}
-            disabled={imageRequired && !image}
-            balance={creditBalance}
-            blockedReason={blockedReason}
+            )}
           />
-        </div>
-      </ComposerShell>
+          <FieldError>{errors.prompt?.message as string | undefined}</FieldError>
+        </PanelSection>
+
+        <PanelSection label="Settings">
+          <PanelFieldList>
+            {isImageModel && (
+              <FieldRow label="Style" description="Added to your prompt when you generate.">
+                <PillSelect
+                  icon={Palette}
+                  label="Style"
+                  value={style}
+                  options={STYLE_OPTIONS}
+                  onChange={setStyle}
+                />
+              </FieldRow>
+            )}
+
+            {pillFields.map((field) =>
+              field.key === durationField?.key ? (
+                // The duration range gets a full-width block — the slider
+                // needs the row's whole width, not a pill's.
+                <div key={field.key} className="border-b border-line py-3.5 last:border-0">
+                  <div className="flex items-center justify-between gap-4 text-label text-ink-soft">
+                    <p>{field.label}</p>
+                    <span>
+                      {Math.min(
+                        typeof duration === "number" ? duration : ((field.defaultValue as number) ?? field.min!),
+                        durationCap,
+                      )}
+                      s
+                    </span>
+                  </div>
+                  <div className="mt-3">
+                    <Slider
+                      min={field.min!}
+                      max={durationCap}
+                      step={1}
+                      value={[
+                        Math.min(
+                          typeof duration === "number" ? duration : ((field.defaultValue as number) ?? field.min!),
+                          durationCap,
+                        ),
+                      ]}
+                      onValueChange={([v]) => setValue(field.key, v, { shouldValidate: true })}
+                    />
+                    {durationCapped && (
+                      <p className="mt-1.5 text-caption text-muted">
+                        {upgradeHint(minTierForDuration(durationModelMax), `up to ${durationModelMax}s`)}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <FieldRow key={field.key} label={composerFieldLabel(field, isImageModel)}>
+                  <PillSelect
+                    icon={fieldIcon(field.key, isImageModel)}
+                    label={composerFieldLabel(field, isImageModel)}
+                    value={(watch(field.key) as string) ?? choicesFor(field)[0] ?? ""}
+                    options={choicesFor(field)}
+                    renderHint={valueHint}
+                    onChange={(v) => setValue(field.key, v, { shouldValidate: true })}
+                    isOptionLocked={optionLock(field.key)}
+                    lockedHint={optionLockHint(field.key)}
+                  />
+                </FieldRow>
+              ),
+            )}
+
+            {panelFields.map((field) =>
+              field.type === "switch" ? (
+                <FieldRow key={field.key} label={field.label} description={field.helperText}>
+                  <Controller
+                    control={control}
+                    name={field.key}
+                    render={({ field: controllerField }) => (
+                      <Switch
+                        checked={Boolean(controllerField.value)}
+                        onCheckedChange={controllerField.onChange}
+                      />
+                    )}
+                  />
+                </FieldRow>
+              ) : (
+                <div key={field.key} className="border-b border-line py-3.5 last:border-0">
+                  <label htmlFor={`dyn-${field.key}`} className="mb-1.5 block text-label text-ink-soft">
+                    {field.label}
+                  </label>
+                  {field.type === "number" ? (
+                    <Input
+                      id={`dyn-${field.key}`}
+                      type="number"
+                      placeholder={field.helperText ?? "Random"}
+                      {...register(field.key, {
+                        setValueAs: (v) => (v === "" ? undefined : Number(v)),
+                      })}
+                    />
+                  ) : (
+                    <Input id={`dyn-${field.key}`} placeholder={field.helperText} {...register(field.key)} />
+                  )}
+                  {field.helperText && field.type !== "number" && (
+                    <p className="mt-1.5 text-caption text-muted">{field.helperText}</p>
+                  )}
+                  <FieldError>{errors[field.key]?.message as string | undefined}</FieldError>
+                </div>
+              ),
+            )}
+          </PanelFieldList>
+        </PanelSection>
+      </div>
+
+      <div className="shrink-0 border-t border-line p-4 sm:p-5">
+        <CreditsSubmitPill
+          fullWidth
+          credits={estimatedCredits}
+          loading={mutation.isPending || busy || uploading}
+          disabled={imageRequired && !image}
+          balance={creditBalance}
+          blockedReason={blockedReason}
+        />
+      </div>
     </form>
   );
 }

@@ -5,13 +5,10 @@ import { useMutation } from "@tanstack/react-query";
 import { useInvalidateCredits, useUsage } from "@/hooks/use-credits";
 import { useForm, Controller, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Clock, Monitor, RectangleHorizontal, ScanFace } from "lucide-react";
+import { ArrowLeftRight, Clock, Monitor, RectangleHorizontal } from "lucide-react";
 import { FieldError, Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/components/ui/toast";
-import { Tooltip } from "@/components/ui/tooltip";
-import { BottomSheet } from "@/components/ui/bottom-sheet";
-import { ModalitySwitcherMobile } from "./modality-switcher";
 import { estimateVideoCredits } from "@/lib/credit-estimate";
 import { seedance2VideoSchema, type Seedance2VideoInput } from "@/lib/validation";
 import { apiFetch } from "@/lib/api-client";
@@ -34,17 +31,15 @@ import {
   type TierInfo,
 } from "@/lib/constants";
 import {
-  ComposerShell,
-  KeyframeReferenceControl,
-  ComposerPromptField,
+  PanelSection,
+  SegmentedTabs,
+  PanelPromptField,
+  PanelFieldList,
+  PanelDropzone,
   ProviderModelPicker,
   PillSelect,
-  SettingsPopover,
-  SettingRow,
-  MobileOptionsTrigger,
-  MobileFieldRow,
+  FieldRow,
   CreditsSubmitPill,
-  pillClass,
   type PickerModel,
   type ReferenceMode,
 } from "./composer";
@@ -95,7 +90,6 @@ export function Seedance2VideoForm({
   const [preview, setPreview] = useState<string | null>(null);
   const [uploadingEndFrame, setUploadingEndFrame] = useState(false);
   const [endFramePreview, setEndFramePreview] = useState<string | null>(null);
-  const [sheetOpen, setSheetOpen] = useState(false);
   const [refMode, setRefMode] = useState<ReferenceMode>("reference");
 
   const {
@@ -119,7 +113,6 @@ export function Seedance2VideoForm({
     },
   });
 
-  const prompt = watch("prompt") ?? "";
   const duration = watch("duration");
   const resolution = watch("resolution");
   const aspectRatio = watch("aspectRatio");
@@ -230,224 +223,166 @@ export function Seedance2VideoForm({
   const submit = handleSubmit((data) => mutation.mutate(data));
 
   return (
-    <form onSubmit={submit} noValidate>
-      <ComposerShell>
-        {/* Stacked on mobile — see seedance-video-form.tsx for the full
-            rationale. Desktop keeps them side by side. */}
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
-          <div className="shrink-0">
-            <KeyframeReferenceControl
-              mode={refMode}
-              onModeChange={handleModeChange}
-              first={{
-                previewUrl: preview,
-                uploading,
-                onFile: handleFile,
-                onRemove: () => {
+    // Fills the studio panel: fields scroll in the middle, Generate stays
+    // pinned in the footer — see generate-workspace.tsx for the panel frame.
+    <form onSubmit={submit} noValidate className="flex h-full min-h-0 flex-col">
+      <div className="min-h-0 flex-1 space-y-5 overflow-y-auto p-4 sm:p-5">
+        <PanelSection label="Model">
+          <ProviderModelPicker models={models} value={model} onChange={onModelChange} fullWidth />
+        </PanelSection>
+
+        <PanelSection
+          label="Upload an image"
+          action={
+            <SegmentedTabs
+              value={refMode}
+              options={["reference", "keyframe"] as const}
+              onChange={handleModeChange}
+              renderLabel={(m) => (m === "reference" ? "Reference" : "Keyframe")}
+            />
+          }
+          hint={
+            refMode === "keyframe"
+              ? "First and last frame — the video interpolates between them."
+              : "Optional — JPG, PNG or WEBP. Guides the whole generation."
+          }
+        >
+          {refMode === "keyframe" ? (
+            <div className="flex items-center gap-1.5">
+              <PanelDropzone
+                compact
+                className="flex-1"
+                label="First frame"
+                previewUrl={preview}
+                uploading={uploading}
+                onFile={handleFile}
+                onRemove={() => {
                   setPreview(null);
                   setValue("image", undefined, { shouldValidate: true });
                   // An end frame without a start frame isn't a valid pairing.
                   setEndFramePreview(null);
                   setValue("lastFrameImage", undefined, { shouldValidate: true });
-                },
-              }}
-              last={{
-                previewUrl: endFramePreview,
-                uploading: uploadingEndFrame,
-                onFile: handleEndFrameFile,
-                onRemove: () => {
+                }}
+              />
+              <button
+                type="button"
+                onClick={handleSwapFrames}
+                aria-label="Swap first and last frame"
+                title="Swap first and last frame"
+                className="flex size-6 shrink-0 items-center justify-center rounded-full border border-line bg-surface-3 text-muted shadow-raised transition-all duration-200 hover:rotate-180 hover:border-border-strong hover:text-ink-soft"
+              >
+                <ArrowLeftRight className="size-3" aria-hidden="true" />
+              </button>
+              <PanelDropzone
+                compact
+                className="flex-1"
+                label="Last frame"
+                previewUrl={endFramePreview}
+                uploading={uploadingEndFrame}
+                onFile={handleEndFrameFile}
+                onRemove={() => {
                   setEndFramePreview(null);
                   setValue("lastFrameImage", undefined, { shouldValidate: true });
-                },
-              }}
-              lastDisabled={!image}
-              onSwap={handleSwapFrames}
-            />
-          </div>
-
-          <div className="flex min-w-0 flex-1 items-start gap-3">
-            <div className="min-w-0 flex-1">
-              <Controller
-                control={control}
-                name="prompt"
-                render={({ field }) => (
-                  <ComposerPromptField
-                    value={field.value ?? ""}
-                    onChange={(v) => {
-                      field.onChange(v);
-                      onPromptChange(v);
-                    }}
-                    onSubmit={submit}
-                    placeholder="Describe the scene you imagine"
-                    maxLength={2000}
-                  />
-                )}
+                }}
+                disabled={!image}
+                disabledHint="Add a first frame first."
               />
-              <FieldError>{errors.prompt?.message}</FieldError>
             </div>
+          ) : (
+            <PanelDropzone
+              label="Click or drag to upload"
+              sublabel="JPG, PNG or WEBP"
+              previewUrl={preview}
+              uploading={uploading}
+              onFile={handleFile}
+              onRemove={() => {
+                setPreview(null);
+                setValue("image", undefined, { shouldValidate: true });
+                setEndFramePreview(null);
+                setValue("lastFrameImage", undefined, { shouldValidate: true });
+              }}
+            />
+          )}
+        </PanelSection>
 
-            <span className="mt-3 shrink-0 text-caption text-muted">{prompt.length}/2000</span>
-          </div>
-        </div>
-
-        {/* Mobile: modality switcher + a single "Options" trigger opening a
-            BottomSheet with everything else, including the model picker —
-            see seedance-video-form.tsx for the full rationale. */}
-        <div className="mt-3 flex items-center gap-2 sm:hidden">
-          <ModalitySwitcherMobile type="text-to-video" />
-          <MobileOptionsTrigger onClick={() => setSheetOpen(true)} />
-          <div className="ml-auto">
-            <CreditsSubmitPill
-              credits={estimatedCredits}
-              loading={mutation.isPending || busy || uploading}
-              balance={creditBalance}
-              blockedReason={blockedReason}
-            />
-          </div>
-        </div>
-
-        <BottomSheet open={sheetOpen} onOpenChange={setSheetOpen} title="Video settings">
-          <MobileFieldRow label="Model">
-            <ProviderModelPicker models={models} value={model} onChange={onModelChange} />
-          </MobileFieldRow>
-          <MobileFieldRow label="Duration">
-            <PillSelect
-              icon={Clock}
-              value={duration}
-              options={DURATIONS}
-              renderLabel={(d) => `${d}s`}
-              onChange={(d) => setValue("duration", d, { shouldValidate: true })}
-              isOptionLocked={(d) => isDurationLocked(d, tierInfo)}
-              lockedHint={(d) => upgradeHint(minTierForDuration(d), `${d}s clips`)}
-            />
-          </MobileFieldRow>
-          <MobileFieldRow label="Resolution">
-            <PillSelect
-              icon={Monitor}
-              value={resolution}
-              options={SEEDANCE2_RESOLUTIONS}
-              renderLabel={(r) => (r === "4k" ? "4K" : r)}
-              onChange={(r) => setValue("resolution", r, { shouldValidate: true })}
-              isOptionLocked={(r) => isResolutionLocked(r, tierInfo)}
-              lockedHint={(r) => upgradeHint(minTierForResolution(r), r === "4k" ? "4K" : r)}
-            />
-          </MobileFieldRow>
-          <MobileFieldRow
-            label="Aspect ratio"
-            description={hasReference ? "Ignored while a reference image is set." : undefined}
-          >
-            <PillSelect
-              icon={RectangleHorizontal}
-              value={aspectRatio}
-              options={SEEDANCE2_ASPECT_RATIOS}
-              onChange={(a) => setValue("aspectRatio", a, { shouldValidate: true })}
-              disabled={hasReference}
-              disabledHint="Ignored while a reference image is set — the video inherits its aspect ratio."
-            />
-          </MobileFieldRow>
-          <MobileFieldRow label="Fix camera position" description="Lock the camera instead of letting it move.">
-            <Controller
-              control={control}
-              name="cameraFixed"
-              render={({ field }) => <Switch checked={field.value} onCheckedChange={field.onChange} />}
-            />
-          </MobileFieldRow>
-          <MobileFieldRow label="Generate audio" description="Sync ambient sound / dialogue to the video.">
-            <Controller
-              control={control}
-              name="generateAudio"
-              render={({ field }) => <Switch checked={field.value ?? true} onCheckedChange={field.onChange} />}
-         
-            />
-          </MobileFieldRow>
-          <MobileFieldRow
-            label="Virtual avatar mode"
-            description="For AI-generated character references — routes around face/deepfake detection via ByteDance's trusted avatar library."
-          >
-            <Controller
-              control={control}
-              name="useVirtualAvatar"
-              render={({ field }) => <Switch checked={field.value} onCheckedChange={field.onChange} />}
-            />
-          </MobileFieldRow>
-          <div className="py-3.5">
-            <label htmlFor="sd2-seed-mobile" className="mb-1.5 block text-label text-ink-soft">
-              Seed (optional)
-            </label>
-            <Input
-              id="sd2-seed-mobile"
-              type="number"
-              placeholder="Random"
-              {...register("seed", {
-                setValueAs: (v) => (v === "" ? undefined : Number(v)),
-              })}
-            />
-          </div>
-        </BottomSheet>
-
-        {/* Desktop: full pill row, scrolling horizontally instead of
-            wrapping onto more rows if it ever runs out of room. */}
-        <div className="mt-3 hidden items-center gap-2 sm:flex">
-        <div className="flex flex-1 items-center gap-2 overflow-x-auto">
-          <ProviderModelPicker models={models} value={model} onChange={onModelChange} />
-
-          <Tooltip content="Coming soon — character consistency isn't wired up yet.">
-            <span className="inline-flex" tabIndex={0}>
-              <button type="button" disabled className={pillClass}>
-                <ScanFace className="size-3.5 text-muted" aria-hidden="true" />
-                Characters
-              </button>
-            </span>
-          </Tooltip>
-
-          <PillSelect
-            icon={Clock}
-            value={duration}
-            options={DURATIONS}
-            renderLabel={(d) => `${d}s`}
-            onChange={(d) => setValue("duration", d, { shouldValidate: true })}
-            isOptionLocked={(d) => isDurationLocked(d, tierInfo)}
-            lockedHint={(d) => upgradeHint(minTierForDuration(d), `${d}s clips`)}
+        <PanelSection label="Prompt">
+          <Controller
+            control={control}
+            name="prompt"
+            render={({ field }) => (
+              <PanelPromptField
+                value={field.value ?? ""}
+                onChange={(v) => {
+                  field.onChange(v);
+                  onPromptChange(v);
+                }}
+                onSubmit={submit}
+                placeholder="Describe the scene you imagine"
+                maxLength={2000}
+              />
+            )}
           />
+          <FieldError>{errors.prompt?.message}</FieldError>
+        </PanelSection>
 
-          <PillSelect
-            icon={Monitor}
-            value={resolution}
-            options={SEEDANCE2_RESOLUTIONS}
-            renderLabel={(r) => (r === "4k" ? "4K" : r)}
-            onChange={(r) => setValue("resolution", r, { shouldValidate: true })}
-            isOptionLocked={(r) => isResolutionLocked(r, tierInfo)}
-            lockedHint={(r) => upgradeHint(minTierForResolution(r), r === "4k" ? "4K" : r)}
-          />
+        <PanelSection label="Settings">
+          <PanelFieldList>
+            <FieldRow label="Duration">
+              <PillSelect
+                icon={Clock}
+                value={duration}
+                options={DURATIONS}
+                renderLabel={(d) => `${d}s`}
+                onChange={(d) => setValue("duration", d, { shouldValidate: true })}
+                isOptionLocked={(d) => isDurationLocked(d, tierInfo)}
+                lockedHint={(d) => upgradeHint(minTierForDuration(d), `${d}s clips`)}
+              />
+            </FieldRow>
 
-          <PillSelect
-            icon={RectangleHorizontal}
-            value={aspectRatio}
-            options={SEEDANCE2_ASPECT_RATIOS}
-            onChange={(a) => setValue("aspectRatio", a, { shouldValidate: true })}
-            disabled={hasReference}
-            disabledHint="Ignored while a reference image is set — the video inherits its aspect ratio."
-          />
+            <FieldRow label="Resolution">
+              <PillSelect
+                icon={Monitor}
+                value={resolution}
+                options={SEEDANCE2_RESOLUTIONS}
+                renderLabel={(r) => (r === "4k" ? "4K" : r)}
+                onChange={(r) => setValue("resolution", r, { shouldValidate: true })}
+                isOptionLocked={(r) => isResolutionLocked(r, tierInfo)}
+                lockedHint={(r) => upgradeHint(minTierForResolution(r), r === "4k" ? "4K" : r)}
+              />
+            </FieldRow>
 
-          <SettingsPopover>
-            <SettingRow title="Fix camera position" description="Lock the camera instead of letting it move.">
+            <FieldRow
+              label="Aspect ratio"
+              description={hasReference ? "Ignored while a reference image is set." : undefined}
+            >
+              <PillSelect
+                icon={RectangleHorizontal}
+                value={aspectRatio}
+                options={SEEDANCE2_ASPECT_RATIOS}
+                onChange={(a) => setValue("aspectRatio", a, { shouldValidate: true })}
+                disabled={hasReference}
+                disabledHint="Ignored while a reference image is set — the video inherits its aspect ratio."
+              />
+            </FieldRow>
+
+            <FieldRow label="Fix camera position" description="Lock the camera instead of letting it move.">
               <Controller
                 control={control}
                 name="cameraFixed"
                 render={({ field }) => <Switch checked={field.value} onCheckedChange={field.onChange} />}
               />
-            </SettingRow>
-            <SettingRow title="Generate audio" description="Sync ambient sound / dialogue to the video.">
+            </FieldRow>
+
+            <FieldRow label="Generate audio" description="Sync ambient sound / dialogue to the video.">
               <Controller
                 control={control}
                 name="generateAudio"
-                render={({ field }) => (
-                  <Switch checked={field.value ?? true} onCheckedChange={field.onChange} />
-                      )}
+                render={({ field }) => <Switch checked={field.value ?? true} onCheckedChange={field.onChange} />}
               />
-            </SettingRow>
-            <SettingRow
-              title="Virtual avatar mode"
+            </FieldRow>
+
+            <FieldRow
+              label="Virtual avatar mode"
               description="For AI-generated character references — routes around face/deepfake detection via ByteDance's trusted avatar library."
             >
               <Controller
@@ -455,8 +390,9 @@ export function Seedance2VideoForm({
                 name="useVirtualAvatar"
                 render={({ field }) => <Switch checked={field.value} onCheckedChange={field.onChange} />}
               />
-            </SettingRow>
-            <div>
+            </FieldRow>
+
+            <div className="py-3.5">
               <label htmlFor="sd2-seed" className="mb-1.5 block text-label text-ink-soft">
                 Seed (optional)
               </label>
@@ -469,17 +405,19 @@ export function Seedance2VideoForm({
                 })}
               />
             </div>
-          </SettingsPopover>
-        </div>
+          </PanelFieldList>
+        </PanelSection>
+      </div>
 
-          <CreditsSubmitPill
-              credits={estimatedCredits}
-              loading={mutation.isPending || busy || uploading}
-              balance={creditBalance}
-              blockedReason={blockedReason}
-            />
-        </div>
-      </ComposerShell>
+      <div className="shrink-0 border-t border-line p-4 sm:p-5">
+        <CreditsSubmitPill
+          fullWidth
+          credits={estimatedCredits}
+          loading={mutation.isPending || busy || uploading}
+          balance={creditBalance}
+          blockedReason={blockedReason}
+        />
+      </div>
     </form>
   );
 }
