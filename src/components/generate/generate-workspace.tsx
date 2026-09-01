@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { FolderOpen, Lightbulb, Sparkles, Zap } from "lucide-react";
+import { FolderOpen, Lightbulb, Sparkles, Wand2, Zap } from "lucide-react";
 import { TextToVideoForm } from "./text-to-video-form";
 import { TextToImageForm } from "./text-to-image-form";
 import { JobStatusCard } from "./job-status-card";
@@ -162,6 +162,15 @@ export function GenerateStudio({ type }: { type: GenerationType }) {
           >
             <Lightbulb className="size-3.5" aria-hidden="true" />
             Prompt ideas
+          </Link>
+          {/* The other end of the dial from this composer — a locked recipe
+              that only asks for one image. See /presets. */}
+          <Link
+            href="/presets"
+            className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface-2 px-3 py-1.5 text-label text-muted transition-colors hover:border-border-strong hover:text-ink-soft"
+          >
+            <Wand2 className="size-3.5" aria-hidden="true" />
+            Viral presets
           </Link>
 
           {usageQuery.data && (
