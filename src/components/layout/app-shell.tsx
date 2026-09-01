@@ -18,6 +18,7 @@ import {
   Menu,
   X,
   User,
+  Wand2,
   Zap,
   ChevronLeft,
 } from "lucide-react";
@@ -75,6 +76,7 @@ const NAV_SECTIONS: { label: string; items: { href: string; label: string; icon:
     items: [
       { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
       { href: "/generate", label: "Generate", icon: Sparkles },
+      { href: "/presets", label: "Presets", icon: Wand2 },
     ],
   },
   {
