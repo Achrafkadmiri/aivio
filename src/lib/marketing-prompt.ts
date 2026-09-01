@@ -1,36 +1,16 @@
-// Turns the Marketing Studio's brief (what you're selling, who's in it, what
-// it should say) plus the picked style into the single string that actually
-// gets submitted.
+// Turns what you typed in the Marketing Studio, plus the picked style, into
+// the single string that actually gets submitted.
 //
-// Everything here is prompt text, on purpose. The backend builds a
-// generation's parameters strictly from the model registry, so "product",
-// "talent" and "headline" have nowhere else to go — same constraint
+// You write the subject — what's being sold, who's in it, what it should say.
+// The style contributes its treatment, and the reference note explains how the
+// attached image must be read. All three are prompt text on purpose: the
+// backend builds a generation's parameters strictly from the model registry,
+// so none of this has a structured field to travel in — the same constraint
 // image-styles.ts documents for its style presets. The one thing that IS
 // structured is the reference image, and even that is a single slot
 // (`inputImageUrl`), which is why the sheet note below has to exist at all.
 
 import type { MarketingKind, MarketingStyle } from "@/lib/marketing-styles";
-
-export type MarketingBrief = {
-  /** "Aurelia Night Serum" */
-  productName: string;
-  /** "30ml amber glass dropper bottle, retinol serum" */
-  productDetails: string;
-  /** Who appears in the shot, when anyone does. */
-  talent: string;
-  /** Text to render into the image — a claim, an offer, a price. */
-  headline: string;
-  /** Anything the style and the brief don't already cover. */
-  extra: string;
-};
-
-export const EMPTY_BRIEF: MarketingBrief = {
-  productName: "",
-  productDetails: "",
-  talent: "",
-  headline: "",
-  extra: "",
-};
 
 /**
  * Which uploaded asset travels as the model's one reference image.
@@ -44,8 +24,8 @@ export const EMPTY_BRIEF: MarketingBrief = {
 export type ReferenceUse = "none" | "product" | "talent" | "sheet";
 
 /** Hard cap on what we submit. The shared dynamic schema allows 2000
- *  characters (see buildDynamicSchema); staying under it keeps a long "extra
- *  direction" from turning into a validation error at submit time. */
+ *  characters (see buildDynamicSchema); staying under it keeps a long
+ *  description from turning into a validation error at submit time. */
 const MAX_PROMPT_LENGTH = 1900;
 
 function referenceNote(kind: MarketingKind, reference: ReferenceUse): string | undefined {
@@ -61,28 +41,32 @@ function referenceNote(kind: MarketingKind, reference: ReferenceUse): string | u
     );
   }
 
-  const subject =
-    reference === "product"
-      ? "the product in the attached reference exactly as it is — same shape, proportions, label text and colours"
-      : "the person in the attached reference — same face, hair and build";
+  // Written out per kind rather than interpolated from one shared fragment:
+  // the traits clause ends the sentence in the image phrasing and sits
+  // mid-sentence in the video one, and sharing it produced a run-on
+  // ("…label text and colours consistent for the whole clip").
+  if (kind === "video") {
+    return reference === "product"
+      ? "The attached image is the opening frame. Keep the product exactly as it is for the whole clip — same shape, proportions, label text and colours, no drift."
+      : "The attached image is the opening frame. Keep the person exactly as they are for the whole clip — same face, hair and build, no drift.";
+  }
 
-  return kind === "video"
-    ? `The attached image is the opening frame. Keep ${subject} consistent for the whole clip, with no drift.`
-    : `Keep ${subject}.`;
+  return reference === "product"
+    ? "Keep the product in the attached reference exactly as it is — same shape, proportions, label text and colours."
+    : "Keep the person in the attached reference exactly as they are — same face, hair and build.";
 }
 
-function subjectLine(kind: MarketingKind, brief: MarketingBrief, reference: ReferenceUse): string {
-  const name = brief.productName.trim();
-  const details = brief.productDetails.trim();
+/**
+ * The lead sentence when nothing was typed. Only reachable with an asset
+ * attached (see promptBlockedReason) — a style plus a photo is a complete
+ * enough request, and inventing a subject line for it beats submitting one
+ * that opens on the style's treatment with no subject at all.
+ */
+function fallbackSubject(kind: MarketingKind, reference: ReferenceUse): string {
   const noun = kind === "video" ? "Advertising video" : "Advertising image";
-
-  const subject = name
-    ? details
-      ? `${name} — ${details}`
-      : name
-    : details || (reference === "none" ? "the product" : "the product in the reference image");
-
-  return `${noun} for ${subject}.`;
+  return reference === "talent"
+    ? `${noun} featuring the person in the reference image.`
+    : `${noun} for the product in the reference image.`;
 }
 
 /** The catalog writes its directions as fragments ("studio product
@@ -97,37 +81,27 @@ function sentence(text: string): string {
 /**
  * The exact text submitted as `prompt`.
  *
- * Order matters: subject first (what this is selling), then who's in it, then
- * how the reference must be treated, then the style's own treatment, and only
- * then the copy and any freeform direction. Models weight the front of a
- * prompt most heavily, and the one thing a marketing shot cannot get wrong is
- * which product it's of.
+ * Order matters: your own words first, then how the reference must be treated,
+ * then the style's treatment. Models weight the front of a prompt most
+ * heavily, and the one thing a marketing shot cannot get wrong is what it's
+ * of — so the subject leads and the look follows it.
  */
 export function buildMarketingPrompt(
   style: MarketingStyle,
-  brief: MarketingBrief,
+  description: string,
   options: { kind: MarketingKind; reference: ReferenceUse },
 ): string {
   const { kind, reference } = options;
-  const parts: string[] = [subjectLine(kind, brief, reference)];
+  const own = description.trim();
 
-  const talent = brief.talent.trim();
-  if (talent) parts.push(`Featuring ${talent}.`);
+  const parts: string[] = [
+    own ? sentence(own).replace(/\s*\.?\s*$/, ".") : fallbackSubject(kind, reference),
+  ];
 
   const note = referenceNote(kind, reference);
   if (note) parts.push(note);
 
   parts.push(`${sentence(style.direction)}.`);
-
-  const headline = brief.headline.trim();
-  if (headline) {
-    parts.push(
-      `Render the headline text "${headline}" exactly as written — correctly spelled, in a clean modern sans-serif, placed so it never covers the product.`,
-    );
-  }
-
-  const extra = brief.extra.trim();
-  if (extra) parts.push(sentence(extra).replace(/\s*\.?\s*$/, "."));
 
   const prompt = parts.join(" ");
   return prompt.length > MAX_PROMPT_LENGTH
@@ -135,15 +109,14 @@ export function buildMarketingPrompt(
     : prompt;
 }
 
-/** Whether the brief says enough to be worth spending credits on. A style
- *  alone describes treatment, never subject — generating from it with no
- *  product attached or named produces a beautiful photo of nothing in
- *  particular, at full price. */
-export function briefBlockedReason(
-  brief: MarketingBrief,
+/** Whether there is enough here to be worth spending credits on. A style
+ *  describes treatment, never subject — running one with nothing typed and
+ *  nothing attached produces a beautiful photo of nothing in particular, at
+ *  full price. */
+export function promptBlockedReason(
+  description: string,
   reference: ReferenceUse,
 ): string | undefined {
-  if (reference !== "none") return undefined;
-  if (brief.productName.trim() || brief.productDetails.trim()) return undefined;
-  return "Add a product photo, or name the product in the brief.";
+  if (description.trim() || reference !== "none") return undefined;
+  return "Describe what you're selling, or attach a product photo.";
 }

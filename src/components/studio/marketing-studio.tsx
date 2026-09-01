@@ -12,7 +12,6 @@ import {
   Maximize,
   Monitor,
   Package,
-  Pencil,
   RectangleHorizontal,
   SlidersHorizontal,
   Timer,
@@ -24,7 +23,6 @@ import {
 import { apiFetch } from "@/lib/api-client";
 import { cn, formatCredits } from "@/lib/utils";
 import { useToast } from "@/components/ui/toast";
-import { Input, Label } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { useGeneration } from "@/hooks/use-generation";
 import { useInvalidateCredits, useUsage } from "@/hooks/use-credits";
@@ -79,10 +77,8 @@ import {
   type MarketingStyle,
 } from "@/lib/marketing-styles";
 import {
-  briefBlockedReason,
   buildMarketingPrompt,
-  EMPTY_BRIEF,
-  type MarketingBrief,
+  promptBlockedReason,
   type ReferenceUse,
 } from "@/lib/marketing-prompt";
 import { composeReferenceSheet } from "@/lib/reference-sheet";
@@ -110,13 +106,13 @@ type Asset = { file: File; previewUrl: string; url: string | null };
 
 /**
  * The Marketing Studio: pick a style, attach your product and your talent,
- * write a one-line brief, generate the ad.
+ * say what you're selling, generate the ad.
  *
  * It is the third point on the same dial as the other two create surfaces —
  * /presets locks everything but one image, /generate exposes every model
- * parameter and asks you to write the prompt yourself. This one keeps the
- * parameters (a marketer still needs 9:16 vs 1:1) but takes the prompt over:
- * what you fill in is a brief, and the style supplies the treatment.
+ * parameter and asks you to write the whole prompt yourself. This one keeps
+ * the parameters (a marketer still needs 9:16 vs 1:1) and splits the prompt:
+ * you write the subject, the style writes the treatment.
  */
 export function MarketingStudio() {
   const { toast } = useToast();
@@ -146,8 +142,10 @@ export function MarketingStudio() {
   const [product, setProduct] = useState<Asset | null>(null);
   const [talent, setTalent] = useState<Asset | null>(null);
   const [uploading, setUploading] = useState(false);
-  const [brief, setBrief] = useState<MarketingBrief>(EMPTY_BRIEF);
-  const [promptOverride, setPromptOverride] = useState<string | null>(null);
+  // What you type. The style's treatment and the reference note are appended
+  // to it on submit rather than written into this field, so switching style
+  // never rewrites your own words — see buildMarketingPrompt.
+  const [description, setDescription] = useState("");
 
   const [activeJobId, setActiveJobId] = useState<string | null>(null);
   // What the RUNNING job produces, captured at submit — not derived from the
@@ -173,8 +171,7 @@ export function MarketingStudio() {
           ? "talent"
           : "none";
 
-  const assembledPrompt = buildMarketingPrompt(style, brief, { kind, reference });
-  const prompt = promptOverride ?? assembledPrompt;
+  const prompt = buildMarketingPrompt(style, description, { kind, reference });
 
   const credits = isImage
     ? estimateImageCredits(config.id, imageSettingsFromParameters(params))
@@ -189,9 +186,6 @@ export function MarketingStudio() {
     setStyle(next);
     setModelId(nextConfig.id);
     setPicked(seedStudioParams(nextConfig, next));
-    // A manual prompt was written against the old style's direction; keeping
-    // it would silently ignore the style just picked.
-    setPromptOverride(null);
   }
 
   function selectModel(id: string) {
@@ -281,11 +275,11 @@ export function MarketingStudio() {
   });
 
   const blockedReason =
-    tierBlockedReason(config, params, tierInfo) ??
-    briefBlockedReason(brief, reference) ??
-    // Only reachable with a hand-edited prompt emptied out — every model here
-    // requires one, so this would come back as a 400 after the round-trip.
-    (prompt.trim() ? undefined : "Write a prompt, or switch back to the brief.");
+    tierBlockedReason(config, params, tierInfo) ?? promptBlockedReason(description, reference);
+
+  function submit() {
+    if (!blockedReason && !uploading && !mutation.isPending) mutation.mutate();
+  }
 
   const pickerModels = studioPickerModels(kind);
 
@@ -329,7 +323,7 @@ export function MarketingStudio() {
     <form
       onSubmit={(e) => {
         e.preventDefault();
-        if (!blockedReason && !uploading) mutation.mutate();
+        submit();
       }}
       // Same studio frame as /generate and /presets — 8rem is the app header
       // plus <main>'s vertical padding (see app-shell.tsx).
@@ -383,79 +377,30 @@ export function MarketingStudio() {
             )}
           </PanelSection>
 
-          <PanelSection label="Brief">
-            <div className="space-y-3">
-              <BriefField
-                id="brief-product"
-                label="Product name"
-                placeholder="Aurelia Night Serum"
-                value={brief.productName}
-                onChange={(v) => setBrief((b) => ({ ...b, productName: v }))}
-              />
-              <BriefField
-                id="brief-details"
-                label="What it is"
-                placeholder="30ml amber glass dropper bottle, retinol serum"
-                value={brief.productDetails}
-                onChange={(v) => setBrief((b) => ({ ...b, productDetails: v }))}
-              />
-              <BriefField
-                id="brief-talent"
-                label="Who's in it"
-                optional
-                placeholder="a woman in her 30s, warm smile, linen shirt"
-                value={brief.talent}
-                onChange={(v) => setBrief((b) => ({ ...b, talent: v }))}
-              />
-              <BriefField
-                id="brief-headline"
-                label="Headline or offer"
-                optional
-                placeholder="30% OFF THIS WEEK"
-                value={brief.headline}
-                onChange={(v) => setBrief((b) => ({ ...b, headline: v }))}
-              />
-              <BriefField
-                id="brief-extra"
-                label="Anything else"
-                optional
-                placeholder="cool morning light, no props"
-                value={brief.extra}
-                onChange={(v) => setBrief((b) => ({ ...b, extra: v }))}
-              />
-            </div>
-          </PanelSection>
-
           <PanelSection
             label="Prompt"
-            action={
-              <button
-                type="button"
-                onClick={() => setPromptOverride(promptOverride === null ? assembledPrompt : null)}
-                className="inline-flex items-center gap-1.5 text-caption font-medium text-muted transition-colors hover:text-ink-soft"
-              >
-                <Pencil className="size-3" aria-hidden="true" />
-                {promptOverride === null ? "Edit manually" : "Back to the brief"}
-              </button>
-            }
-            hint={
-              promptOverride === null
-                ? "Assembled from your brief and the style. This is exactly what gets sent."
-                : "Edited by hand — the brief fields above no longer change it."
-            }
+            hint="What you're selling, who's in it, any words to render. The style adds the look."
           >
-            {promptOverride === null ? (
-              <div className="max-h-40 overflow-y-auto rounded-xl border border-line bg-surface-dark px-3.5 py-3">
-                <p className="text-caption whitespace-pre-wrap text-muted">{assembledPrompt}</p>
+            <PanelPromptField
+              value={description}
+              onChange={setDescription}
+              onSubmit={submit}
+              maxLength={1200}
+              placeholder="Nord Coffee Roasters — a matte black 340g bag of single-origin beans, held by a woman in her 30s"
+            />
+
+            {/* The style and the reference rule are appended, not shown in the
+                field — so they can't be mistaken for your own text and can't
+                survive switching style. Readable on demand, same as the
+                preset runner's recipe disclosure, so nothing ships unseen. */}
+            <details className="mt-2 rounded-xl border border-line bg-surface-dark">
+              <summary className="cursor-pointer px-3.5 py-2.5 text-caption font-medium text-muted transition-colors hover:text-ink-soft">
+                What gets sent
+              </summary>
+              <div className="max-h-40 overflow-y-auto border-t border-line px-3.5 py-3">
+                <p className="text-caption whitespace-pre-wrap text-ink-soft">{prompt}</p>
               </div>
-            ) : (
-              <PanelPromptField
-                value={promptOverride}
-                onChange={setPromptOverride}
-                maxLength={2000}
-                placeholder="Describe the ad you want"
-              />
-            )}
+            </details>
           </PanelSection>
 
           <PanelSection label="Output">
@@ -574,7 +519,7 @@ function referenceHint(reference: ReferenceUse, isImage: boolean): string {
     return "Both are merged into one reference sheet and sent together — the prompt tells the model which is which.";
   }
   if (reference === "none") {
-    return "Optional. Without a photo the model invents the product from your brief.";
+    return "Optional. Without a photo the model invents the product from your prompt.";
   }
   if (!isImage) {
     return "Video carries one reference image — it becomes the opening frame of the clip.";
@@ -637,39 +582,6 @@ function AssetSlot({
   );
 }
 
-function BriefField({
-  id,
-  label,
-  value,
-  placeholder,
-  optional,
-  onChange,
-}: {
-  id: string;
-  label: string;
-  value: string;
-  placeholder: string;
-  optional?: boolean;
-  onChange: (value: string) => void;
-}) {
-  return (
-    <div>
-      <Label htmlFor={id} className="mb-1.5 flex items-baseline justify-between gap-2">
-        <span>{label}</span>
-        {optional && <span className="text-caption font-normal text-muted">Optional</span>}
-      </Label>
-      <Input
-        id={id}
-        value={value}
-        placeholder={placeholder}
-        maxLength={160}
-        onChange={(e) => onChange(e.target.value)}
-        className="px-3.5 py-2.5"
-      />
-    </div>
-  );
-}
-
 /** Idle canvas — the picked style's own artwork blown up, so the right side
  *  says something before there is a result to show. */
 function StyleCanvas({ style }: { style: MarketingStyle }) {
@@ -684,7 +596,7 @@ function StyleCanvas({ style }: { style: MarketingStyle }) {
       <p className="mt-2 max-w-sm text-body-sm text-muted">{style.blurb}</p>
       <p className="mt-6 flex items-center gap-1.5 text-caption text-muted">
         <Info className="size-3" aria-hidden="true" />
-        Attach your product, fill in the brief, and generate.
+        Attach your product, write your prompt, and generate.
       </p>
     </div>
   );
