@@ -45,8 +45,8 @@ export type ViralPreset = {
   /** What kind of photo this preset actually needs, shown by the dropzone. */
   imageHint: string;
   /** What the uploaded image *is*, phrased for the model — fills the
-   * 【Reference Image】block buildPresetPrompt prepends. Written as a noun
-   * phrase that completes "The attached image is ___". */
+   * `@image = …` definition line buildPresetPrompt prepends. Written as a
+   * noun phrase that completes "@image = ___". */
   referenceSubject: string;
   /** Locked prompt — never editable here, but readable (see the studio's
    * "What this preset does" disclosure) so it isn't a black box. */
@@ -77,11 +77,11 @@ export const VIRAL_PRESETS: ViralPreset[] = [
     referenceSubject: "the person this video is of",
     prompt: `【Style】Beauty-campaign hyperrealism, slow motion, soft key light with a warm rim, glossy confident tone.
 【Duration】5 seconds
-【Main Character】The person in the reference image, identity and outfit preserved exactly.
+【Main Character】The person in @image, identity and outfit preserved exactly.
 [00:00-00:02] Shot 1: The turn.
-Scene: Same setting and lighting as the reference image, camera at eye level.
+Scene: Same setting and lighting as @image, camera at eye level.
 Action: The subject turns their head toward camera and lifts their chin, holding eye contact.
-Key detail: Facial structure, skin texture and hair color must match the reference exactly — no drift.
+Key detail: Facial structure, skin texture and hair color must match @image exactly — no drift.
 [00:02-00:05] Shot 2: The flip.
 Scene: Same framing, camera pushes in a few centimetres.
 Action: The subject flips their hair back in slow motion; individual strands separate and catch the rim light.
@@ -101,9 +101,9 @@ Key detail: Hair moves with real weight and settles — no rubber-sheet warping 
     referenceSubject: "the subject and the environment this shot takes place in",
     prompt: `【Style】Prestige-drama cinematography, hyperrealism, anamorphic shallow depth of field, motivated practical lighting, restrained tone.
 【Duration】5 seconds
-【Main Character】The subject of the reference image, unchanged.
+【Main Character】The subject of @image, unchanged.
 [00:00-00:05] Shot 1: The push.
-Scene: The exact environment of the reference image, its lighting direction preserved.
+Scene: The exact environment of @image, its lighting direction preserved.
 Action: The camera dollies slowly and steadily toward the subject while the background falls further out of focus.
 Key detail: The move is mechanically smooth and continuous — a real dolly, never a digital zoom or a handheld drift.
 Key detail: The subject stays alive between beats — a blink, a small breath, a micro shift of weight.`,
@@ -122,11 +122,11 @@ Key detail: The subject stays alive between beats — a blink, a small breath, a
     referenceSubject: "the product this commercial is for",
     prompt: `【Style】Ultra-premium product commercial, macro hyperrealism, locked-off studio camera, dramatic sweeping rim light, indulgent tone.
 【Duration】5 seconds
-【Main Character】The product from the reference image, its shape, label and finish preserved exactly.
+【Main Character】The product from @image, its shape, label and finish preserved exactly.
 [00:00-00:02] Shot 1: The hold.
 Scene: Dark reflective studio surface, product centered, camera locked off.
 Action: The product sits still while a rim light builds from the left, revealing edge and material.
-Key detail: Every logo, ridge and matte-to-gloss transition stays crisp and legible.
+Key detail: Every logo, ridge and matte-to-gloss transition reads exactly as it does in @image.
 [00:02-00:05] Shot 2: The rotation.
 Scene: Same macro framing, camera still locked.
 Action: The product rotates a smooth quarter-turn on its axis; the rim light travels across the surface with it.
@@ -147,7 +147,7 @@ Key detail: Reflections track the rotation physically — the light moves, the l
     referenceSubject: "the person walking the runway, including their outfit",
     prompt: `【Style】High-fashion runway film, hyperrealism, tracking camera retreating at walking pace, hard directional key light, assured tone.
 【Duration】6 seconds
-【Main Character】The person in the reference image, outfit and proportions preserved exactly.
+【Main Character】The person in @image, outfit and proportions preserved exactly.
 [00:00-00:03] Shot 1: The approach.
 Scene: A long runway in a dark hall, spill light raking across the floor.
 Action: The subject walks directly toward camera at a steady, deliberate pace; the camera retreats to hold framing.
@@ -155,7 +155,7 @@ Key detail: Gait carries real weight — hips and shoulders counter-rotate, fabr
 [00:03-00:06] Shot 2: The mark.
 Scene: End of the runway, camera stops.
 Action: The subject reaches their mark, plants, and holds a still pose facing camera.
-Key detail: The stop is decisive — clothing and hair settle a fraction later than the body does.`,
+Key detail: The stop is decisive — clothing and hair settle a fraction later than the body does, and the outfit is still the one in @image.`,
     duration: 6,
     resolution: "720p",
     cameraFixed: false,
@@ -171,10 +171,10 @@ Key detail: The stop is decisive — clothing and hair settle a fraction later t
     referenceSubject: "the vehicle or subject driving through this shot",
     prompt: `【Style】Cinematic automotive commercial, hyperrealism, low tracking camera, hard storm lighting with lens flare, epic tone.
 【Duration】6 seconds
-【Main Character】The subject of the reference image, its color and silhouette preserved.
+【Main Character】The subject of @image, its color and silhouette preserved.
 [00:00-00:03] Shot 1: The pass.
 Scene: Rain-soaked asphalt at night, low camera near ground level.
-Action: The subject drives past camera, throwing a wide sheet of spray; headlights streak across the lens.
+Action: The subject from @image drives past camera, throwing a wide sheet of spray; headlights streak across the lens.
 Key detail: Water has mass — it arcs, breaks and falls, it does not float as particles.
 [00:03-00:06] Shot 2: The pull-back.
 Scene: Same road, camera rising and falling behind.
@@ -195,10 +195,10 @@ Key detail: Reflections on the wet surface stay consistent with the headlights t
     referenceSubject: "the person standing in the spotlight",
     prompt: `【Style】Live-music documentary, hyperrealism, slow handheld-feel drift, one hard warm spotlight against deep shadow, intimate tone.
 【Duration】5 seconds
-【Main Character】The person in the reference image, identity and clothing preserved exactly.
+【Main Character】The person in @image, identity and clothing preserved exactly.
 [00:00-00:05] Shot 1: The hold.
 Scene: A dark venue, haze in the air, a single warm spotlight from high front-left.
-Action: The subject stands in the beam; the camera drifts a few degrees around them as haze moves through the light.
+Action: The subject from @image stands in the beam; the camera drifts a few degrees around them as haze moves through the light.
 Key detail: The spotlight's edge stays soft and the falloff into black is smooth — no flat grey background.
 Key detail: The subject breathes and shifts subtly; they are never a still photograph with moving light on top.`,
     duration: 5,
@@ -216,9 +216,9 @@ Key detail: The subject breathes and shifts subtly; they are never a still photo
     referenceSubject: "the scene this shot is filmed in",
     prompt: `【Style】Travel-film cinematography, hyperrealism, smooth crane move, low golden-hour sun with long shadows, calm tone.
 【Duration】6 seconds
-【Main Character】The scene from the reference image, its composition and content preserved.
+【Main Character】The scene from @image, its composition and content preserved.
 [00:00-00:03] Shot 1: The drift.
-Scene: The reference scene, relit by a low warm sun raking in from one side.
+Scene: The scene in @image, relit by a low warm sun raking in from one side.
 Action: The camera drifts slowly sideways; dust and pollen catch the light in the foreground.
 Key detail: Shadows lengthen consistently from one light direction — no second invented sun.
 [00:03-00:06] Shot 2: The rise.
@@ -240,9 +240,9 @@ Key detail: The rise is even and mechanical, and the horizon stays level through
     referenceSubject: "the people in this scene and the room they are in",
     prompt: `【Style】Slice-of-life mockumentary, hyperrealism, handheld-feel camera, warm natural indoor light, cozy relaxed tone.
 【Duration】5 seconds
-【Main Character】The people in the reference image, identities and clothing preserved exactly.
+【Main Character】The people in @image, identities and clothing preserved exactly.
 [00:00-00:02] Shot 1: The beat before.
-Scene: The reference setting, its light warmed slightly toward late afternoon.
+Scene: The setting in @image, its light warmed slightly toward late afternoon.
 Action: The subject listens, mouth closed, eyes already starting to give it away.
 Key detail: Micro-expressions carry this beat — a raised eyebrow, a stifled smile.
 [00:02-00:05] Shot 2: The laugh.
@@ -264,12 +264,12 @@ Key detail: The laugh looks unscripted — asymmetric, a little messy, never cam
     referenceSubject: "the surface and material being filmed",
     prompt: `【Style】Macro texture study, hyperrealism, locked slow lateral crawl, single soft raking light, patient tone.
 【Duration】5 seconds
-【Main Character】The surface and material of the reference image, unchanged.
+【Main Character】The surface and material of @image, unchanged.
 [00:00-00:05] Shot 1: The crawl.
-Scene: Extreme close-up on the reference subject, one soft light raking across it from the side.
+Scene: Extreme close-up on the subject in @image, one soft light raking across it from the side.
 Action: The camera crawls laterally across the surface at a constant, unhurried speed.
 Key detail: Focus stays razor-thin and consistent; grain, weave and imperfection are the subject.
-Key detail: Nothing in frame is invented — the crawl reveals what the reference already contains.`,
+Key detail: Nothing in frame is invented — the crawl reveals what @image already contains.`,
     duration: 5,
     resolution: "1080p",
     cameraFixed: true,
@@ -282,29 +282,33 @@ export function findPreset(slug: string): ViralPreset | undefined {
 }
 
 /**
- * The prompt actually sent for a preset: a 【Reference Image】block naming
- * what the uploaded photo is and how strictly to hold to it, followed by the
- * preset's own recipe.
+ * The prompt actually sent for a preset: an `@image = …` definition line
+ * naming what the uploaded photo is and how strictly to hold to it, followed
+ * by the preset's own recipe, whose shot lines refer back to `@image` by
+ * name wherever they used to say "the reference image".
  *
  * The image already reaches the model as the `image` wire parameter either
  * way (see the Seedance2Input mapping in the backend's generation-runner) —
- * this block doesn't make the model *see* an image it otherwise wouldn't.
- * What it does is state the image's ROLE, which the parameter alone can't:
- * without it the model is free to read a reference as "loose inspiration"
- * and drift the face, the label or the setting. Naming the subject and
- * saying "match it exactly, replace nothing" is what holds identity.
+ * none of this makes the model *see* an image it otherwise wouldn't. What it
+ * does is state the image's ROLE, which the parameter alone can't: without
+ * it the model is free to read a reference as "loose inspiration" and drift
+ * the face, the label or the setting. Naming the subject, saying "match it
+ * exactly, replace nothing", and then pointing at that name from each shot
+ * is what holds identity across the clip.
  *
- * It's prepended here rather than written into all nine prompts so the
- * wording can be tuned in one place, and so the studio's "What this preset
- * does" disclosure can show exactly the text that goes over the wire.
+ * `@image` is our own convention, not a documented Seedance token — the
+ * model reads it as ordinary instruction text, which is exactly why the
+ * definition line has to come first and define it. Nothing downstream parses
+ * it: generations.ts stores the prompt as-is and generation-runner.ts passes
+ * it through verbatim.
  *
- * 【…】is Seedance's own structured-prompt convention (the same one every
- * recipe above and every entry in prompt-templates.ts already uses), not an
- * API-level token — it is read as instruction text like the rest.
+ * Prepended here rather than written into all nine prompts so the wording
+ * can be tuned in one place, and so the studio's "What this preset does"
+ * disclosure can show exactly the text that goes over the wire.
  */
 export function buildPresetPrompt(preset: ViralPreset): string {
   return [
-    `【Reference Image】The attached image is ${preset.referenceSubject}. Treat it as the single source of truth: identity, facial structure, proportions, colors, clothing, labels and setting must match it exactly for the whole clip. Animate what is in the image — never replace, restyle or reimagine it, and never substitute a different subject.`,
+    `@image = ${preset.referenceSubject}. Treat @image as the single source of truth: identity, facial structure, proportions, colors, clothing, labels and setting must match it exactly for the whole clip. Animate what is in @image — never replace, restyle or reimagine it, and never substitute a different subject.`,
     preset.prompt,
   ].join("\n");
 }
