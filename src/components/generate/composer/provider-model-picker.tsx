@@ -26,10 +26,14 @@ export function ProviderModelPicker<T extends string>({
   models,
   value,
   onChange,
+  fullWidth,
 }: {
   models: readonly PickerModel<T>[];
   value: T;
   onChange: (id: T) => void;
+  /** Panel variant: the trigger spans its container as a select-style row
+   * (logo + name left, chevron right) instead of a compact toolbar pill. */
+  fullWidth?: boolean;
 }) {
   const selected = models?.find((m) => m.id === value) ?? models[0];
 
@@ -55,9 +59,14 @@ export function ProviderModelPicker<T extends string>({
       }}
     >
       <DropdownTrigger asChild>
-        <button type="button" className={pillClass}>
+        <button
+          type="button"
+          className={cn(pillClass, fullWidth && "w-full rounded-xl bg-surface-dark px-3.5 py-2.5")}
+        >
           <ProviderLogo provider={selected.provider ?? "?"} size="sm" />
-          <span className="max-w-[9rem] truncate font-medium">{selected.label}</span>
+          <span className={cn("truncate font-medium", fullWidth ? "flex-1 text-left" : "max-w-[9rem]")}>
+            {selected.label}
+          </span>
           <ChevronDown className="size-3 shrink-0 text-muted" aria-hidden="true" />
         </button>
       </DropdownTrigger>

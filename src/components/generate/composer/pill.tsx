@@ -1,7 +1,7 @@
 "use client";
 
 import { type ReactNode } from "react";
-import { Check, ChevronDown, Lock, SlidersHorizontal, type LucideIcon } from "lucide-react";
+import { Check, ChevronDown, Lock, type LucideIcon } from "lucide-react";
 import {
   DropdownRoot,
   DropdownTrigger,
@@ -9,7 +9,6 @@ import {
   DropdownItem,
   DropdownLabel,
 } from "@/components/ui/dropdown";
-import { Slider } from "@/components/ui/slider";
 import { Tooltip } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
@@ -139,128 +138,12 @@ export function PillSelect<T extends string | number>({
   );
 }
 
-/** A pill that opens a single numeric slider — duration, steps, ... */
-export function PillSlider({
-  icon: Icon,
-  label,
-  value,
-  min,
-  max,
-  step = 1,
-  formatValue,
-  onChange,
-  helperText,
-}: {
-  icon: LucideIcon;
-  label: string;
-  value: number;
-  min: number;
-  max: number;
-  step?: number;
-  formatValue?: (v: number) => string;
-  onChange: (v: number) => void;
-  helperText?: string;
-}) {
-  const display = formatValue ? formatValue(value) : String(value);
-  return (
-    <DropdownRoot>
-      <DropdownTrigger asChild>
-        <button type="button" className={pillClass}>
-          <Icon className="size-3.5 text-muted" aria-hidden="true" />
-          <span className="font-medium">{display}</span>
-          <ChevronDown className="size-3 text-muted" aria-hidden="true" />
-        </button>
-      </DropdownTrigger>
-      <DropdownContent align="start" className="w-64 space-y-3 p-4">
-        <div className="flex items-center justify-between text-caption text-muted">
-          <span>{label}</span>
-          <span className="text-label text-ink-soft">{display}</span>
-        </div>
-        <Slider min={min} max={max} step={step} value={[value]} onValueChange={([v]) => onChange(v)} />
-        {helperText && <p className="text-caption text-muted">{helperText}</p>}
-      </DropdownContent>
-    </DropdownRoot>
-  );
-}
-
-/** A pill that opens a free-form panel — advanced toggles, seed, etc. */
-export function SettingsPopover({
-  children,
-  active,
-  label,
-}: {
-  children: ReactNode;
-  active?: boolean;
-  label?: string;
-}) {
-  return (
-    <DropdownRoot>
-      <DropdownTrigger asChild>
-        <button
-          type="button"
-          className={cn(pillClass, active && "border-brand/50 text-brand")}
-          aria-label="Advanced settings"
-        >
-          <SlidersHorizontal className="size-3.5" aria-hidden="true" />
-          {label && <span className="font-medium">{label}</span>}
-        </button>
-      </DropdownTrigger>
-      <DropdownContent align="end" className="max-h-[28rem] w-80 overflow-y-auto p-4">
-        <p className="mb-3 text-caption font-medium tracking-wide text-muted uppercase">
-          {label ?? "Advanced"}
-        </p>
-        <div className="space-y-4">{children}</div>
-      </DropdownContent>
-    </DropdownRoot>
-  );
-}
-
-export function SettingRow({
-  title,
-  description,
-  children,
-}: {
-  title: string;
-  description?: string;
-  children: ReactNode;
-}) {
-  return (
-    <div className="flex items-center justify-between gap-4">
-      <div className="min-w-0">
-        <p className="text-label text-ink-soft">{title}</p>
-        {description && <p className="mt-0.5 text-caption text-muted">{description}</p>}
-      </div>
-      {children}
-    </div>
-  );
-}
-
-/** The trigger for the mobile BottomSheet that replaces the composer's
- * pill row on narrow viewports — see e.g. seedance-video-form.tsx, which
- * renders this instead of the full horizontal-scroll row below `sm:`.
- * Icon-only (no label) — matches the reference mobile composer, where this
- * sits between the modality switcher and the submit button. */
-export function MobileOptionsTrigger({ onClick }: { onClick: () => void }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-label="Settings"
-      className={cn(pillClass, "px-2.5")}
-    >
-      <SlidersHorizontal className="size-4 text-muted" aria-hidden="true" />
-    </button>
-  );
-}
-
-/** A labeled row inside the mobile BottomSheet — pairs a field's pill
- * control (or a switch, same as SettingRow) with its name, since the pill
- * alone (icon + value, no label) doesn't carry enough context once it's not
- * sitting in a labeled toolbar. Unlike SettingRow (used in the desktop-only
- * SettingsPopover dropdown, where the panel edge already implies grouping),
- * this draws its own border so a long stack of rows in a full-height sheet
- * still reads as a list. */
-export function MobileFieldRow({
+/** A labeled row in the panel's settings list — pairs a field's pill
+ * control (or a switch) with its name, since the pill alone (icon + value,
+ * no label) doesn't carry enough context outside a labeled toolbar. Draws
+ * its own bottom border so a stack of rows reads as a list; wrap the stack
+ * in PanelFieldList (see panel.tsx) for the grouped frame. */
+export function FieldRow({
   label,
   description,
   children,

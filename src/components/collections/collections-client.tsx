@@ -57,8 +57,8 @@ export function CollectionsClient() {
             {collections.map((collection) => (
               <Link key={collection.id} href={`/collections/${collection.id}`}>
                 <Card variant="standard" className="flex h-full flex-col">
-                  <span className="flex size-11 items-center justify-center rounded-xl bg-brand-deep shadow-glow-sm">
-                    <FolderKanban className="size-5 text-white" aria-hidden="true" />
+                  <span className="flex size-11 items-center justify-center rounded-xl bg-accent-orange shadow-glow-sm">
+                    <FolderKanban className="size-5 text-on-brand" aria-hidden="true" />
                   </span>
                   <h2 className="mt-4 text-subheading font-semibold text-ink">{collection.name}</h2>
                   {collection.description && (

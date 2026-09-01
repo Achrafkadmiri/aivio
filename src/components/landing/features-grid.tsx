@@ -4,12 +4,13 @@ import { Reveal } from "@/components/marketing/reveal";
 import { TiltCard } from "@/components/marketing/tilt-card";
 import { cn } from "@/lib/utils";
 
-// Each card's icon chip cycles through the palette's four solid hues
-// (ember → teal → amber → rust, see globals.css) instead of every chip
+// Each card's icon chip takes one of the four signal colors in order
+// (lime → hot → amber → orange, see globals.css) instead of every chip
 // being the same fill — same trick ArtCraft uses to tell its tool cards
-// apart at a glance, done with flat colors from one family rather than a
-// gradient per card.
-const CHIP_COLORS = ["bg-brand", "bg-accent-teal", "bg-brand-soft", "bg-brand-deep"];
+// apart at a glance. This is the one place the whole set appears at once,
+// which is what makes it read as a deliberate palette rather than four
+// unrelated accents scattered across the app.
+const CHIP_COLORS = ["bg-brand", "bg-accent-hot", "bg-accent-amber", "bg-accent-orange"];
 
 const FEATURES = [
   {
@@ -63,7 +64,7 @@ export function FeaturesGrid() {
                     CHIP_COLORS[index % CHIP_COLORS.length],
                   )}
                 >
-                  <feature.icon className="size-6 text-white" aria-hidden="true" />
+                  <feature.icon className="size-6 text-on-brand" aria-hidden="true" />
                 </span>
                 <h3 className="mt-5 text-feature-title font-semibold text-ink">
                   {feature.title}

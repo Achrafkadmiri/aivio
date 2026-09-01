@@ -4,12 +4,17 @@
  * Design tokens for Vixerra's own identity — deliberately moved off the
  * violet→pink "AI SaaS" gradient (what this file used to be, modeled on
  * leonardo.ai) toward a palette that actually means something for a video
- * tool: ember (warm) × teal (cool) is the classic film color-grading duo,
- * on true near-black rather than a colored-tinted black. Single source of
- * truth for color/type/radius/shadow values — components should always
- * reach for a Tailwind utility generated from one of these tokens
- * (bg-surface, text-muted, rounded-2xl, shadow-glow-md, text-body, ...)
- * rather than hardcoding a hex value or pixel size.
+ * tool: a black/white/silver base broken by four saturated signal colors
+ * (lime, amber, orange, hot magenta). The base carries every structural
+ * surface; the four are confined to things that DO something or MEAN
+ * something — actions, credits, categories, announcements. Read the
+ * "signal set" note below before reaching for one, and before adding a
+ * fifth.
+ *
+ * Single source of truth for color/type/radius/shadow values — components
+ * should always reach for a Tailwind utility generated from one of these
+ * tokens (bg-surface, text-muted, rounded-2xl, shadow-glow-md, text-body,
+ * ...) rather than hardcoding a hex value or pixel size.
  *
  * Tailwind v4 is CSS-first: every key below auto-generates a matching
  * utility class (no tailwind.config.ts needed). The default numeric
@@ -18,70 +23,106 @@
  * sm(640)/md(768)/lg(1024).
  */
 @theme {
-  /* Surfaces — true near-black, no violet/blue undertone. Higgsfield/
-     ArtCraft/most serious creative tools land here rather than on a
-     colored-tinted "void" — the color budget is spent on the ember/teal
-     accents instead, not on the background itself. */
-  --color-surface: #0a0a0b; /* Background Primary */
-  --color-surface-2: #141416; /* Background Secondary (cards) */
-  --color-surface-3: #1d1d20; /* Background Tertiary (elevated / card hover) */
-  --color-surface-dark: #101012; /* Input fields */
-  --color-overlay: #0a0a0b;
-  --color-dropdown-hover: #232326; /* Hover states, dropdowns */
+  /* Surfaces — true near-black with the faintest cool cast, no warm or
+     violet undertone. This palette is monochrome by design (black, white,
+     silver), so every bit of hierarchy has to come from VALUE rather than
+     hue: the ramp below is spaced widely enough that surface / card /
+     elevated stay distinguishable without a single colored tint doing the
+     work. Deeper than a typical #111 dark theme on purpose — the darker
+     the ground, the more silver reads as an actual metal catching light
+     rather than as another gray box. */
+  --color-surface: #050506; /* Background Primary */
+  --color-surface-2: #0f0f11; /* Background Secondary (cards) */
+  --color-surface-3: #17171a; /* Background Tertiary (elevated / card hover) */
+  --color-surface-dark: #0a0a0c; /* Input fields */
+  --color-overlay: #050506;
+  --color-dropdown-hover: #1f1f23; /* Hover states, dropdowns */
 
   /* App-shell background — the authenticated app (dashboard/generate/
      gallery/settings, see AppShell) uses a hair softer near-black than the
      marketing site's pure --color-surface, and the sidebar sits one step
      above that again — closer to ArtCraft's own studio UI (distinct body/
      sidebar/canvas planes) than a single flat tone everywhere. */
-  --color-surface-app: #101011;
-  --color-surface-sidebar: #161618;
+  --color-surface-app: #0b0b0d;
+  --color-surface-sidebar: #101013;
 
-  /* Text */
-  --color-ink: #fafaf9; /* Text Primary — off-white, warm not blue-white */
-  --color-ink-soft: #fafaf9;
-  --color-ink-softer: #fafaf9;
-  --color-muted: #9c9ca3; /* Text Secondary */
-  --color-text-tertiary: #6c6c74; /* Labels, captions */
+  /* Text — cool neutrals, matching the silver below. In a monochrome
+     system the text ramp IS most of the design, so these three steps are
+     pulled further apart than they would be in a colored palette: primary
+     near-white, secondary clearly dimmer, tertiary dimmer again. Without
+     a hue to separate them, anything closer collapses into one gray. */
+  --color-ink: #f7f8fa; /* Text Primary — off-white, cool not warm */
+  --color-ink-soft: #f7f8fa;
+  --color-ink-softer: #f7f8fa;
+  --color-muted: #979ca6; /* Text Secondary */
+  --color-text-tertiary: #676c76; /* Labels, captions */
 
   /* Borders — translucent white, not opaque gray */
   --color-line: rgb(255 255 255 / 0.1); /* Default border */
   --color-border-subtle: rgb(255 255 255 / 0.06); /* Subtle dividers */
   --color-border-strong: rgb(255 255 255 / 0.16); /* Focus rings, active borders */
 
-  /* Brand — Ember. Warm, high-energy, unclaimed by the other big AI-video
-     tools (Leonardo/Midjourney-adjacent = violet, ArtCraft = blue,
-     Higgsfield = lime). Used for text accents, badges, links, focus/active
-     states, icon fills, and gradient CTAs — the primary button itself
-     stays a solid white pill (see button.tsx), never a brand-filled one,
-     so the accent reads as deliberate emphasis rather than default chrome. */
-  --color-brand: #ff4d23;
-  --color-brand-hover: #ff7a4d;
-  --color-brand-active: #e23e14;
+  /* Silver — the base metal. Everything structural (surfaces, type,
+     borders) is black/white/grey, and this is the neutral accent that
+     belongs to that base rather than to the signal set below: identity
+     marks and any chrome that should read as material, not as an action.
+     Pitched below pure white on purpose — an accent sitting at the same
+     value as body text (#f7f8fa) stops being an accent. */
+  --color-silver: #bfc7d2;
 
-  /* Ember family — two solid tonal siblings of --color-brand (same hue
-     family, shifted lighter/warmer and darker/deeper) used for categorical
-     coding — e.g. the sidebar/dashboard's per-section icon colors — as an
-     alternative to inventing unrelated new hues. Solid fills only, never
-     blended together: see the note on gradients below. */
-  --color-brand-soft: #ffab2e; /* lighter, more yellow — Gallery/Library */
-  --color-brand-deep: #c73e1d; /* deeper, more muted rust — Collections */
+  /* ---- The signal set ------------------------------------------------
+     Four saturated colors that break the monochrome. The base stays black
+     and white; these are the interruptions, and they earn their loudness
+     by being confined to things that DO something or mean something —
+     actions, value, categories, one-off announcements. Nothing structural
+     ever takes one.
+     Each is assigned a job below rather than being used interchangeably:
+     a screen where every accent is a different color for no reason reads
+     as chaos, not as energy. All four are bright enough to carry black
+     glyphs (13.4:1 lime, 14.7:1 amber, 9.2:1 orange, 5.4:1 hot), and all
+     four clear 5:1 as text on the ground, so any of them can be a label
+     or a fill without a contrast exception. */
 
-  /* Secondary accent — electric teal. Paired with --color-brand as a
-     warm/cool duo (film-grade "orange & teal") for dual-tone moments, but
-     each surface gets ONE flat, solid hue from this family — never a
-     blended gradient fill between them (that reads as the exact generic-
-     AI-SaaS look this palette was built to move away from; see
-     buttonVariants' retired "gradient" variant, now "accent"). */
-  --color-accent-teal: #2fe8d0;
-  --color-accent-teal-soft: #7ff3e3;
+  /* Lime — primary action. The default accent: buttons, active states,
+     focus rings, sliders, links, accent text. It is the loudest thing on
+     a black screen and the one color the eye should follow to find "what
+     do I press". */
+  --color-brand: #bbdc12;
+  --color-brand-hover: #cbe93a;
+  --color-brand-active: #a3c30d;
 
-  /* Status — kept clearly separate in hue from brand-ember so alerts never
-     get mistaken for accent decoration. */
-  --color-success: #22c55e;
-  --color-warning: #f2b705;
-  --color-accent: #fb3a5c; /* error/destructive */
-  --color-info: #3fa9f5;
+  /* Ink for glyphs and labels sitting ON any light accent fill — all four
+     signal colors and silver. Every one of them is a LIGHT color, so
+     white-on-accent is unreadable (as low as 1.4:1); black is between 5:1
+     and 15:1 on all of them, and on a saturated fill it is also the only
+     choice that looks deliberate rather than washed. */
+  --color-on-brand: #050506;
+
+  /* Amber — value. Reserved for credits: the balance chips, the Zap
+     glyphs, the cost on the generate button. Money-adjacent UI reads
+     faster with a color of its own, and keeping it off the action color
+     means "what this costs" never gets confused with "what to press". */
+  --color-accent-amber: #ffd400;
+
+  /* Orange — the third categorical slot (per-section icons, chip
+     rotations). Sits between lime and hot in temperature, so a row of all
+     four still reads as a deliberate sequence. */
+  --color-accent-orange: #ff8f00;
+
+  /* Hot magenta — announcements. The loudest of the four and the most
+     rationed: exclusives, "new", the promo banner, the section beam.
+     Against an otherwise black-and-white page a single hot panel lands
+     without needing any extra size or weight. */
+  --color-accent-hot: #ff0052;
+
+  /* Status — separate from the signal set above, and deliberately so:
+     these mean something fixed, and must never be mistaken for
+     decoration. Warning is the one to watch — it sits closest to amber,
+     so it is kept clearly deeper and less acid than the credits color. */
+  --color-success: #3fbe80;
+  --color-warning: #d99a20; /* deeper + duller than accent-amber/-orange */
+  --color-accent: #e8404f; /* error — a true red, not the hot's magenta */
+  --color-info: #56a8e8;
 
   /* Fonts (next/font variables set on <html> in layout.tsx). Three roles
      instead of one: a geometric grotesk carries display/heading weight
@@ -106,31 +147,35 @@
   --radius-2xl: 32px;
   --radius-full: 9999px;
 
-  /* Shadows — plain black depth shadows + a soft localized ember glow
-     (was violet). */
+  /* Shadows — plain black depth shadows + a soft localized brand bloom.
+     Now that the brand is a saturated lime rather than a near-white
+     metal, the glows can carry a little more alpha again without turning
+     into haze: a coloured glow reads as a halo at a strength where a
+     white one would just look like fog. Still restrained — the point is
+     that a lime button looks lit from behind, not that it flares. */
   --shadow-raised: 0 1px 2px 0 rgb(0 0 0 / 0.3);
   --shadow-floating: 0 8px 30px -4px rgb(0 0 0 / 0.5);
   --shadow-modal: 0 20px 60px -12px rgb(0 0 0 / 0.6);
   --shadow-inset: inset 0 1px 0 0 rgb(255 255 255 / 0.05);
   --shadow-card: 0 4px 12px rgb(0 0 0 / 0.4), inset 0 1px 0 0 rgb(255 255 255 / 0.05);
-  --shadow-glow-sm: 0 0 20px rgb(255 77 35 / 0.18);
-  --shadow-glow-md: 0 0 40px rgb(255 77 35 / 0.22);
-  --shadow-glow-lg: 0 0 80px rgb(255 77 35 / 0.18);
-  --shadow-glow-teal-sm: 0 0 20px rgb(47 232 208 / 0.18);
-  --shadow-glow-teal-md: 0 0 40px rgb(47 232 208 / 0.22);
+  --shadow-glow-sm: 0 0 20px rgb(187 220 18 / 0.16);
+  --shadow-glow-md: 0 0 40px rgb(187 220 18 / 0.2);
+  --shadow-glow-lg: 0 0 80px rgb(187 220 18 / 0.16);
+  --shadow-glow-hot-sm: 0 0 20px rgb(255 0 82 / 0.18);
+  --shadow-glow-hot-md: 0 0 40px rgb(255 0 82 / 0.24);
   --shadow-glow-white: 0 0 30px rgb(255 255 255 / 0.05);
 
-  /* No gradient() fills anywhere in this system, full stop — that
-     ember→teal blend used to fill buttons/badges/icon chips/decor blobs
-     app-wide, and even the single-hue radial glow this token used to hold,
-     read as exactly the generic-AI-SaaS tell this palette was rebuilt to
-     move away from. Every surface below picks ONE flat, solid color from
-     the palette instead (--color-brand / -brand-soft / -brand-deep /
-     -accent-teal) — see buttonVariants' "accent" variant (was "gradient"),
-     app-shell's per-section nav colors, and the dashboard's icon chips.
+  /* No gradient() fills anywhere in this system, full stop — a two-hue
+     blend used to fill buttons/badges/icon chips/decor blobs app-wide, and
+     even the single-hue radial glow this token used to hold, read as
+     exactly the generic-AI-SaaS tell this palette was rebuilt to move away
+     from. Every surface below picks ONE flat, solid color from the palette
+     instead (--color-brand / -accent-amber / -accent-orange / -accent-hot) —
+     see buttonVariants' "accent" variant (was "gradient"), app-shell's
+     per-section nav colors, and the dashboard's icon chips.
      --gradient-hero-glow is now a flat solid tint too (kept the old name
      since call sites still consume it as a plain `background` value). */
-  --gradient-hero-glow: rgb(255 77 35 / 0.08);
+  --gradient-hero-glow: rgb(187 220 18 / 0.06);
 
   /* Type scale: each pairs font-size with its line-height (and, where
      useful, letter-spacing) in a single utility. Font-family is NOT
@@ -380,7 +425,7 @@
   /* Custom scrollbar — the default OS scrollbar (light gray, ~15-17px) reads
      as unstyled chrome against this app's near-black surfaces. Thin,
      translucent-white by default (echoes --color-line's translucent-white
-     border treatment rather than an opaque gray), brand-ember on hover —
+     border treatment rather than an opaque gray), brand-lime on hover —
      the same "brand reserved for focus/active states" rule already used for
      :focus-visible above. Applied to `*` (not just html/body) since
      ::-webkit-scrollbar doesn't inherit — every internal scroll container
@@ -412,7 +457,7 @@
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background-color: rgb(255 77 35 / 0.45);
+    background-color: rgb(187 220 18 / 0.55);
   }
 
   ::-webkit-scrollbar-corner {
@@ -461,7 +506,7 @@
   }
 
   /* Accent text — used for hero accent words, stat numbers, wordmarks.
-     Solid ember, never gradient-clipped — this app doesn't use blended
+     Solid lime, never gradient-clipped — this app doesn't use blended
      gradient fills anywhere (see the note above --gradient-hero-glow). */
   .text-gradient {
     color: var(--color-brand);
@@ -532,7 +577,7 @@
 
   /* Light-beam section divider — a blurred, multi-stop horizontal band used
      as a dramatic separator (migration brief §3, step 5). Recolored to
-     Vixerra's own ember→teal duo instead of the source's blue→violet→red,
+     Vixerra's own silver→accent pair instead of the source's blue→violet→red,
      consistent with "no unrelated hues" (see --color-brand's own comment
      above). Two layers: a soft wide glow plus a crisp thin line on top. */
   .light-beam {
@@ -542,7 +587,7 @@
       to right,
       transparent,
       var(--color-brand) 35%,
-      var(--color-accent-teal) 65%,
+      var(--color-accent-hot) 65%,
       transparent
     );
     opacity: 0.8;

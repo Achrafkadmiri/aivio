@@ -6,9 +6,9 @@ import { gridContainerVariants, gridItemVariants } from "@/lib/animations";
 import { TiltCard } from "@/components/marketing/tilt-card";
 import { cn } from "@/lib/utils";
 
-// Same four-hue solid rotation as features-grid.tsx (ember/teal/amber/rust)
+// Same four-fill rotation as features-grid.tsx (lime/hot/amber/orange)
 // instead of every icon badge sharing one gradient fill.
-const CHIP_COLORS = ["bg-brand", "bg-accent-teal", "bg-brand-soft", "bg-brand-deep"];
+const CHIP_COLORS = ["bg-brand", "bg-accent-hot", "bg-accent-amber", "bg-accent-orange"];
 
 // "Why creatives choose Vixerra" — plain icon + copy cards. No per-card
 // video/image sample here: the page's real output examples are kept to the
@@ -71,7 +71,7 @@ export function CapabilitiesGrid() {
                     CHIP_COLORS[index % CHIP_COLORS.length],
                   )}
                 >
-                  <reason.icon className="size-6 text-white" aria-hidden="true" />
+                  <reason.icon className="size-6 text-on-brand" aria-hidden="true" />
                 </span>
 
                 <div>

@@ -60,7 +60,7 @@ export function Hero() {
   return (
     <section className="relative isolate flex min-h-screen flex-col justify-center overflow-hidden bg-black">
       <div
-        className="pointer-events-none absolute left-1/2 top-0 h-[36rem] w-[70%] -translate-x-1/2 -translate-y-1/3 rounded-full bg-brand/20 blur-[120px]"
+        className="pointer-events-none absolute left-1/2 top-0 h-[36rem] w-[70%] -translate-x-1/2 -translate-y-1/3 rounded-full bg-brand/10 blur-[120px]"
         aria-hidden="true"
       />
 

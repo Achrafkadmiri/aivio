@@ -54,8 +54,11 @@ function CreditsBadge() {
       className="flex items-center gap-1.5 rounded-full border border-line bg-surface-2 px-3 py-1.5 text-label text-ink-soft transition-colors hover:border-border-strong"
       title="Credits remaining"
     >
-      <Zap className="size-3.5 text-brand" aria-hidden="true" />
-      <span className="font-semibold">{formatCredits(data.credit_balance)}</span>
+      {/* Credits are amber everywhere they appear — see --color-accent-amber.
+          Keeping value off the lime action color means "what you have"
+          never reads as "what to press". */}
+      <Zap className="size-3.5 text-accent-amber" aria-hidden="true" />
+      <span className="font-semibold text-accent-amber">{formatCredits(data.credit_balance)}</span>
       <span className="hidden text-muted sm:inline">credits</span>
     </Link>
   );
@@ -321,7 +324,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                   type="button"
                   className="flex items-center gap-2.5 rounded-full border border-line bg-surface-2 py-1.5 pr-3 pl-1.5 transition-colors hover:border-border-strong hover:bg-surface-3"
                 >
-                  <span className="flex size-7 items-center justify-center rounded-full bg-brand text-caption font-semibold text-white">
+                  <span className="flex size-7 items-center justify-center rounded-full bg-brand text-caption font-semibold text-on-brand">
                     {initial}
                   </span>
                   <span className="hidden text-label text-ink-soft sm:inline">{user?.name}</span>

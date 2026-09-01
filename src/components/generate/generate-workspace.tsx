@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Sparkles, Zap } from "lucide-react";
+import { FolderOpen, Lightbulb, Sparkles, Zap } from "lucide-react";
 import { TextToVideoForm } from "./text-to-video-form";
 import { TextToImageForm } from "./text-to-image-form";
 import { JobStatusCard } from "./job-status-card";
@@ -11,7 +11,6 @@ import { MODALITIES } from "./modality-switcher";
 import { useGeneration } from "@/hooks/use-generation";
 import { useUsage } from "@/hooks/use-credits";
 import { useSpotlight } from "@/hooks/use-spotlight";
-import { useSidebarCollapsed } from "@/components/providers/sidebar-provider";
 import { cn, formatCredits } from "@/lib/utils";
 import {
   VIDEO_MODELS,
@@ -23,43 +22,21 @@ import {
   type GenerationType,
 } from "@/lib/constants";
 
-// The whole studio renders at 70%: the hero/result column and the composer
-// docked under it. The composer used to be the one thing left at full size,
-// which made the form the biggest element on a page whose actual subject —
-// the thing being generated — was drawn at 0.7.
-//
-// Keep in sync with the literal "[zoom:0.7]" / "sm:[zoom:0.7]" classes below:
-// Tailwind arbitrary-value classes have to stay string literals for its
-// build-time scanner to pick them up, so neither can be derived from this.
-const STUDIO_ZOOM = 0.7;
-
+/**
+ * Studio layout: a fixed-width composer panel on the left (modality tabs →
+ * model → upload → prompt → settings → generate, top to bottom) and the
+ * result canvas filling the rest — the classic image-to-video studio
+ * arrangement (media.io, Kling, PixVerse) rather than the previous
+ * bottom-docked composer bar. On desktop the studio claims the viewport
+ * height left under the app header and each side scrolls internally; below
+ * lg the two stack and the page scrolls as one.
+ */
 export function GenerateStudio({ type }: { type: GenerationType }) {
   const [activeJobId, setActiveJobId] = useState<string | null>(null);
   const [activeIsVideo, setActiveIsVideo] = useState(true);
   const generation = useGeneration(activeJobId);
   const active = MODALITIES.find((m) => m.type === type) ?? MODALITIES[0];
-  const sidebarCollapsed = useSidebarCollapsed();
-  // The empty-state canvas this drives lives inside the [zoom:0.7] wrapper
-  // below, so the cursor offset needs the same zoom correction as
-  // composerHeight's padding math — see use-spotlight.ts.
-  const spotlight = useSpotlight<HTMLDivElement>(STUDIO_ZOOM);
-
-  // The composer's pill row (model, duration, resolution, aspect ratio,
-  // format, settings, submit) wraps onto more lines the narrower the
-  // viewport gets, so its real height varies a lot — a fixed pb-* guess on
-  // the scroll container above either wastes space on desktop or (on a
-  // narrow phone, where it wraps to 3-4 rows) isn't enough, letting the
-  // fixed-positioned composer bar cover the "Create" hero text behind it.
-  // Measuring the actual rendered height keeps them from ever overlapping.
-  const composerRef = useRef<HTMLDivElement>(null);
-  const [composerHeight, setComposerHeight] = useState(0);
-  useEffect(() => {
-    const el = composerRef.current;
-    if (!el) return;
-    const observer = new ResizeObserver(([entry]) => setComposerHeight(entry.contentRect.height));
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
+  const spotlight = useSpotlight<HTMLDivElement>();
 
   // Deep-link support — e.g. "Use this prompt" from /prompts lands on
   // /generate (text-to-video) with ?model=&prompt= pre-filled. Read once:
@@ -102,77 +79,105 @@ export function GenerateStudio({ type }: { type: GenerationType }) {
   }
 
   // "Create another" (completed) / "Try again" (failed) both just clear the
-  // active job so the idle hero + composer come back for a fresh attempt.
+  // active job so the idle canvas + composer come back for a fresh attempt.
   function handleReset() {
     setActiveJobId(null);
   }
 
   return (
-    // The composer bar below is zoomed to match this column, but the two
-    // wrappers stay separate: zoom scales an element's own box model,
-    // padding included, so a bar whose lg:pl-64 sidebar clearance sat inside
-    // a zoomed context would shrink that clearance too and slide under the
-    // (unzoomed, real 240px-wide) sidebar. The fix is to split the two jobs —
-    // the bar's POSITIONING stays true-scale, and the zoom goes on the
-    // content inside it. See the composer's own comment below.
-    <>
-      <div className="flex h-full flex-col [zoom:0.7]">
-        <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
-          {/* Desktop: full pill row. overflow-x-auto + shrink-0/whitespace-nowrap
-              on each pill (same pattern as settings-nav.tsx) is kept as a
-              belt-and-suspenders fallback for in-between widths. On mobile
-              this switcher instead lives inside the composer's own bottom
-              row — see modality-switcher.tsx's ModalitySwitcherMobile. */}
-          <div className="glass hidden max-w-full items-center gap-1 overflow-x-auto rounded-full p-1 sm:flex">
-            {MODALITIES.map((m) => (
-              <Link
-                key={m.type}
-                href={m.href}
-                className={cn(
-                  "shrink-0 rounded-full px-4 py-2 text-label font-medium whitespace-nowrap transition-colors",
-                  m.type === type
-                    ? "bg-brand text-white shadow-glow-sm"
-                    : "text-muted hover:text-ink-soft",
-                )}
-              >
-                {m.label}
-              </Link>
-            ))}
-            <span
-              title="Coming soon"
-              className="shrink-0 cursor-not-allowed rounded-full px-4 py-2 text-label font-medium whitespace-nowrap text-muted opacity-50"
+    // The 8rem accounts for the app header (h-16) plus <main>'s lg:p-8
+    // vertical padding — see app-shell.tsx.
+    <div className="flex flex-col gap-4 lg:h-[calc(100vh-8rem)] lg:flex-row">
+      {/* Composer panel. The 1px brand top edge is the one accent touch
+          carried over from the old composer bar — still marking "this is
+          the generate control" without going full glow. */}
+      <div
+        className={cn(
+          "relative isolate flex w-full shrink-0 flex-col overflow-hidden rounded-2xl border border-line bg-surface-2 shadow-floating",
+          "before:absolute before:inset-x-0 before:top-0 before:h-px before:bg-brand before:content-['']",
+          "lg:w-[400px] xl:w-[430px]",
+        )}
+      >
+        {/* Modality tabs — underline style, one route per modality. */}
+        <div className="flex shrink-0 items-center gap-5 border-b border-line px-4 pt-3 sm:px-5">
+          {MODALITIES.map((m) => (
+            <Link
+              key={m.type}
+              href={m.href}
+              className={cn(
+                "border-b-2 pb-2.5 text-body-sm font-semibold whitespace-nowrap transition-colors",
+                m.type === type
+                  ? "border-brand text-ink"
+                  : "border-transparent text-muted hover:text-ink-soft",
+              )}
             >
-              Audio to Video
-            </span>
-          </div>
+              {m.heroTitle}
+            </Link>
+          ))}
+          <span
+            title="Coming soon"
+            className="cursor-not-allowed border-b-2 border-transparent pb-2.5 text-body-sm font-semibold whitespace-nowrap text-muted opacity-50"
+          >
+            Audio
+          </span>
+        </div>
+
+        {/* The form fills the rest of the panel and manages its own scroll
+            area + pinned Generate footer — see the forms' root <form>. */}
+        <div className="min-h-0 flex-1">
+          {type === "text-to-video" && (
+            <TextToVideoForm
+              onCreated={handleCreated(true)}
+              busy={busy}
+              initialModel={initialModel}
+              initialPrompt={initialPrompt}
+              initialParams={initialParams}
+              tierInfo={usageQuery.data?.tier_info}
+            />
+          )}
+          {type === "text-to-image" && (
+            <TextToImageForm
+              onCreated={handleCreated(false)}
+              busy={busy}
+              initialModel={initialImageModel}
+              initialPrompt={initialPrompt}
+            />
+          )}
+        </div>
+      </div>
+
+      {/* Result side: quick links + credits up top, canvas below. */}
+      <div className="flex min-w-0 flex-1 flex-col gap-3">
+        <div className="flex shrink-0 flex-wrap items-center gap-2">
+          <Link
+            href="/my-gallery"
+            className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface-2 px-3 py-1.5 text-label text-muted transition-colors hover:border-border-strong hover:text-ink-soft"
+          >
+            <FolderOpen className="size-3.5" aria-hidden="true" />
+            Creations
+          </Link>
+          <Link
+            href="/prompts"
+            className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface-2 px-3 py-1.5 text-label text-muted transition-colors hover:border-border-strong hover:text-ink-soft"
+          >
+            <Lightbulb className="size-3.5" aria-hidden="true" />
+            Prompt ideas
+          </Link>
 
           {usageQuery.data && (
-            <div className="flex shrink-0 items-center gap-1.5 rounded-full border border-line bg-surface-2 px-3 py-1.5 text-body-sm text-ink-soft">
-              <Zap className="size-4 text-brand" aria-hidden="true" />
-              <span className="font-semibold">{formatCredits(usageQuery.data.credit_balance)}</span>
+            <div className="ml-auto flex shrink-0 items-center gap-1.5 rounded-full border border-line bg-surface-2 px-3 py-1.5 text-body-sm text-ink-soft">
+              <Zap className="size-4 text-accent-amber" aria-hidden="true" />
+              <span className="font-semibold text-accent-amber">
+                {formatCredits(usageQuery.data.credit_balance)}
+              </span>
               <span className="text-muted">credits remaining</span>
             </div>
           )}
         </div>
 
-        {/* Bottom padding clears the fixed composer bar docked below — see
-            the composerHeight measurement above. This div lives inside the
-            [zoom:0.7] wrapper but composerHeight was measured outside it
-            (real, unzoomed pixels), so it has to be scaled back up — zoom
-            shrinks how far a given padding value reaches on screen, same
-            reason the composer bar itself is kept a sibling of this wrapper
-            rather than a descendant. pb-56 is just the fallback for the
-            first paint before ResizeObserver reports a real height. */}
-        <div
-          className={cn("mt-6 flex-1 overflow-y-auto", !composerHeight && "pb-56")}
-          style={composerHeight ? { paddingBottom: (composerHeight + 32) / STUDIO_ZOOM } : undefined}
-        >
+        <div className="min-h-0 flex-1">
           {hasJob ? (
-            // h-full hands the card the exact height left above the docked
-            // composer (this scroll container's padding-bottom already
-            // reserves that space), so the result can size itself to fit
-            // instead of running off the bottom of the viewport.
-            <div className="mx-auto h-full w-full max-w-4xl">
+            <div className="h-full min-h-[24rem] w-full">
               <JobStatusCard
                 generation={generation}
                 hasJob={hasJob}
@@ -183,23 +188,27 @@ export function GenerateStudio({ type }: { type: GenerationType }) {
           ) : (
             // The empty state is framed as a "canvas" — a large dashed,
             // brand-tinted card — rather than text floating in open space.
-            // Same accent language as the composer's reference/keyframe
-            // boxes (dashed border-brand, tinted icon ring), so "this is
-            // where your creation will appear" reads consistently the very
-            // first time someone lands here and every time after.
+            // Same accent language as the composer's upload drop zones
+            // (dashed border-brand, tinted icon ring), so "this is where
+            // your creation will appear" reads consistently the very first
+            // time someone lands here and every time after.
             <div
               {...spotlight}
-              className="group relative flex h-full min-h-[50vh] flex-col items-center justify-center overflow-hidden rounded-3xl border-2 border-dashed border-brand/15 bg-surface-2/20 p-10 text-center"
+              className="group relative flex h-full min-h-[24rem] flex-col items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-brand/15 bg-surface-2/20 p-10 text-center"
             >
               {/* Ambient drifting glow at rest — crossfades out for the
-                  cursor spotlight below once hovered. */}
+                  cursor spotlight below once hovered. Kept faint on
+                  purpose: spread across a 34rem blob, lime stops reading
+                  as a glow and turns the whole canvas olive. The tight
+                  halo on the badge below is where the colour should
+                  actually register. */}
               <div
-                className="pointer-events-none absolute -top-24 left-1/2 size-[34rem] -translate-x-1/2 bg-brand opacity-25 blur-3xl transition-opacity duration-300 animate-blob-float group-hover:opacity-0"
+                className="pointer-events-none absolute -top-24 left-1/2 size-[34rem] -translate-x-1/2 bg-brand opacity-[0.06] blur-3xl transition-opacity duration-300 animate-blob-float group-hover:opacity-0"
                 aria-hidden="true"
               />
               {/* Cursor spotlight — see use-spotlight.ts. */}
               <div
-                className="pointer-events-none absolute size-[34rem] -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand opacity-0 blur-3xl transition-opacity duration-300 group-hover:opacity-25"
+                className="pointer-events-none absolute size-[34rem] -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand opacity-0 blur-3xl transition-opacity duration-300 group-hover:opacity-[0.09]"
                 style={{ left: "var(--spot-x, 50%)", top: "var(--spot-y, 0%)" }}
                 aria-hidden="true"
               />
@@ -208,82 +217,19 @@ export function GenerateStudio({ type }: { type: GenerationType }) {
                 {/* Soft pulsing halo behind the badge — a small sign of life
                     on an otherwise static empty state. */}
                 <span
-                  className="absolute inset-0 -m-2 animate-pulse rounded-2xl bg-brand opacity-30 blur-lg"
+                  className="absolute inset-0 -m-2 animate-pulse rounded-2xl bg-brand opacity-20 blur-lg"
                   aria-hidden="true"
                 />
                 <span className="relative flex size-16 items-center justify-center rounded-2xl bg-brand shadow-glow-md">
-                  <Sparkles className="size-7 text-white" aria-hidden="true" />
+                  <Sparkles className="size-7 text-on-brand" aria-hidden="true" />
                 </span>
               </span>
-              <h2 className="relative text-display font-bold text-ink">{active.heroTitle}</h2>
+              <h2 className="relative text-heading font-bold text-ink">{active.heroTitle}</h2>
               <p className="relative mt-3 text-body text-muted">{active.heroSubtitle}</p>
             </div>
           )}
         </div>
       </div>
-
-      {/* Docked to the bottom of the viewport rather than sitting inline in
-          a two-column layout — matches ArtCraft's floating prompt bar, but
-          full-width rather than a centered column: it spans the whole
-          bottom edge (minus px-4 breathing room). A sibling of the hero's
-          [zoom:0.7] div rather than a child, so the positioning below stays
-          true-scale — see the comment on the return's opening fragment, and
-          the inner zoom wrapper that scales the forms themselves.
-
-          Being `fixed` means it's positioned against the viewport, not the
-          flex layout AppShell's <main> sits in, so it can't just inherit
-          the sidebar's width the way <main> does automatically — it has to
-          clear the sidebar with its own left padding, kept in sync with
-          the live collapsed state via sidebar-provider (w-60 expanded / w-16
-          collapsed, each plus that column's ml-3 + the flex gap-3 to
-          <main>, rounded up to the nearest spacing step, plus a bit of
-          extra breathing room). Forgetting this is exactly why the bar
-          used to stay pinned to the expanded width and not visibly grow
-          when the sidebar collapsed. */}
-      <div
-        className={cn(
-          "pointer-events-none fixed inset-x-0 bottom-4 z-30 px-4 transition-[padding-left] duration-300",
-          sidebarCollapsed ? "lg:pl-24" : "lg:pl-64",
-        )}
-      >
-        {/* The zoom starts at sm: on purpose. The composer is the primary
-            touch surface on a phone, and 0.7 takes its controls down to
-            19-28px tall — the Settings trigger measures 20x26 on a 375px
-            viewport, well under a usable tap target. Below sm: it also
-            collapses to three controls (modality, options, generate) rather
-            than the full pill row, so it is not what looks oversized next to
-            the hero there anyway.
-
-            composerRef sits on the UNZOOMED wrapper on purpose: the scroll
-            container above reserves room for this bar out of its measured
-            height, and it needs that in real screen pixels. A zoomed element
-            reports its own coordinate space to ResizeObserver, so measuring
-            inside the zoom would over-report by 1/0.7 and reserve half a bar
-            too much. Measuring the wrapper around it gives the true rendered
-            height, which is what the `/ STUDIO_ZOOM` correction there expects. */}
-        <div ref={composerRef} className="pointer-events-auto w-full">
-          <div className="sm:[zoom:0.7]">
-            {type === "text-to-video" && (
-              <TextToVideoForm
-                onCreated={handleCreated(true)}
-                busy={busy}
-                initialModel={initialModel}
-                initialPrompt={initialPrompt}
-                initialParams={initialParams}
-                tierInfo={usageQuery.data?.tier_info}
-              />
-            )}
-            {type === "text-to-image" && (
-              <TextToImageForm
-                onCreated={handleCreated(false)}
-                busy={busy}
-                initialModel={initialImageModel}
-                initialPrompt={initialPrompt}
-              />
-            )}
-          </div>
-        </div>
-      </div>
-    </>
+    </div>
   );
 }

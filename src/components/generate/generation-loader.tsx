@@ -33,7 +33,7 @@ function Sparks() {
           key={spark.d}
           d={spark.d}
           fill="currentColor"
-          className="text-brand-soft motion-safe:animate-sparkle-twinkle"
+          className="text-accent-amber motion-safe:animate-sparkle-twinkle"
           style={{
             animationDelay: `${spark.delay}ms`,
             // SVG children scale from the user-space origin by default, which
@@ -59,7 +59,7 @@ export function GenerationLoader({
 
   return (
     <div className={cn("relative flex items-center justify-center", className)} aria-hidden="true">
-      {/* Soft ember bloom behind the mark — flat colour plus blur, no
+      {/* Soft silver bloom behind the mark — flat colour plus blur, no
         * gradient fill (see the palette note in globals.css). */}
       <span className="pointer-events-none absolute size-24 rounded-full bg-brand opacity-20 blur-2xl" />
 
