@@ -13,6 +13,7 @@ import {
   Sparkles,
   Images,
   FolderKanban,
+  Megaphone,
   Settings,
   LogOut,
   Menu,
@@ -77,6 +78,7 @@ const NAV_SECTIONS: { label: string; items: { href: string; label: string; icon:
       { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
       { href: "/generate", label: "Generate", icon: Sparkles },
       { href: "/presets", label: "Presets", icon: Wand2 },
+      { href: "/studio", label: "Marketing", icon: Megaphone },
     ],
   },
   {

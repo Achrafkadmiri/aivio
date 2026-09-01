@@ -44,6 +44,10 @@ export type ViralPreset = {
   badge?: "New";
   /** What kind of photo this preset actually needs, shown by the dropzone. */
   imageHint: string;
+  /** What the uploaded image *is*, phrased for the model — fills the
+   * 【Reference Image】block buildPresetPrompt prepends. Written as a noun
+   * phrase that completes "The attached image is ___". */
+  referenceSubject: string;
   /** Locked prompt — never editable here, but readable (see the studio's
    * "What this preset does" disclosure) so it isn't a black box. */
   prompt: string;
@@ -70,6 +74,7 @@ export const VIRAL_PRESETS: ViralPreset[] = [
     previewUrl: CLIPS.makeupGirl,
     badge: "New",
     imageHint: "A clear portrait — face visible, hair not tied back.",
+    referenceSubject: "the person this video is of",
     prompt: `【Style】Beauty-campaign hyperrealism, slow motion, soft key light with a warm rim, glossy confident tone.
 【Duration】5 seconds
 【Main Character】The person in the reference image, identity and outfit preserved exactly.
@@ -93,6 +98,7 @@ Key detail: Hair moves with real weight and settles — no rubber-sheet warping 
     category: "Portrait",
     previewUrl: CLIPS.seedance,
     imageHint: "Any photo with one clear subject and some space around it.",
+    referenceSubject: "the subject and the environment this shot takes place in",
     prompt: `【Style】Prestige-drama cinematography, hyperrealism, anamorphic shallow depth of field, motivated practical lighting, restrained tone.
 【Duration】5 seconds
 【Main Character】The subject of the reference image, unchanged.
@@ -113,6 +119,7 @@ Key detail: The subject stays alive between beats — a blink, a small breath, a
     category: "Product",
     previewUrl: CLIPS.sippo,
     imageHint: "A product shot on a plain background — the cleaner the cutout, the better.",
+    referenceSubject: "the product this commercial is for",
     prompt: `【Style】Ultra-premium product commercial, macro hyperrealism, locked-off studio camera, dramatic sweeping rim light, indulgent tone.
 【Duration】5 seconds
 【Main Character】The product from the reference image, its shape, label and finish preserved exactly.
@@ -137,6 +144,7 @@ Key detail: Reflections track the rotation physically — the light moves, the l
     previewUrl: CLIPS.model,
     badge: "New",
     imageHint: "A full-body or waist-up photo of one person.",
+    referenceSubject: "the person walking the runway, including their outfit",
     prompt: `【Style】High-fashion runway film, hyperrealism, tracking camera retreating at walking pace, hard directional key light, assured tone.
 【Duration】6 seconds
 【Main Character】The person in the reference image, outfit and proportions preserved exactly.
@@ -160,6 +168,7 @@ Key detail: The stop is decisive — clothing and hair settle a fraction later t
     category: "Motion",
     previewUrl: CLIPS.sippo,
     imageHint: "A vehicle, or any subject you want thrown into heavy weather.",
+    referenceSubject: "the vehicle or subject driving through this shot",
     prompt: `【Style】Cinematic automotive commercial, hyperrealism, low tracking camera, hard storm lighting with lens flare, epic tone.
 【Duration】6 seconds
 【Main Character】The subject of the reference image, its color and silhouette preserved.
@@ -183,6 +192,7 @@ Key detail: Reflections on the wet surface stay consistent with the headlights t
     category: "Portrait",
     previewUrl: CLIPS.msc,
     imageHint: "A portrait or performance photo — upper body works best.",
+    referenceSubject: "the person standing in the spotlight",
     prompt: `【Style】Live-music documentary, hyperrealism, slow handheld-feel drift, one hard warm spotlight against deep shadow, intimate tone.
 【Duration】5 seconds
 【Main Character】The person in the reference image, identity and clothing preserved exactly.
@@ -203,6 +213,7 @@ Key detail: The subject breathes and shifts subtly; they are never a still photo
     category: "Motion",
     previewUrl: CLIPS.seedance,
     imageHint: "A landscape, street or wide scene with room above the subject.",
+    referenceSubject: "the scene this shot is filmed in",
     prompt: `【Style】Travel-film cinematography, hyperrealism, smooth crane move, low golden-hour sun with long shadows, calm tone.
 【Duration】6 seconds
 【Main Character】The scene from the reference image, its composition and content preserved.
@@ -226,6 +237,7 @@ Key detail: The rise is even and mechanical, and the horizon stays level through
     category: "Playful",
     previewUrl: CLIPS.seedance,
     imageHint: "A photo of one or two people, faces clearly visible.",
+    referenceSubject: "the people in this scene and the room they are in",
     prompt: `【Style】Slice-of-life mockumentary, hyperrealism, handheld-feel camera, warm natural indoor light, cozy relaxed tone.
 【Duration】5 seconds
 【Main Character】The people in the reference image, identities and clothing preserved exactly.
@@ -249,6 +261,7 @@ Key detail: The laugh looks unscripted — asymmetric, a little messy, never cam
     category: "Product",
     previewUrl: CLIPS.makeupGirl,
     imageHint: "Anything with texture worth staring at — fabric, food, skin, metal.",
+    referenceSubject: "the surface and material being filmed",
     prompt: `【Style】Macro texture study, hyperrealism, locked slow lateral crawl, single soft raking light, patient tone.
 【Duration】5 seconds
 【Main Character】The surface and material of the reference image, unchanged.
@@ -266,6 +279,34 @@ Key detail: Nothing in frame is invented — the crawl reveals what the referenc
 
 export function findPreset(slug: string): ViralPreset | undefined {
   return VIRAL_PRESETS.find((p) => p.slug === slug);
+}
+
+/**
+ * The prompt actually sent for a preset: a 【Reference Image】block naming
+ * what the uploaded photo is and how strictly to hold to it, followed by the
+ * preset's own recipe.
+ *
+ * The image already reaches the model as the `image` wire parameter either
+ * way (see the Seedance2Input mapping in the backend's generation-runner) —
+ * this block doesn't make the model *see* an image it otherwise wouldn't.
+ * What it does is state the image's ROLE, which the parameter alone can't:
+ * without it the model is free to read a reference as "loose inspiration"
+ * and drift the face, the label or the setting. Naming the subject and
+ * saying "match it exactly, replace nothing" is what holds identity.
+ *
+ * It's prepended here rather than written into all nine prompts so the
+ * wording can be tuned in one place, and so the studio's "What this preset
+ * does" disclosure can show exactly the text that goes over the wire.
+ *
+ * 【…】is Seedance's own structured-prompt convention (the same one every
+ * recipe above and every entry in prompt-templates.ts already uses), not an
+ * API-level token — it is read as instruction text like the rest.
+ */
+export function buildPresetPrompt(preset: ViralPreset): string {
+  return [
+    `【Reference Image】The attached image is ${preset.referenceSubject}. Treat it as the single source of truth: identity, facial structure, proportions, colors, clothing, labels and setting must match it exactly for the whole clip. Animate what is in the image — never replace, restyle or reimagine it, and never substitute a different subject.`,
+    preset.prompt,
+  ].join("\n");
 }
 
 /** Every preset runs on Seedance 2.0 — it's the model in the catalog that

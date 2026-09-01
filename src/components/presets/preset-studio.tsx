@@ -23,7 +23,12 @@ import { useGeneration } from "@/hooks/use-generation";
 import { useInvalidateCredits, useUsage } from "@/hooks/use-credits";
 import { useLazyVideo } from "@/hooks/use-lazy-video";
 import { estimateVideoCredits } from "@/lib/credit-estimate";
-import { PRESET_MODEL_ID, resolvePresetSettings, type ViralPreset } from "@/lib/viral-presets";
+import {
+  PRESET_MODEL_ID,
+  buildPresetPrompt,
+  resolvePresetSettings,
+  type ViralPreset,
+} from "@/lib/viral-presets";
 
 /**
  * The one-image preset runner: a locked recipe on the left with a single
@@ -54,6 +59,9 @@ export function PresetStudio({ preset }: { preset: ViralPreset }) {
   // actually submit — see resolvePresetSettings for why this isn't silent.
   const settings = resolvePresetSettings(preset, usageQuery.data?.tier_info);
   const credits = estimateVideoCredits(PRESET_MODEL_ID, settings.duration, settings.resolution);
+  // Exactly what goes over the wire — the disclosure below shows this same
+  // string, tag block included, rather than the bare recipe.
+  const prompt = buildPresetPrompt(preset);
 
   const busy = generation.status === "queued" || generation.status === "processing";
 
@@ -87,7 +95,7 @@ export function PresetStudio({ preset }: { preset: ViralPreset }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           model: PRESET_MODEL_ID,
-          prompt: preset.prompt,
+          prompt,
           image: imageUrl,
           duration: settings.duration,
           resolution: settings.resolution,
@@ -164,7 +172,7 @@ export function PresetStudio({ preset }: { preset: ViralPreset }) {
               </summary>
               <div className="border-t border-line px-3.5 py-3">
                 <pre className="font-mono text-caption whitespace-pre-wrap text-ink-soft">
-                  {preset.prompt}
+                  {prompt}
                 </pre>
               </div>
             </details>

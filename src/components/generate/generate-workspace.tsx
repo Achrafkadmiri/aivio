@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { FolderOpen, Lightbulb, Sparkles, Wand2, Zap } from "lucide-react";
+import { FolderOpen, Lightbulb, Megaphone, Sparkles, Wand2, Zap } from "lucide-react";
 import { TextToVideoForm } from "./text-to-video-form";
 import { TextToImageForm } from "./text-to-image-form";
 import { JobStatusCard } from "./job-status-card";
@@ -171,6 +171,15 @@ export function GenerateStudio({ type }: { type: GenerationType }) {
           >
             <Wand2 className="size-3.5" aria-hidden="true" />
             Viral presets
+          </Link>
+          {/* Same models, but the prompt is assembled from a brief and a
+              style instead of written here. See /studio. */}
+          <Link
+            href="/studio"
+            className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface-2 px-3 py-1.5 text-label text-muted transition-colors hover:border-border-strong hover:text-ink-soft"
+          >
+            <Megaphone className="size-3.5" aria-hidden="true" />
+            Marketing studio
           </Link>
 
           {usageQuery.data && (
