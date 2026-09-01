@@ -377,10 +377,10 @@ export function MarketingStudio() {
             )}
           </PanelSection>
 
-          <PanelSection
-            label="Prompt"
-            hint="What you're selling, who's in it, any words to render. The style adds the look."
-          >
+          {/* The style's direction and the reference rule are appended on
+              submit (see buildMarketingPrompt), not shown here — so they can't
+              be mistaken for your own text and can't survive switching style. */}
+          <PanelSection label="Prompt">
             <PanelPromptField
               value={description}
               onChange={setDescription}
@@ -388,19 +388,6 @@ export function MarketingStudio() {
               maxLength={1200}
               placeholder="Nord Coffee Roasters — a matte black 340g bag of single-origin beans, held by a woman in her 30s"
             />
-
-            {/* The style and the reference rule are appended, not shown in the
-                field — so they can't be mistaken for your own text and can't
-                survive switching style. Readable on demand, same as the
-                preset runner's recipe disclosure, so nothing ships unseen. */}
-            <details className="mt-2 rounded-xl border border-line bg-surface-dark">
-              <summary className="cursor-pointer px-3.5 py-2.5 text-caption font-medium text-muted transition-colors hover:text-ink-soft">
-                What gets sent
-              </summary>
-              <div className="max-h-40 overflow-y-auto border-t border-line px-3.5 py-3">
-                <p className="text-caption whitespace-pre-wrap text-ink-soft">{prompt}</p>
-              </div>
-            </details>
           </PanelSection>
 
           <PanelSection label="Output">
