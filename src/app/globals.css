@@ -265,6 +265,18 @@
   --animate-icon-pulse: icon-pulse 2s ease-in-out infinite;
   --animate-sparkle-twinkle: sparkle-twinkle 2.2s ease-in-out infinite;
   --animate-status-pulse: status-pulse 1.8s ease-in-out infinite;
+
+  /* The three /presets "How it works" step marks (see presets/step-icons.tsx).
+     Each one acts out its step rather than illustrating it — a card being
+     chosen out of a row, a photo dropping into an empty frame, a finished
+     clip being pulled down. Same rules as the icon-* set above: transform/
+     opacity only, long enough cycles (2.4-3.2s) to read as demonstration
+     rather than fidgeting, and applied with motion-safe: at the call site.
+     They share one duration family so three marks sitting in a carousel
+     never look like they're racing each other. */
+  --animate-preset-select: preset-select 3.2s ease-in-out infinite;
+  --animate-drop-into-frame: drop-into-frame 3.2s ease-in-out infinite;
+  --animate-arrow-dip: arrow-dip 2.4s ease-in-out infinite;
 }
 
 @keyframes blob-float {
@@ -379,6 +391,65 @@
   50% {
     opacity: 1;
     transform: scale(1.2);
+  }
+}
+
+/* One card lifts out of the row and stays chosen for most of the cycle —
+   the dwell is the point, so it reads as "this one is picked" rather than a
+   card bobbing up and down. */
+@keyframes preset-select {
+  0%,
+  12% {
+    opacity: 0.35;
+    transform: translateY(0) scale(1);
+  }
+  30%,
+  78% {
+    opacity: 1;
+    transform: translateY(-2.5px) scale(1.08);
+  }
+  96%,
+  100% {
+    opacity: 0.35;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* A photo falls into the empty frame, sits there long enough to register as
+   landed, then clears so the loop can show the drop again. */
+@keyframes drop-into-frame {
+  0% {
+    opacity: 0;
+    transform: translateY(-9px) scale(0.9);
+  }
+  22%,
+  72% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  90%,
+  100% {
+    opacity: 0;
+    transform: translateY(5px) scale(0.96);
+  }
+}
+
+/* Download arrow travelling from the frame down onto the tray line. */
+@keyframes arrow-dip {
+  0%,
+  10% {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  35%,
+  65% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  90%,
+  100% {
+    opacity: 0;
+    transform: translateY(4px);
   }
 }
 

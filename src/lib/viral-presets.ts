@@ -42,14 +42,13 @@ export type ViralPreset = {
   /** Optional card pill. Kept to "New" — nothing here counts real usage, so
    * a "Hot" / "#1 this week" badge would be an invented number. */
   badge?: "New";
-  /** What kind of photo this preset actually needs, shown by the dropzone. */
-  imageHint: string;
   /** What the uploaded image *is*, phrased for the model — fills the
    * `@image = …` definition line buildPresetPrompt prepends. Written as a
    * noun phrase that completes "@image = ___". */
   referenceSubject: string;
-  /** Locked prompt — never editable here, but readable (see the studio's
-   * "What this preset does" disclosure) so it isn't a black box. */
+  /** The recipe. Never editable and never rendered — it goes straight into
+   * the generation request. It's the thing a preset actually sells, so the
+   * studio deliberately shows no prompt UI at all. */
   prompt: string;
   duration: number;
   resolution: (typeof SEEDANCE2_RESOLUTIONS)[number];
@@ -73,7 +72,6 @@ export const VIRAL_PRESETS: ViralPreset[] = [
     category: "Trending",
     previewUrl: CLIPS.makeupGirl,
     badge: "New",
-    imageHint: "A clear portrait — face visible, hair not tied back.",
     referenceSubject: "the person this video is of",
     prompt: `【Style】Beauty-campaign hyperrealism, slow motion, soft key light with a warm rim, glossy confident tone.
 【Duration】5 seconds
@@ -97,7 +95,6 @@ Key detail: Hair moves with real weight and settles — no rubber-sheet warping 
     tagline: "A slow dolly toward your subject, shallow depth of field, film grade.",
     category: "Portrait",
     previewUrl: CLIPS.seedance,
-    imageHint: "Any photo with one clear subject and some space around it.",
     referenceSubject: "the subject and the environment this shot takes place in",
     prompt: `【Style】Prestige-drama cinematography, hyperrealism, anamorphic shallow depth of field, motivated practical lighting, restrained tone.
 【Duration】5 seconds
@@ -118,7 +115,6 @@ Key detail: The subject stays alive between beats — a blink, a small breath, a
     tagline: "Your product rotates on a dark reflective set under a moving rim light.",
     category: "Product",
     previewUrl: CLIPS.sippo,
-    imageHint: "A product shot on a plain background — the cleaner the cutout, the better.",
     referenceSubject: "the product this commercial is for",
     prompt: `【Style】Ultra-premium product commercial, macro hyperrealism, locked-off studio camera, dramatic sweeping rim light, indulgent tone.
 【Duration】5 seconds
@@ -143,7 +139,6 @@ Key detail: Reflections track the rotation physically — the light moves, the l
     category: "Trending",
     previewUrl: CLIPS.model,
     badge: "New",
-    imageHint: "A full-body or waist-up photo of one person.",
     referenceSubject: "the person walking the runway, including their outfit",
     prompt: `【Style】High-fashion runway film, hyperrealism, tracking camera retreating at walking pace, hard directional key light, assured tone.
 【Duration】6 seconds
@@ -167,7 +162,6 @@ Key detail: The stop is decisive — clothing and hair settle a fraction later t
     tagline: "Rain, headlights and spray — your shot becomes a car commercial.",
     category: "Motion",
     previewUrl: CLIPS.sippo,
-    imageHint: "A vehicle, or any subject you want thrown into heavy weather.",
     referenceSubject: "the vehicle or subject driving through this shot",
     prompt: `【Style】Cinematic automotive commercial, hyperrealism, low tracking camera, hard storm lighting with lens flare, epic tone.
 【Duration】6 seconds
@@ -191,7 +185,6 @@ Key detail: Reflections on the wet surface stay consistent with the headlights t
     tagline: "Your subject lands in a dark venue under a single warm spotlight.",
     category: "Portrait",
     previewUrl: CLIPS.msc,
-    imageHint: "A portrait or performance photo — upper body works best.",
     referenceSubject: "the person standing in the spotlight",
     prompt: `【Style】Live-music documentary, hyperrealism, slow handheld-feel drift, one hard warm spotlight against deep shadow, intimate tone.
 【Duration】5 seconds
@@ -212,7 +205,6 @@ Key detail: The subject breathes and shifts subtly; they are never a still photo
     tagline: "Warm low sun, drifting dust, a slow crane up over your scene.",
     category: "Motion",
     previewUrl: CLIPS.seedance,
-    imageHint: "A landscape, street or wide scene with room above the subject.",
     referenceSubject: "the scene this shot is filmed in",
     prompt: `【Style】Travel-film cinematography, hyperrealism, smooth crane move, low golden-hour sun with long shadows, calm tone.
 【Duration】6 seconds
@@ -236,7 +228,6 @@ Key detail: The rise is even and mechanical, and the horizon stays level through
     tagline: "Your photo warms up into a genuine, unscripted laugh.",
     category: "Playful",
     previewUrl: CLIPS.seedance,
-    imageHint: "A photo of one or two people, faces clearly visible.",
     referenceSubject: "the people in this scene and the room they are in",
     prompt: `【Style】Slice-of-life mockumentary, hyperrealism, handheld-feel camera, warm natural indoor light, cozy relaxed tone.
 【Duration】5 seconds
@@ -260,7 +251,6 @@ Key detail: The laugh looks unscripted — asymmetric, a little messy, never cam
     tagline: "An extreme close-up crawl across the texture of your subject.",
     category: "Product",
     previewUrl: CLIPS.makeupGirl,
-    imageHint: "Anything with texture worth staring at — fabric, food, skin, metal.",
     referenceSubject: "the surface and material being filmed",
     prompt: `【Style】Macro texture study, hyperrealism, locked slow lateral crawl, single soft raking light, patient tone.
 【Duration】5 seconds
@@ -292,7 +282,6 @@ Key detail: Nothing in frame is invented — the crawl reveals what @image alrea
     category: "Motion",
     previewUrl: CLIPS.msc,
     badge: "New",
-    imageHint: "One clear subject with visible edges — a person, object or model.",
     referenceSubject: "the subject the camera orbits",
     prompt: `【Style】Showcase orbit, hyperrealism, continuous gimbal arc at constant radius, even wraparound lighting, confident tone.
 【Duration】6 seconds
@@ -314,7 +303,6 @@ Key detail: Sides and back not visible in @image are inferred consistently with 
     category: "Motion",
     previewUrl: CLIPS.model,
     badge: "New",
-    imageHint: "A subject mid-action or mid-pose — the more dynamic, the better.",
     referenceSubject: "the frozen subject the camera sweeps around",
     prompt: `【Style】Bullet-time set piece, hyperrealism, fast arcing camera around a near-frozen subject, hard rim light, heightened tone.
 【Duration】5 seconds
@@ -339,7 +327,6 @@ Key detail: Only the camera moves. Parallax across the background sells the swee
     category: "Motion",
     previewUrl: CLIPS.seedance,
     badge: "New",
-    imageHint: "An outdoor scene or a subject shot from above works best.",
     referenceSubject: "the place this pull-back starts from",
     prompt: `【Style】Continuous scale-jump pull-back, hyperrealism, one unbroken vertical zoom out, natural daylight, awe-struck tone.
 【Duration】6 seconds
@@ -364,7 +351,6 @@ Key detail: One continuous move, no cuts or dissolves; each scale stays geograph
     category: "Playful",
     previewUrl: CLIPS.sippo,
     badge: "New",
-    imageHint: "A full-body photo of one person, or a single distinct object.",
     referenceSubject: "the subject being rendered as a collectible figure",
     prompt: `【Style】Collectible-toy commercial, glossy plastic hyperrealism, locked-off studio camera, bright even product light, playful tone.
 【Duration】5 seconds
@@ -389,7 +375,6 @@ Key detail: Plastic sheen, seam lines and paint edges read as a real manufacture
     category: "Trending",
     previewUrl: CLIPS.makeupGirl,
     badge: "New",
-    imageHint: "A photo of one person, ideally waist-up or full-body.",
     referenceSubject: "the person being photographed",
     prompt: `【Style】Early-2000s paparazzi footage, consumer camcorder look, harsh direct on-camera flash, heavy grain and chromatic fringing, tabloid tone.
 【Duration】5 seconds
@@ -413,7 +398,6 @@ Key detail: Handheld shake, focus hunting and interlacing artifacts sell the era
     tagline: "Black-and-white, venetian-blind shadows, cigarette smoke.",
     category: "Portrait",
     previewUrl: CLIPS.msc,
-    imageHint: "A portrait — upper body, face clearly lit.",
     referenceSubject: "the person in this noir scene",
     prompt: `【Style】1940s film noir, high-contrast black and white, hard single-source key, heavy practical smoke, fatalistic tone.
 【Duration】5 seconds
@@ -455,9 +439,8 @@ export function findPreset(slug: string): ViralPreset | undefined {
  * it: generations.ts stores the prompt as-is and generation-runner.ts passes
  * it through verbatim.
  *
- * Prepended here rather than written into all nine prompts so the wording
- * can be tuned in one place, and so the studio's "What this preset does"
- * disclosure can show exactly the text that goes over the wire.
+ * Prepended here rather than written into every recipe so the wording can be
+ * tuned in one place.
  */
 export function buildPresetPrompt(preset: ViralPreset): string {
   return [

@@ -23,6 +23,7 @@ export function CreditsSubmitPill({
   balance,
   blockedReason,
   fullWidth,
+  hideTooltip,
   className,
 }: {
   credits: number;
@@ -37,6 +38,13 @@ export function CreditsSubmitPill({
   /** Panel-footer variant: spans its container as a big labeled "Generate"
    * button instead of the compact number-only pill. */
   fullWidth?: boolean;
+  /** Drop the hover tooltip, leaving just the button. For surfaces that
+   * already state the cost on the button face and don't want the money
+   * breakdown on top of it — the preset studio, where the whole point is
+   * one uncluttered action. The caller then owns surfacing `blockedReason`
+   * itself, since the tooltip was the only place it appeared; `aria-label`
+   * still carries the full hint either way. */
+  hideTooltip?: boolean;
   className?: string;
 }) {
   const unaffordable = balance !== undefined && credits > balance;
@@ -53,11 +61,15 @@ export function CreditsSubmitPill({
 
   const blocked = Boolean(blockedReason) || unaffordable;
 
-  return (
-    <Tooltip content={hint}>
-      {/* A disabled button fires no pointer events, so the tooltip's hover
-          target has to be the wrapper — same pattern as DisabledPillHint. */}
-      <span className={cn("inline-flex shrink-0", fullWidth && "w-full")} tabIndex={0}>
+  const control = (
+    // A disabled button fires no pointer events, so the tooltip's hover
+    // target has to be the wrapper — same pattern as DisabledPillHint. With
+    // no tooltip to hover there's nothing to focus either, so the span drops
+    // out of the tab order rather than sitting there as a dead stop.
+    <span
+      className={cn("inline-flex shrink-0", fullWidth && "w-full")}
+      tabIndex={hideTooltip ? undefined : 0}
+    >
         <button
           type="submit"
           disabled={disabled || loading || blocked}
@@ -88,7 +100,8 @@ export function CreditsSubmitPill({
             credits
           )}
         </button>
-      </span>
-    </Tooltip>
+    </span>
   );
+
+  return hideTooltip ? control : <Tooltip content={hint}>{control}</Tooltip>;
 }

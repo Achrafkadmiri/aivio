@@ -3,16 +3,12 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useMutation } from "@tanstack/react-query";
+import { ChevronLeft, ChevronRight, Info, Pencil, Sparkles } from "lucide-react";
 import {
-  ChevronLeft,
-  ChevronRight,
-  Download,
-  ImagePlus,
-  Info,
-  Pencil,
-  Sparkles,
-  Wand2,
-} from "lucide-react";
+  PickPresetMark,
+  UploadImageMark,
+  DownloadResultMark,
+} from "@/components/presets/step-icons";
 import { apiFetch } from "@/lib/api-client";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/components/ui/toast";
@@ -59,8 +55,8 @@ export function PresetStudio({ preset }: { preset: ViralPreset }) {
   // actually submit — see resolvePresetSettings for why this isn't silent.
   const settings = resolvePresetSettings(preset, usageQuery.data?.tier_info);
   const credits = estimateVideoCredits(PRESET_MODEL_ID, settings.duration, settings.resolution);
-  // Exactly what goes over the wire — the disclosure below shows this same
-  // string, tag block included, rather than the bare recipe.
+  // Never rendered — the recipe is the product here, so it goes straight to
+  // the request and is not surfaced anywhere in the UI.
   const prompt = buildPresetPrompt(preset);
 
   const busy = generation.status === "queued" || generation.status === "processing";
@@ -127,34 +123,41 @@ export function PresetStudio({ preset }: { preset: ViralPreset }) {
         e.preventDefault();
         if (!blockedReason) mutation.mutate();
       }}
-      className="flex flex-col gap-4 lg:h-[calc(100vh-8rem)] lg:flex-row"
+      // min-h floor matters now that nothing inside scrolls: on a short
+      // viewport, claiming exactly the visible height would squeeze the
+      // upload card until its hint got clipped with no way to reach it.
+      // Below 38rem the studio keeps its height and the PAGE scrolls
+      // instead, which is the right thing to give up first.
+      className="flex flex-col gap-4 lg:h-[calc(100vh-8rem)] lg:min-h-[38rem] lg:flex-row"
     >
       <div className="flex w-full shrink-0 flex-col gap-4 lg:w-[400px] xl:w-[430px]">
         <PresetHeaderCard preset={preset} />
 
-        {/* overflow-hidden + an inner scroll area is load-bearing: the column
-            has a fixed height on lg, so this card is min-h-0 and free to
-            shrink under its own content. Without a scroll container that
-            content just spilled out of the card and rendered on top of the
-            Generate button below it. */}
+        {/* Nothing here scrolls. The dropzone is the only flexible element —
+            everything around it is shrink-0 — so it absorbs whatever height
+            the column has left and the panel always fits exactly. Its floor
+            (min-h-52) is what the panel is guaranteed even at the studio's
+            minimum height — raise one without the other and a scrollbar
+            comes back on short viewports. overflow-hidden
+            stays as a guard so nothing can ever spill onto the Generate
+            button below, the way it did before. */}
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-line bg-surface-2 shadow-floating">
           <div className="flex shrink-0 items-center justify-between gap-2 px-4 pt-4 sm:px-5 sm:pt-5">
             <span className="text-label font-medium text-ink-soft">Your image</span>
             <span className="text-caption text-muted">Required</span>
           </div>
 
-          <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-4 sm:p-5">
+          <div className="flex min-h-0 flex-1 flex-col gap-3 p-4 sm:p-5">
             <PanelDropzone
-              className="min-h-48 flex-1"
+              className="min-h-52 flex-1"
               label="Upload image"
               sublabel="Select a PNG or JPG from your device"
               previewUrl={preview}
               uploading={uploading}
               onFile={handleFile}
               onRemove={clearImage}
+              previewMode="showcase"
             />
-
-            <p className="shrink-0 text-caption text-muted">{preset.imageHint}</p>
 
             {settings.notes.map((note) => (
               <p key={note} className="flex shrink-0 items-start gap-1.5 text-caption text-warning">
@@ -162,30 +165,30 @@ export function PresetStudio({ preset }: { preset: ViralPreset }) {
                 {note}
               </p>
             ))}
-
-            {/* Locked, but not hidden — the recipe is readable on demand so a
-                preset doesn't read as a black box, and so anyone who wants to
-                adapt it can lift it into the full composer. */}
-            <details className="shrink-0 rounded-xl border border-line bg-surface-dark">
-              <summary className="cursor-pointer px-3.5 py-2.5 text-caption font-medium text-muted transition-colors hover:text-ink-soft">
-                What this preset does
-              </summary>
-              <div className="border-t border-line px-3.5 py-3">
-                <pre className="font-mono text-caption whitespace-pre-wrap text-ink-soft">
-                  {prompt}
-                </pre>
-              </div>
-            </details>
           </div>
         </div>
 
-        <CreditsSubmitPill
-          fullWidth
-          credits={credits}
-          loading={mutation.isPending || busy || uploading}
-          balance={usageQuery.data?.credit_balance}
-          blockedReason={blockedReason}
-        />
+        <div className="shrink-0 space-y-2">
+          {/* Full-round and taller than the composer's footer button. This is
+              the only action on the screen, so it gets to look like it —
+              className lands last in cn(), so these override the shared
+              rounded-xl/px-4 py-3 without needing another prop. */}
+          <CreditsSubmitPill
+            fullWidth
+            hideTooltip
+            credits={credits}
+            loading={mutation.isPending || busy || uploading}
+            balance={usageQuery.data?.credit_balance}
+            blockedReason={blockedReason}
+            className="rounded-full py-4 text-body-sm"
+          />
+          {/* The tooltip was the only place blockedReason appeared, so with
+              it gone the reason the button is dead has to be stated here —
+              otherwise a greyed-out Generate has no explanation at all. */}
+          {blockedReason && (
+            <p className="text-center text-caption text-muted">{blockedReason}</p>
+          )}
+        </div>
       </div>
 
       <div className="flex min-w-0 flex-1 flex-col">
@@ -227,7 +230,7 @@ function PresetHeaderCard({ preset }: { preset: ViralPreset }) {
   return (
     <div
       ref={containerRef}
-      className="relative aspect-video w-full shrink-0 overflow-hidden rounded-2xl border border-line bg-surface-3 shadow-floating"
+      className="relative aspect-[21/9] w-full shrink-0 overflow-hidden rounded-2xl border border-line bg-surface-3 shadow-floating"
     >
       {hasLoadedOnce && (
         <video
@@ -241,19 +244,30 @@ function PresetHeaderCard({ preset }: { preset: ViralPreset }) {
           <source src={preset.previewUrl} type="video/mp4" />
         </video>
       )}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-black/40" aria-hidden="true" />
+      {/* Flat scrim rather than a bottom-weighted gradient: the name sits in
+          the middle of the frame now, so the whole clip has to be knocked
+          back evenly for lime-on-video to stay legible. */}
+      <div className="absolute inset-0 bg-black/45" aria-hidden="true" />
 
       <Link
         href="/presets"
-        className="absolute top-3 right-3 inline-flex items-center gap-1.5 rounded-full border border-line bg-black/60 px-3 py-1.5 text-caption font-semibold text-ink backdrop-blur-sm transition-colors hover:border-border-strong hover:bg-black/80"
+        className="absolute top-3 right-3 z-10 inline-flex items-center gap-1.5 rounded-full border border-line bg-black/60 px-3 py-1.5 text-caption font-semibold text-ink backdrop-blur-sm transition-colors hover:border-border-strong hover:bg-black/80"
       >
         <Pencil className="size-3.5" aria-hidden="true" />
         Change
       </Link>
 
-      <div className="absolute inset-x-0 bottom-0 p-4">
-        <h1 className="font-display text-feature-title font-bold text-ink uppercase">{preset.title}</h1>
-        <p className="mt-1 text-caption text-white/70">{preset.tagline}</p>
+      {/* The preset's name IS the branding here — centred, brand-coloured and
+          set in the display face, the way the gallery's own hero cards read.
+          drop-shadow does the heavy lifting over a moving clip: lime on a
+          bright frame would otherwise disappear for whole seconds at a time. */}
+      <div className="absolute inset-0 flex flex-col items-center justify-center px-5 text-center">
+        <h1 className="font-display text-heading font-bold tracking-tight text-brand uppercase [text-shadow:0_2px_18px_rgb(0_0_0/0.75)]">
+          {preset.title}
+        </h1>
+        <p className="mt-2 max-w-[28ch] text-caption text-white/75 [text-shadow:0_1px_10px_rgb(0_0_0/0.8)]">
+          {preset.tagline}
+        </p>
       </div>
     </div>
   );
@@ -261,17 +275,17 @@ function PresetHeaderCard({ preset }: { preset: ViralPreset }) {
 
 const STEPS = [
   {
-    icon: Wand2,
+    Mark: PickPresetMark,
     title: "Pick a preset",
     body: "Every preset is a finished recipe — the prompt, the camera move, the length and the audio are already written. You never have to describe anything.",
   },
   {
-    icon: ImagePlus,
+    Mark: UploadImageMark,
     title: "Upload one image",
     body: "Drop in a JPG, PNG or WEBP. That photo becomes the reference the whole clip is built from, so your subject stays your subject.",
   },
   {
-    icon: Download,
+    Mark: DownloadResultMark,
     title: "Generate and download",
     body: "One tap, usually under a minute. Download the result straight from the canvas — it's also saved to your gallery.",
   },
@@ -283,14 +297,16 @@ const STEPS = [
 function HowItWorks() {
   const [index, setIndex] = useState(0);
   const step = STEPS[index];
-  const Icon = step.icon;
+  const Mark = step.Mark;
 
   return (
     <div className="flex h-full min-h-[24rem] flex-col items-center justify-center gap-6 rounded-2xl border border-line bg-surface-2 p-6 text-center shadow-card">
       <div className="flex max-w-md flex-col items-center gap-4">
-        <span className="flex size-16 items-center justify-center rounded-2xl bg-brand shadow-glow-md">
-          <Icon className="size-7 text-on-brand" aria-hidden="true" />
-        </span>
+        {/* Keyed on the step so switching slides remounts the mark and its
+            animation restarts from frame one — otherwise the next step's
+            drawing picks up mid-cycle and the first thing you see is the
+            tail of a loop rather than the step being acted out. */}
+        <Mark key={step.title} className="h-24" />
         <h2 className="font-display text-subheading font-bold text-ink">{step.title}</h2>
         <p className="text-body text-muted">{step.body}</p>
       </div>

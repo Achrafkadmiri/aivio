@@ -145,6 +145,7 @@ export function PanelDropzone({
   disabled,
   disabledHint,
   compact,
+  previewMode = "cover",
   className,
 }: {
   label: string;
@@ -157,6 +158,20 @@ export function PanelDropzone({
   disabledHint?: string;
   /** Keyframe pair tiles — shorter box, no sublabel, smaller icon. */
   compact?: boolean;
+  /**
+   * How an uploaded file is presented once it's there.
+   *
+   * `cover` (default) crops to fill — right for the composer's small tiles,
+   * where a clean crop reads as a tidier grid.
+   *
+   * `showcase` is for surfaces where the upload IS the input (the preset
+   * studio): the whole frame is shown uncropped so you can check what you're
+   * about to hand the model, sitting on a blurred, dimmed copy of itself
+   * instead of dead letterbox bars — a portrait photo in a landscape slot
+   * otherwise leaves two black voids that read as a broken image rather than
+   * a deliberate fit.
+   */
+  previewMode?: "cover" | "showcase";
   className?: string;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -212,8 +227,40 @@ export function PanelDropzone({
         // Local blob: URL or already-uploaded remote URL filling a fixed
         // slot, so a plain <img> is the right tool — next/image would
         // force/crop dimensions we don't know here.
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={previewUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />
+        previewMode === "showcase" ? (
+          <>
+            {/* Blurred, dimmed copy of the same file behind the real one, so
+                whatever shape it is fills the slot instead of leaving voids.
+                scale-110 hides the soft edges the blur pulls in from the
+                border. aria-hidden — it's the same picture twice. */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={previewUrl}
+              alt=""
+              aria-hidden="true"
+              className="absolute inset-0 h-full w-full scale-110 object-cover opacity-30 blur-xl"
+            />
+            <div className="absolute inset-0 bg-surface-dark/50" aria-hidden="true" />
+            {/* The framed copy sits in its own absolute layer rather than in
+                the flex flow. max-h-full needs a parent with a definite
+                height to resolve against — in the stacked layout the slot's
+                height comes from its content, so an in-flow image resolved
+                max-h to none and grew the whole card to its natural size.
+                Absolute inset-0 always has the slot's height, so the image
+                letterboxes to fit instead of driving the layout. */}
+            <span className="absolute inset-0 flex items-center justify-center p-3">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={previewUrl}
+                alt=""
+                className="max-h-full max-w-full rounded-lg object-contain shadow-floating ring-1 ring-white/15"
+              />
+            </span>
+          </>
+        ) : (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={previewUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />
+        )
       ) : (
         <>
           <span
@@ -241,7 +288,13 @@ export function PanelDropzone({
             onRemove();
           }}
           aria-label={`Remove ${label.toLowerCase()}`}
-          className="absolute top-1.5 right-1.5 flex size-5 items-center justify-center rounded-full bg-black/70 text-white opacity-0 backdrop-blur-sm transition-opacity group-hover:opacity-100"
+          // Hover-to-reveal is fine with a mouse but leaves this button
+          // permanently unreachable on touch — there is no hover there, so
+          // an uploaded image could never be removed on a phone. It stays
+          // hidden-until-hover on pointer devices (no change to the
+          // composer's look) and is always shown where hover doesn't exist.
+          // focus-within covers keyboard users for the same reason.
+          className="absolute top-1.5 right-1.5 flex size-5 items-center justify-center rounded-full bg-black/70 text-white opacity-0 backdrop-blur-sm transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 [@media(hover:none)]:opacity-100"
         >
           <X className="size-3" />
         </button>
