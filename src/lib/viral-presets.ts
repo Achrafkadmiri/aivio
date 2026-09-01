@@ -275,6 +275,159 @@ Key detail: Nothing in frame is invented — the crawl reveals what @image alrea
     cameraFixed: true,
     generateAudio: false,
   },
+
+  // ── Trending formats ──────────────────────────────────────────────────
+  // Added after a survey of what the current crop of one-tap preset apps
+  // leads with (higgsfield.ai/viral-presets and similar). Only the *format
+  // names* were taken from that survey — orbit shots, bullet time, earth
+  // zoom, noir and Y2K flash photography are standard cinematography
+  // vocabulary, not any one product's invention. Every recipe below is
+  // written from scratch in our own bracket-tag format; no competitor
+  // prompt text or preview media is copied, and none is available to copy
+  // anyway (their prompts are server-side, same as ours).
+  {
+    slug: "orbit-360",
+    title: "Orbit 360",
+    tagline: "The camera circles all the way around your subject, once.",
+    category: "Motion",
+    previewUrl: CLIPS.msc,
+    badge: "New",
+    imageHint: "One clear subject with visible edges — a person, object or model.",
+    referenceSubject: "the subject the camera orbits",
+    prompt: `【Style】Showcase orbit, hyperrealism, continuous gimbal arc at constant radius, even wraparound lighting, confident tone.
+【Duration】6 seconds
+【Main Character】The subject of @image, its shape, materials and colors preserved exactly.
+[00:00-00:06] Shot 1: The full circle.
+Scene: The setting of @image, extended plausibly around the sides and behind the subject.
+Action: The camera makes one smooth, unbroken 360° orbit around the subject at a fixed radius and height.
+Key detail: Radius and speed never change — no easing, no stutter, no drift toward or away from the subject.
+Key detail: Sides and back not visible in @image are inferred consistently with what is; the front must look identical when the orbit returns to it.`,
+    duration: 6,
+    resolution: "720p",
+    cameraFixed: false,
+    generateAudio: false,
+  },
+  {
+    slug: "bullet-time",
+    title: "Bullet Time",
+    tagline: "The moment freezes and the camera sweeps around it.",
+    category: "Motion",
+    previewUrl: CLIPS.model,
+    badge: "New",
+    imageHint: "A subject mid-action or mid-pose — the more dynamic, the better.",
+    referenceSubject: "the frozen subject the camera sweeps around",
+    prompt: `【Style】Bullet-time set piece, hyperrealism, fast arcing camera around a near-frozen subject, hard rim light, heightened tone.
+【Duration】5 seconds
+【Main Character】The subject of @image, held in the exact pose the image captures.
+[00:00-00:01] Shot 1: The freeze.
+Scene: The setting of @image, time slowing to a near stop.
+Action: Motion in frame decelerates until the subject is almost still, held mid-gesture.
+Key detail: The pose is the one in @image — it is not re-staged or re-posed.
+[00:01-00:05] Shot 2: The sweep.
+Scene: Same frozen instant, camera now traveling.
+Action: The camera arcs rapidly around the subject while the subject stays nearly motionless; dust and debris hang in the air.
+Key detail: Only the camera moves. Parallax across the background sells the sweep, not any movement of the subject.`,
+    duration: 5,
+    resolution: "720p",
+    cameraFixed: false,
+    generateAudio: false,
+  },
+  {
+    slug: "earth-zoom",
+    title: "Earth Zoom",
+    tagline: "Pull back from your photo all the way out to orbit.",
+    category: "Motion",
+    previewUrl: CLIPS.seedance,
+    badge: "New",
+    imageHint: "An outdoor scene or a subject shot from above works best.",
+    referenceSubject: "the place this pull-back starts from",
+    prompt: `【Style】Continuous scale-jump pull-back, hyperrealism, one unbroken vertical zoom out, natural daylight, awe-struck tone.
+【Duration】6 seconds
+【Main Character】The location in @image, which the entire move starts from and never cuts away from.
+[00:00-00:02] Shot 1: Ground.
+Scene: Exactly the frame of @image, held for a beat.
+Action: The camera begins rising and pulling back from the subject.
+Key detail: The first second must read as @image itself before anything else is revealed.
+[00:02-00:06] Shot 2: Out.
+Scene: The same location, receding — street, then city, then continent, then the curve of the planet.
+Action: The pull-back continues without a cut, accelerating as scale increases, ending on Earth from orbit.
+Key detail: One continuous move, no cuts or dissolves; each scale stays geographically consistent with the last.`,
+    duration: 6,
+    resolution: "720p",
+    cameraFixed: false,
+    generateAudio: true,
+  },
+  {
+    slug: "action-figure",
+    title: "Action Figure",
+    tagline: "Your subject becomes a boxed collectible, turning under studio light.",
+    category: "Playful",
+    previewUrl: CLIPS.sippo,
+    badge: "New",
+    imageHint: "A full-body photo of one person, or a single distinct object.",
+    referenceSubject: "the subject being rendered as a collectible figure",
+    prompt: `【Style】Collectible-toy commercial, glossy plastic hyperrealism, locked-off studio camera, bright even product light, playful tone.
+【Duration】5 seconds
+【Main Character】The subject of @image, reproduced as a boxed action figure — same face, outfit, colors and proportions, rendered in molded plastic.
+[00:00-00:02] Shot 1: The box.
+Scene: A blister-pack toy box on a clean studio surface, camera locked off.
+Action: The packaged figure sits still as the light comes up across the plastic window and printed card.
+Key detail: The figure inside is recognizably the subject of @image — likeness survives the plastic treatment.
+[00:02-00:05] Shot 2: The turn.
+Scene: Same framing, camera still locked.
+Action: The box rotates a slow quarter-turn; light travels across the glossy window and the figure's molded surface.
+Key detail: Plastic sheen, seam lines and paint edges read as a real manufactured toy, not a shrunken person.`,
+    duration: 5,
+    resolution: "1080p",
+    cameraFixed: true,
+    generateAudio: false,
+  },
+  {
+    slug: "y2k-paparazzi",
+    title: "Y2K Paparazzi",
+    tagline: "Blown-out flash, camcorder grain, early-2000s red carpet.",
+    category: "Trending",
+    previewUrl: CLIPS.makeupGirl,
+    badge: "New",
+    imageHint: "A photo of one person, ideally waist-up or full-body.",
+    referenceSubject: "the person being photographed",
+    prompt: `【Style】Early-2000s paparazzi footage, consumer camcorder look, harsh direct on-camera flash, heavy grain and chromatic fringing, tabloid tone.
+【Duration】5 seconds
+【Main Character】The person in @image, face, hair and outfit preserved exactly.
+[00:00-00:02] Shot 1: The walk-out.
+Scene: A dark venue exit at night, a crowd of photographers pressing in from the sides.
+Action: The subject walks toward camera as flashes fire in rapid, irregular bursts.
+Key detail: Each flash blows out the highlights for a frame and drops the background to black — exposure never settles.
+[00:02-00:05] Shot 2: The glance.
+Scene: Same street, camera jostled and hand-held.
+Action: The subject turns briefly toward one flash, then keeps moving past camera.
+Key detail: Handheld shake, focus hunting and interlacing artifacts sell the era — the face still stays the face in @image.`,
+    duration: 5,
+    resolution: "720p",
+    cameraFixed: false,
+    generateAudio: true,
+  },
+  {
+    slug: "noir-detective",
+    title: "Noir",
+    tagline: "Black-and-white, venetian-blind shadows, cigarette smoke.",
+    category: "Portrait",
+    previewUrl: CLIPS.msc,
+    imageHint: "A portrait — upper body, face clearly lit.",
+    referenceSubject: "the person in this noir scene",
+    prompt: `【Style】1940s film noir, high-contrast black and white, hard single-source key, heavy practical smoke, fatalistic tone.
+【Duration】5 seconds
+【Main Character】The person in @image, facial structure and clothing shape preserved exactly, rendered monochrome.
+[00:00-00:05] Shot 1: The hold.
+Scene: A dim office at night, a venetian blind throwing hard bars of light across the subject and the back wall.
+Action: The subject holds still and then turns their head slowly into the key light; smoke drifts through the beam.
+Key detail: Contrast is extreme — deep crushed blacks, blown speculars, no grey midtone wash.
+Key detail: Monochrome is a grade over @image, not a redesign; the same face, hair and garment shapes must remain readable.`,
+    duration: 5,
+    resolution: "720p",
+    cameraFixed: false,
+    generateAudio: false,
+  },
 ];
 
 export function findPreset(slug: string): ViralPreset | undefined {
