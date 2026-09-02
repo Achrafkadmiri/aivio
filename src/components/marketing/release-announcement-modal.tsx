@@ -13,7 +13,16 @@ import { apiFetch } from "@/lib/api-client";
 const DISMISSED_KEY = "aivio:seedance-2-5-announcement";
 // Skip the auth flow pages entirely — popping a promo over a login form is
 // just noise, and pathname changes there shouldn't re-trigger the check.
-const SUPPRESSED_PREFIXES = ["/login", "/signup", "/forgot-password", "/reset-password"];
+// "/admin" covers the whole staff console: a product launch ad is for
+// customers, and popping one over an operator mid-action is both noise and a
+// credibility problem — the console should never look like the marketing site.
+const SUPPRESSED_PREFIXES = [
+  "/login",
+  "/signup",
+  "/forgot-password",
+  "/reset-password",
+  "/admin",
+];
 
 const HERO = SHOWCASE_VIDEOS.find((v) => v.id === "falcon-desert")!;
 
