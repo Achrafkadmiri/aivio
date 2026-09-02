@@ -7,6 +7,11 @@
 // Image 2, the fast Nano Banana) silently ignores an uploaded asset — the
 // generation would still succeed and still be billed, just without the
 // product in it. The full catalog stays one click away at /generate.
+//
+// Seedream 4.5 and 5-lite are `image: "none"` for that exact reason even
+// though their schemas do list an image field — they accept the reference and
+// then ignore it, which is the same silent failure with an extra upload step.
+// See the probe recorded in cloudflare-models.ts.
 
 import {
   CLOUDFLARE_MODELS,

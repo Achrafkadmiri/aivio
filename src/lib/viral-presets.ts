@@ -399,14 +399,41 @@ Key detail: Handheld shake, focus hunting and interlacing artifacts sell the era
     category: "Portrait",
     previewUrl: CLIPS.msc,
     referenceSubject: "the person in this noir scene",
-    prompt: `【Style】1940s film noir, high-contrast black and white, hard single-source key, heavy practical smoke, fatalistic tone.
-【Duration】5 seconds
-【Main Character】The person in @image, facial structure and clothing shape preserved exactly, rendered monochrome.
-[00:00-00:05] Shot 1: The hold.
-Scene: A dim office at night, a venetian blind throwing hard bars of light across the subject and the back wall.
-Action: The subject holds still and then turns their head slowly into the key light; smoke drifts through the beam.
-Key detail: Contrast is extreme — deep crushed blacks, blown speculars, no grey midtone wash.
-Key detail: Monochrome is a grade over @image, not a redesign; the same face, hair and garment shapes must remain readable.`,
+    prompt: `Style】 4K photorealistic short product promotion, blending a premium beauty commercial look with authentic TikTok influencer content. Soft natural morning light, shallow depth of field, realistic skin texture, natural motion, sharp and clearly readable product focus.
+
+【Duration】 5 seconds
+
+【Main Character】 The person in @image, face, hair and outfit preserved exactly.
+
+【Scene & Audio】 Luxury minimalist bathroom with a clean cream-colored interior, subtle plants, and a mirror in the background. Smooth cinematic handheld camera movement. Audio features energetic young female voiceover with perfect lip-sync over trendy, upbeat beauty/lifestyle music.
+
+【Timeline】
+
+[00:00–00:02] Shot 1: The Intro
+
+Scene: Bright luxury minimalist bathroom.
+
+Action: The influencer smiles at the camera and quickly raises the LUMÉA GlowDrop Serum (30ml frosted glass dropper bottle with white and soft-gold design) toward the lens.
+
+Dialogue: "You need to try this!"
+
+[00:02–00:04] Shot 2: Application
+
+Scene: Tight close-up on the serum bottle and her face.
+
+Action: She applies one drop of the hydrating serum to her cheek and smiles as her skin takes on a natural luminous glow.
+
+Dialogue: "My skin has never looked this good!"
+
+[00:04–00:05] Shot 3: The Call to Action
+
+Scene: Medium close-up framing face and product.
+
+Action: She holds the serum bottle right next to her face while looking directly into the camera.
+
+Dialogue: "LUMÉA GlowDrop!"
+
+【On-Screen Text】 "LUMÉA GlowDrop ✨" in minimal luxury typography, positioned at the bottom center throughout.`,
     duration: 5,
     resolution: "720p",
     cameraFixed: false,

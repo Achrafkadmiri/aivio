@@ -82,8 +82,8 @@ export type CloudflareModelConfig = {
   imageCfParam?: string;
   /** grok wants `{ url }` (its schema calls the field `image.url`), veo-3.1
    *  wants a raw base64-encoded image (fetched and re-encoded server-side,
-   *  see generation-runner.ts), the Seedream 4.5/5-lite pair demand an
- *  array in `image_input`, and most others want a bare URL string. */
+   *  see generation-runner.ts), nano-banana-pro demands an array in
+   *  `image_input`, and most others want a bare URL string. */
   imageParamShape?: "string" | "urlObject" | "base64" | "urlArray";
   /** Cloudflare param for a closing-frame reference image, for the models
    *  that accept one. runCloudflareJob already resolves the stored
@@ -333,8 +333,9 @@ export const CLOUDFLARE_MODELS: CloudflareModelConfig[] = [
     outputKind: "url",
   },
   // 4.5 and 5-lite share a shape: `image_input` is strictly an array (a bare
-  // string is rejected), and both can batch-generate via
-  // sequential_image_generation. We pin that to "disabled": this pipeline
+  // string is rejected) that both then ignore — see the note on 4.5 below,
+  // which is why neither declares an image any more. Both can batch-generate
+  // via sequential_image_generation. We pin that to "disabled": this pipeline
   // persists exactly one result URL, so a batch would bill the user for
   // images we then silently drop. 4.5's disable_safety_checker is
   // deliberately not exposed — the provider's checker stays on.
@@ -345,9 +346,17 @@ export const CLOUDFLARE_MODELS: CloudflareModelConfig[] = [
     description: "Up to 4K with aspect-ratio control",
     category: "text-to-image",
     promptRequired: true,
-    image: "optional",
-    imageCfParam: "image_input",
-    imageParamShape: "urlArray",
+    // Probed live 2026-09-02: `image_input` is in this model's schema and a
+    // well-formed array is accepted without complaint — and then ignored. The
+    // same reference that nano-banana-pro and seedream-5-pro reproduce
+    // faithfully (tested as a data: URI and as an https URL the provider itself
+    // hosts, at every aspect_ratio including "match_input_image") comes back
+    // here as an unrelated invention. A reference slot that silently drops the
+    // reference is worse than no slot at all — the generation still succeeds and
+    // still bills — so as far as this app is concerned the model takes no image.
+    // That also keeps it out of STUDIO_IMAGE_MODELS, whose whole premise is
+    // "keep my product and my talent".
+    image: "none",
     fields: [
       { key: "size", cfParam: "size", label: "Size", type: "select", options: ["2K", "4K"], defaultValue: "2K" },
       { key: "aspectRatio", cfParam: "aspect_ratio", label: "Aspect ratio", type: "select", options: ["match_input_image", "1:1", "4:3", "3:4", "16:9", "9:16", "3:2", "2:3", "21:9"], defaultValue: "1:1" },
@@ -363,9 +372,9 @@ export const CLOUDFLARE_MODELS: CloudflareModelConfig[] = [
     description: "Faster Seedream 5, 2K/3K with PNG or JPEG output",
     category: "text-to-image",
     promptRequired: true,
-    image: "optional",
-    imageCfParam: "image_input",
-    imageParamShape: "urlArray",
+    // Ignores `image_input` exactly like its 4.5 sibling — same live probe, same
+    // day, same unrelated output. See the note there.
+    image: "none",
     fields: [
       { key: "size", cfParam: "size", label: "Size", type: "select", options: ["2K", "3K"], defaultValue: "2K" },
       { key: "aspectRatio", cfParam: "aspect_ratio", label: "Aspect ratio", type: "select", options: ["match_input_image", "1:1", "4:3", "3:4", "16:9", "9:16", "3:2", "2:3", "21:9"], defaultValue: "1:1" },

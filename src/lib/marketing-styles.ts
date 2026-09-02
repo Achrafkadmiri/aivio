@@ -103,7 +103,12 @@ export type MarketingStyle = {
   model: string;
 };
 
-const SEEDREAM = "bytedance/seedream-4.5";
+// Every image style runs on Nano Banana Pro. It is not a taste call: the two
+// cheaper ByteDance image models accept a reference image and then ignore it
+// (see cloudflare-models.ts), which makes them useless to a studio built on
+// "keep my product and my talent". Nano Banana Pro reproduces a reference
+// faithfully, and is what the styles that used to open on Seedream 4.5 now
+// point at.
 const NANO_BANANA = "google/nano-banana-pro";
 const VEO_FAST = "google/veo-3.1-fast";
 const SEEDANCE_MINI = "bytedance/seedance-2.0-mini";
@@ -121,7 +126,7 @@ export const MARKETING_STYLES: MarketingStyle[] = [
     direction:
       "studio product photography on a seamless backdrop, large soft key light with a subtle rim, smooth gradient falloff, crisp product edges, nothing in frame competing with the product",
     aspect: "1:1",
-    model: SEEDREAM,
+    model: NANO_BANANA,
   },
   {
     id: "stone-pedestal",
@@ -134,7 +139,7 @@ export const MARKETING_STYLES: MarketingStyle[] = [
     direction:
       "editorial still life, the product raised on a stone pedestal in a minimal architectural set, hard directional sunlight with long soft shadows, warm neutral palette",
     aspect: "3:4",
-    model: SEEDREAM,
+    model: NANO_BANANA,
   },
   {
     id: "splash-freeze",
@@ -147,7 +152,7 @@ export const MARKETING_STYLES: MarketingStyle[] = [
     direction:
       "high-speed flash photography, a liquid splash frozen mid-air around the product, crystalline droplets suspended, wet reflective surface, ultra-crisp macro detail",
     aspect: "3:4",
-    model: SEEDREAM,
+    model: NANO_BANANA,
   },
   {
     id: "natural-set",
@@ -160,7 +165,7 @@ export const MARKETING_STYLES: MarketingStyle[] = [
     direction:
       "the product staged on natural materials — raw stone, linen, fresh foliage — dappled daylight through leaves, organic shadow shapes, calm earthy palette",
     aspect: "1:1",
-    model: SEEDREAM,
+    model: NANO_BANANA,
   },
   {
     id: "dark-luxe",
@@ -173,7 +178,7 @@ export const MARKETING_STYLES: MarketingStyle[] = [
     direction:
       "low-key studio lighting on a black glossy surface, a single dramatic rim light tracing the product silhouette, deep shadows, premium reflective finish",
     aspect: "3:4",
-    model: SEEDREAM,
+    model: NANO_BANANA,
   },
   {
     id: "gradient-pop",
@@ -186,7 +191,7 @@ export const MARKETING_STYLES: MarketingStyle[] = [
     direction:
       "bold duotone gradient backdrop, hard colored studio lights, the product floating in a playful weightless composition, punchy saturated color and crisp shadow shapes",
     aspect: "1:1",
-    model: SEEDREAM,
+    model: NANO_BANANA,
   },
   {
     id: "ingredient-burst",
@@ -199,7 +204,7 @@ export const MARKETING_STYLES: MarketingStyle[] = [
     direction:
       "the product at the center of its ingredients bursting outward in mid-air, motion frozen at high shutter speed, bright even key light, weightless arrangement",
     aspect: "1:1",
-    model: SEEDREAM,
+    model: NANO_BANANA,
   },
   {
     id: "flat-lay",
@@ -212,7 +217,7 @@ export const MARKETING_STYLES: MarketingStyle[] = [
     direction:
       "top-down flat lay on a textured surface, styled props arranged on a clean grid, even diffuse daylight, generous negative space",
     aspect: "1:1",
-    model: SEEDREAM,
+    model: NANO_BANANA,
   },
 
   // ---------- Ads ----------
@@ -310,7 +315,7 @@ export const MARKETING_STYLES: MarketingStyle[] = [
     direction:
       "e-commerce listing photo on a pure white background, even shadowless lighting, the product centered and fully in frame, no props and no text",
     aspect: "1:1",
-    model: SEEDREAM,
+    model: NANO_BANANA,
   },
   {
     id: "spec-infographic",
@@ -349,7 +354,7 @@ export const MARKETING_STYLES: MarketingStyle[] = [
     direction:
       "lifestyle listing photo showing the product being used in a real home setting, natural window light, authentic candid framing, shallow depth of field",
     aspect: "1:1",
-    model: SEEDREAM,
+    model: NANO_BANANA,
   },
   {
     id: "bundle-contents",
@@ -362,7 +367,7 @@ export const MARKETING_STYLES: MarketingStyle[] = [
     direction:
       "everything-in-the-box layout: each included item laid out top-down in a neat grid on a soft neutral surface, even lighting, equal spacing",
     aspect: "1:1",
-    model: SEEDREAM,
+    model: NANO_BANANA,
   },
 
   // ---------- UGC ----------
