@@ -73,6 +73,13 @@ export type AdminStats = {
   inFlight: number;
   creditsSpent30d: number;
   unreadMessages: number;
+  /** 30-day daily spines built server-side with generate_series, so quiet
+   *  days come back as 0 rather than being absent from the chart. */
+  generationSeries: { date: string; count: number; failed: number }[];
+  signupSeries: { date: string; count: number }[];
+  creditSeries: { date: string; count: number }[];
+  tierSplit: { tier: string; count: number }[];
+  byStatus: { status: string; count: number }[];
 };
 
 export function useAdminStats() {

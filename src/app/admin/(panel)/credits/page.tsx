@@ -5,12 +5,23 @@ import Link from "next/link";
 import { AlertTriangle, CheckCircle2 } from "lucide-react";
 import { useAdminCredits } from "@/hooks/use-admin-data";
 import { CREDIT_VALUE_USD } from "@/lib/constants";
+import { ChartCard, BreakdownDonut } from "@/components/admin/charts";
 import {
   PageHeader, Panel, Table, Th, Td, Mono, Pagination,
   EmptyRow, LoadingBlock, ErrorBlock, formatDate,
 } from "@/components/admin/ui";
 
 const LIMIT = 50;
+
+// Fixed per source so a colour means the same thing in every chart on the
+// page — monthly is the plan allowance, recharge is money in, refund and
+// admin_grant are credits nobody paid for.
+const SOURCE_COLORS: Record<string, string> = {
+  monthly: "#bbdc12",
+  recharge: "#ffd400",
+  refund: "#56a8e8",
+  admin_grant: "#ff8f00",
+};
 
 export default function AdminCreditsPage() {
   const [offset, setOffset] = useState(0);
@@ -78,22 +89,41 @@ export default function AdminCreditsPage() {
         )}
       </div>
 
-      <section className="mb-6">
-        <h2 className="mb-3 text-label font-medium text-ink-soft">By source</h2>
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          {bySource.map((s) => (
-            <div key={s.source} className="rounded-2xl border border-line bg-surface-2 p-4">
-              <p className="font-mono text-caption text-brand">{s.source}</p>
-              <p className="font-display mt-1.5 text-feature-title font-bold text-ink">
-                {s.amount.toLocaleString()}
-              </p>
-              <p className="text-caption text-muted">
-                {s.grants} grants · {s.remaining.toLocaleString()} left
-              </p>
-            </div>
-          ))}
-        </div>
-      </section>
+      <div className="mb-6 grid gap-4 lg:grid-cols-2">
+        <ChartCard title="Where credits come from" hint="Total granted, split by source">
+          <BreakdownDonut
+            data={bySource.map((s) => ({ name: s.source, value: s.amount }))}
+            total={totals.granted}
+            totalLabel="granted"
+            colors={SOURCE_COLORS}
+          />
+        </ChartCard>
+
+        <ChartCard title="Outstanding by source" hint="What is still unspent">
+          <div className="space-y-3">
+            {bySource.map((s) => {
+              const pct = s.amount ? Math.round((s.remaining / s.amount) * 100) : 0;
+              return (
+                <div key={s.source}>
+                  <div className="mb-1 flex items-center justify-between text-caption">
+                    <span className="font-mono text-brand">{s.source}</span>
+                    <span className="text-muted">
+                      {s.remaining.toLocaleString()} / {s.amount.toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="h-2 overflow-hidden rounded-full bg-white/5">
+                    <div
+                      className="h-full rounded-full bg-brand"
+                      style={{ width: `${pct}%` }}
+                      aria-hidden="true"
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </ChartCard>
+      </div>
 
       <Panel>
         <Table

@@ -10,6 +10,7 @@ import {
 } from "@/hooks/use-admin-data";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { ChartCard, RankedBars } from "@/components/admin/charts";
 import {
   PageHeader,
   Panel,
@@ -81,34 +82,20 @@ export default function AdminGenerationsPage() {
         })}
       </div>
 
-      {/* Failure concentration by model is the fastest way to tell "we're
-          broken" from "one provider is broken". Only rendered when there is
-          something to see. */}
       {data && data.failuresByModel.length > 0 && (
-        <Panel className="mb-4 p-4">
-          <p className="mb-2.5 text-label font-medium text-ink-soft">Failures by model (7 days)</p>
-          <div className="flex flex-wrap gap-2">
-            {data.failuresByModel.map((m) => {
-              const rate = Math.round((m.failed / m.total) * 100);
-              return (
-                <span
-                  key={m.model}
-                  className={cn(
-                    "inline-flex items-center gap-2 rounded-full border px-3 py-1 text-caption",
-                    rate >= 25
-                      ? "border-accent/40 bg-accent/10 text-accent"
-                      : "border-line bg-white/5 text-muted",
-                  )}
-                >
-                  <span className="font-mono">{m.model}</span>
-                  <span className="font-semibold">
-                    {m.failed}/{m.total} · {rate}%
-                  </span>
-                </span>
-              );
-            })}
-          </div>
-        </Panel>
+        <ChartCard
+          title="Failures by model"
+          hint="Last 7 days. Separates “we are broken” from “one provider is broken”."
+          className="mb-4"
+        >
+          <RankedBars
+            data={data.failuresByModel.map((m) => ({
+              label: m.model.replace(/^[^/]+\//, ""),
+              value: m.failed,
+            }))}
+            height={Math.max(140, data.failuresByModel.length * 34)}
+          />
+        </ChartCard>
       )}
 
       {isLoading ? (
