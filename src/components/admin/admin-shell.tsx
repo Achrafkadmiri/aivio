@@ -11,6 +11,7 @@ import {
   Images,
   LifeBuoy,
   Activity,
+  ScrollText,
   LogOut,
   ShieldCheck,
 } from "lucide-react";
@@ -37,6 +38,7 @@ const NAV = [
   { href: "/admin/presets", label: "Presets", icon: Wand2 },
   { href: "/admin/content", label: "Content", icon: Images },
   { href: "/admin/support", label: "Support", icon: LifeBuoy },
+  { href: "/admin/audit", label: "Audit log", icon: ScrollText },
 ];
 
 export function AdminShell({ children }: { children: ReactNode }) {
