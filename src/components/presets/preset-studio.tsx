@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useMutation } from "@tanstack/react-query";
-import { ChevronLeft, ChevronRight, Info, Pencil, Sparkles } from "lucide-react";
+import { ChevronLeft, ChevronRight, Info, Pencil, Sparkles, Wand2 } from "lucide-react";
 import {
   PickPresetMark,
   UploadImageMark,
@@ -18,8 +18,8 @@ import { JobStatusCard } from "@/components/generate/job-status-card";
 import { useGeneration } from "@/hooks/use-generation";
 import { useInvalidateCredits, useUsage } from "@/hooks/use-credits";
 import { useLazyVideo } from "@/hooks/use-lazy-video";
-import { estimateVideoCredits } from "@/lib/credit-estimate";
 import {
+  presetCredits,
   resolvePresetSettings,
   type Preset,
 } from "@/lib/viral-presets";
@@ -54,11 +54,8 @@ export function PresetStudio({ preset }: { preset: Preset }) {
   // The server re-runs the same step-down for real (fitPresetToPlan); this
   // is here so the price and the notes are right BEFORE anyone clicks.
   const settings = resolvePresetSettings(preset, usageQuery.data?.tier_info);
-  const credits = estimateVideoCredits(
-    preset.model,
-    settings.durationSeconds ?? 5,
-    settings.resolution ?? "720p",
-  );
+  // Both stages, when the recipe has two — the server bills for both.
+  const credits = presetCredits(preset, settings);
 
   const busy = generation.status === "queued" || generation.status === "processing";
 
@@ -156,6 +153,14 @@ export function PresetStudio({ preset }: { preset: Preset }) {
               onRemove={clearImage}
               previewMode="showcase"
             />
+
+            {preset.styleModel && (
+              <p className="flex shrink-0 items-start gap-1.5 text-caption text-muted">
+                <Wand2 className="mt-0.5 size-3 shrink-0" aria-hidden="true" />
+                Your photo is redrawn as a character first, then animated — the result is a
+                character based on it, not the photo itself.
+              </p>
+            )}
 
             {settings.notes.map((note) => (
               <p key={note} className="flex shrink-0 items-start gap-1.5 text-caption text-warning">

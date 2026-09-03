@@ -19,9 +19,9 @@ import { PresetForm } from "@/components/admin/preset-form";
 import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
 import { Select, Input } from "@/components/ui/input";
-import { estimateVideoCredits } from "@/lib/credit-estimate";
 import {
   PRESET_CATEGORIES,
+  presetCredits,
   presetDurationLabel,
   presetDurationSeconds,
   presetResolution,
@@ -275,11 +275,10 @@ function PresetRow({
   onDelete: () => void;
 }) {
   const resolution = presetResolution(preset.parameters);
-  const credits = estimateVideoCredits(
-    preset.model,
-    presetDurationSeconds(preset.parameters) ?? 5,
-    resolution ?? "720p",
-  );
+  const credits = presetCredits(preset, {
+    durationSeconds: presetDurationSeconds(preset.parameters),
+    resolution,
+  });
 
   return (
     <tr>
@@ -290,6 +289,9 @@ function PresetRow({
       <Td>{preset.category}</Td>
       <Td>
         <Mono className="text-caption">{preset.model}</Mono>
+        {preset.styleModel && (
+          <Mono className="block text-caption text-muted">via {preset.styleModel}</Mono>
+        )}
       </Td>
       <Td>
         {presetDurationLabel(preset.parameters)}

@@ -319,6 +319,9 @@ export type AdminPresetRow = {
   prompt: string;
   model: string;
   parameters: Record<string, unknown>;
+  styleModel: string | null;
+  stylePrompt: string | null;
+  styleParameters: Record<string, unknown>;
   requiresImage: boolean;
   published: boolean;
   sortOrder: number;
@@ -343,6 +346,9 @@ export type AdminPresetInput = {
   prompt: string;
   model: string;
   parameters: Record<string, unknown>;
+  styleModel: string | null;
+  stylePrompt: string | null;
+  styleParameters: Record<string, unknown>;
   requiresImage: boolean;
   published: boolean;
   sortOrder: number;

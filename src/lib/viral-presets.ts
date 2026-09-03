@@ -31,6 +31,7 @@ import {
 } from "@/lib/constants";
 import { getCloudflareModel } from "@/lib/cloudflare-models";
 import { RESOLUTION_RANK } from "@/lib/tier-limits";
+import { estimateVideoCredits, estimateImageCredits } from "@/lib/credit-estimate";
 
 export const PRESET_CATEGORIES = ["Trending", "Portrait", "Product", "Motion", "Playful"] as const;
 export type PresetCategory = (typeof PRESET_CATEGORIES)[number];
@@ -52,6 +53,12 @@ export type Preset = {
   /** That model's own wire parameters. Keys and value spellings differ per
    * model, which is why nothing here reads `parameters.duration` directly. */
   parameters: Record<string, unknown>;
+  /** The image model that redraws the upload into a character before the
+   * video model runs, or null when the photo is animated directly. Its
+   * instruction stays server-side — this is here so the studio can price
+   * the second model call and say what is about to happen. */
+  styleModel: string | null;
+  styleParameters: Record<string, unknown>;
   requiresImage: boolean;
 };
 
@@ -208,4 +215,37 @@ export function resolvePresetSettings(
   }
 
   return done();
+}
+
+/**
+ * What running this preset costs, both stages included.
+ *
+ * A recipe with a character stage bills for two model calls — the image model
+ * that redraws the upload, then the video model that animates the result. The
+ * server charges for both (createGenerationJob's extraCredits), so a card
+ * showing only the video half would quote a price the user is not charged.
+ *
+ * Mirrors the sum the /generations/preset handler computes. Same convention
+ * as the rest of this file: authoritative on the server, previewed here.
+ */
+export function presetCredits(
+  preset: Pick<Preset, "model" | "styleModel" | "styleParameters">,
+  settings: { durationSeconds: number | undefined; resolution: string | undefined },
+): number {
+  const video = estimateVideoCredits(
+    preset.model,
+    settings.durationSeconds ?? 5,
+    settings.resolution ?? "720p",
+  );
+  if (!preset.styleModel) return video;
+
+  const params = preset.styleParameters ?? {};
+  const str = (v: unknown) => (typeof v === "string" && v !== "" ? v : undefined);
+  const stage = estimateImageCredits(preset.styleModel, {
+    // Same key precedence as the backend's imageSettingsFromParameters — each
+    // image model spells its size field differently.
+    size: str(params.size) ?? str(params.imageSize) ?? str(params.resolution),
+    quality: str(params.quality),
+  });
+  return video + stage;
 }

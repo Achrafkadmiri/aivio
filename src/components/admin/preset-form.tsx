@@ -72,6 +72,10 @@ const MODEL_OPTIONS = [
   ).map((m) => ({ id: m.id, label: `${m.label} (${m.provider})` })),
 ];
 
+const STYLE_MODEL_OPTIONS = CLOUDFLARE_MODELS.filter(
+  (m) => m.category === "text-to-image" && m.image !== "none",
+).map((m) => ({ id: m.id, label: `${m.label} (${m.provider})` }));
+
 function fieldsForModel(modelId: string): DynamicField[] {
   return SEEDANCE_FIELDS[modelId] ?? getCloudflareModel(modelId)?.fields ?? [];
 }
@@ -95,6 +99,9 @@ const EMPTY: AdminPresetInput = {
   prompt: "",
   model: SEEDANCE2_MODEL_ID,
   parameters: defaultParameters(SEEDANCE2_MODEL_ID),
+  styleModel: null,
+  stylePrompt: null,
+  styleParameters: {},
   requiresImage: true,
   published: false,
   sortOrder: 0,
@@ -128,6 +135,9 @@ export function PresetForm({
           prompt: initial.prompt,
           model: initial.model,
           parameters: initial.parameters ?? {},
+          styleModel: initial.styleModel,
+          stylePrompt: initial.stylePrompt,
+          styleParameters: initial.styleParameters ?? {},
           requiresImage: initial.requiresImage,
           published: initial.published,
           sortOrder: initial.sortOrder,
@@ -163,6 +173,21 @@ export function PresetForm({
       return { ...v, parameters: next };
     });
   }, [value.model]);
+
+  const styleFields = useMemo(
+    () => (value.styleModel ? fieldsForModel(value.styleModel) : []),
+    [value.styleModel],
+  );
+
+  const previousStyleModel = useRef(value.styleModel);
+  useEffect(() => {
+    if (previousStyleModel.current === value.styleModel) return;
+    previousStyleModel.current = value.styleModel;
+    setValue((v) => ({
+      ...v,
+      styleParameters: v.styleModel ? defaultParameters(v.styleModel) : {},
+    }));
+  }, [value.styleModel]);
 
   const composedPromptLength =
     value.prompt.length + value.referenceSubject.length + PROMPT_SCAFFOLD_LENGTH;
@@ -290,6 +315,65 @@ export function PresetForm({
           required
         />
       </Field>
+
+      <div className="rounded-xl border border-line bg-surface-3 p-4">
+        <p className="text-label font-medium text-ink-soft">Character stage (optional)</p>
+        <p className="mt-1 mb-3 text-caption text-muted">
+          Runs an image model over the upload before the video model sees it. Use it when the
+          recipe should produce a drawn, rendered or otherwise synthetic character — that is
+          what lets a portrait recipe run on a video model that refuses photographs of real
+          people. An instruction that just reproduces the photo clears neither the provider&apos;s
+          detector nor its terms, so write a real transformation.
+        </p>
+
+        <div className="space-y-4">
+          <Field label="Image model" hint="Only models that can edit a supplied image are listed.">
+            <Select
+              value={value.styleModel ?? ""}
+              onChange={(e) => set("styleModel", e.target.value || null)}
+            >
+              <option value="">None — animate the photo directly</option>
+              {STYLE_MODEL_OPTIONS.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.label}
+                </option>
+              ))}
+            </Select>
+          </Field>
+
+          {value.styleModel && (
+            <>
+              <Field
+                label="Conversion instruction"
+                hint="What the upload becomes. Never shown to the user."
+              >
+                <Textarea
+                  value={value.stylePrompt ?? ""}
+                  onChange={(e) => set("stylePrompt", e.target.value || null)}
+                  rows={4}
+                  className="font-mono text-caption"
+                  placeholder="Redraw the subject as a cel-shaded anime character, keeping their hairstyle, outfit and colouring recognisable. Flat illustrated shading, clean linework, plainly a drawing rather than a photograph."
+                />
+              </Field>
+
+              {styleFields.length > 0 && (
+                <div className="grid gap-4 sm:grid-cols-2">
+                  {styleFields.map((field) => (
+                    <ParameterField
+                      key={field.key}
+                      field={field}
+                      value={value.styleParameters[field.key]}
+                      onChange={(next) =>
+                        set("styleParameters", { ...value.styleParameters, [field.key]: next })
+                      }
+                    />
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      </div>
 
       <div className="flex flex-wrap gap-6">
         <ToggleField

@@ -2,12 +2,12 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Clock, ImagePlus, Monitor, Sparkles } from "lucide-react";
+import { Clock, ImagePlus, Monitor, Sparkles, Wand2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLazyVideo } from "@/hooks/use-lazy-video";
-import { estimateVideoCredits } from "@/lib/credit-estimate";
 import {
   PRESET_CATEGORIES,
+  presetCredits,
   presetDurationLabel,
   presetDurationSeconds,
   presetResolution,
@@ -66,11 +66,10 @@ function PresetCard({ preset }: { preset: Preset }) {
   // rather than as columns on the preset, since every model spells them
   // differently — hence the accessors instead of preset.duration.
   const resolution = presetResolution(preset.parameters);
-  const credits = estimateVideoCredits(
-    preset.model,
-    presetDurationSeconds(preset.parameters) ?? 5,
-    resolution ?? "720p",
-  );
+  const credits = presetCredits(preset, {
+    durationSeconds: presetDurationSeconds(preset.parameters),
+    resolution,
+  });
 
   return (
     <Link
@@ -96,6 +95,10 @@ function PresetCard({ preset }: { preset: Preset }) {
           <MetaChip icon={Clock} label={presetDurationLabel(preset.parameters)} />
           {resolution && <MetaChip icon={Monitor} label={resolution} />}
           {preset.requiresImage && <MetaChip icon={ImagePlus} label="1 photo" />}
+          {/* Says up front that the upload is redrawn — the output is a
+              character, not the photo animated, and that is a different
+              product than the card would otherwise promise. */}
+          {preset.styleModel && <MetaChip icon={Wand2} label="AI character" />}
         </div>
         <h3 className="font-display text-feature-title font-bold text-ink">{preset.title}</h3>
         <p className="mt-1 text-caption text-white/70">{preset.tagline}</p>
