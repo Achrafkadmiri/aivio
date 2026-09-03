@@ -154,6 +154,21 @@ export function PresetStudio({ preset }: { preset: Preset }) {
               previewMode="showcase"
             />
 
+            {/* The character the video is actually being built from. Only
+                exists once the first stage finishes, which is also the
+                point the run stops looking like it has stalled. */}
+            {generation.stagedImageUrl && (
+              <div className="shrink-0 space-y-1.5">
+                <p className="text-caption text-muted">Your character</p>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={generation.stagedImageUrl}
+                  alt="The character generated from your photo"
+                  className="h-28 w-auto rounded-lg border border-line object-cover"
+                />
+              </div>
+            )}
+
             {preset.styleModel && (
               <p className="flex shrink-0 items-start gap-1.5 text-caption text-muted">
                 <Wand2 className="mt-0.5 size-3 shrink-0" aria-hidden="true" />

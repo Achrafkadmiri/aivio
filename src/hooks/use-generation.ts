@@ -12,10 +12,20 @@ type GenerationState = {
   status: GenerationStatus;
   progress: number;
   result: GenerationResult | null;
+  /** A preset character stage's output, once it exists. Arrives well
+   * before the video does — the point is to have something to show
+   * during the second half of the run. */
+  stagedImageUrl: string | null;
   error: string | null;
 };
 
-const IDLE_STATE: GenerationState = { status: "idle", progress: 0, result: null, error: null };
+const IDLE_STATE: GenerationState = {
+  status: "idle",
+  progress: 0,
+  result: null,
+  stagedImageUrl: null,
+  error: null,
+};
 
 export function useGeneration(jobId: string | null) {
   const [state, setState] = useState<GenerationState>(IDLE_STATE);
@@ -36,7 +46,14 @@ export function useGeneration(jobId: string | null) {
     // EventSource is even created) keeps every setState call inside a
     // callback reacting to the external stream, not the effect body itself.
     source.addEventListener("queued", () => {
-      setState({ status: "queued", progress: 0, result: null, error: null });
+      // Keeps any staged image already received: the stream reconnects on
+      // its own wall-clock budget, and re-sending "queued" must not wipe
+      // the character out from under a run that is still going.
+      setState((prev) => ({ ...prev, status: "queued", progress: 0, result: null, error: null }));
+    });
+    source.addEventListener("staged", (event) => {
+      const data = JSON.parse((event as MessageEvent).data);
+      setState((prev) => ({ ...prev, stagedImageUrl: data.styledImageUrl ?? null }));
     });
     source.addEventListener("started", () => {
       setState((prev) => ({ ...prev, status: "processing" }));
@@ -47,12 +64,13 @@ export function useGeneration(jobId: string | null) {
     });
     source.addEventListener("completed", (event) => {
       const data = JSON.parse((event as MessageEvent).data);
-      setState({
+      setState((prev) => ({
+        ...prev,
         status: "completed",
         progress: 100,
         result: { resultUrl: data.resultUrl, thumbnailUrl: data.thumbnailUrl ?? null },
         error: null,
-      });
+      }));
       source.close();
     });
     source.addEventListener("failed", (event) => {
