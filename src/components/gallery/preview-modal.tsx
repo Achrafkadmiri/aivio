@@ -148,7 +148,9 @@ export function PreviewModal({
   viewerIsOwner?: boolean;
   onClose: () => void;
   onNavigate: (index: number) => void;
-  onDelete?: () => void;
+  /** Resolves false when the user declined the confirmation, so the panel
+   *  knows to stay open. */
+  onDelete?: () => void | Promise<boolean | void>;
   onDuplicate?: () => void;
   onAddToCollection?: () => void;
   onRemoveFromCollection?: () => void;
@@ -205,7 +207,9 @@ function PreviewBody({
   viewerIsOwner?: boolean;
   onClose: () => void;
   onNavigate: (index: number) => void;
-  onDelete?: () => void;
+  /** Resolves false when the user declined the confirmation, so the panel
+   *  knows to stay open. */
+  onDelete?: () => void | Promise<boolean | void>;
   onDuplicate?: () => void;
   onAddToCollection?: () => void;
   onRemoveFromCollection?: () => void;
@@ -535,9 +539,14 @@ function PreviewBody({
               <Button
                 variant="secondary"
                 size="icon"
-                onClick={() => {
-                  onDelete();
-                  onClose();
+                onClick={async () => {
+                  // Awaited, because the handler now raises a confirmation
+                  // prompt. Closing straight away left that question
+                  // floating over the grid with the details it was asking
+                  // about already gone; `false` means the user backed out,
+                  // so the panel stays exactly where they left it.
+                  const deleted = await onDelete();
+                  if (deleted !== false) onClose();
                 }}
                 className="text-accent hover:text-accent"
                 aria-label="Delete"

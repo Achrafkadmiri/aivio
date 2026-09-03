@@ -27,7 +27,9 @@ export function GalleryGrid({
   /** Credits each generation's creator on the tile — the public feed and
    *  shared collections. */
   showAuthor?: boolean;
-  onDelete?: (id: string) => void;
+  /** May resolve false to say the user cancelled, which keeps the preview
+   *  panel open instead of closing it over a delete that never happened. */
+  onDelete?: (id: string) => void | Promise<boolean | void>;
   onDuplicate?: (id: string) => void;
   onAddToCollection?: (id: string) => void;
   onRemoveFromCollection?: (id: string) => void;

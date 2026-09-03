@@ -113,8 +113,14 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
               cancelRef.current?.focus();
             }}
             onPointerDownOutside={ignoreOpeningClick}
-            onFocusOutside={ignoreOpeningClick}
             onInteractOutside={ignoreOpeningClick}
+            // Never close on a focus change. When this is raised from inside
+            // another modal (the gallery preview), that dialog's focus trap
+            // pulls focus back to itself a beat after this one mounts —
+            // which read as "the user clicked away" and silently cancelled
+            // the prompt. A question this consequential closes on an answer,
+            // Escape, or a deliberate click outside; nothing else.
+            onFocusOutside={(event) => event.preventDefault()}
           >
             <div className="flex gap-4">
               <span

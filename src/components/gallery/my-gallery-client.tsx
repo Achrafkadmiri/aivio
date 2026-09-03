@@ -187,7 +187,11 @@ export function MyGalleryClient() {
                   confirmLabel: "Delete",
                   tone: "danger",
                 });
-                if (ok) deleteMutation.mutate(id);
+                // Reported back so the preview panel knows whether to close:
+                // a cancelled delete should leave it open on the same item.
+                if (!ok) return false;
+                deleteMutation.mutate(id);
+                return true;
               }}
               onDuplicate={(id) => duplicateMutation.mutate(id)}
               onAddToCollection={(id) => setCollectionTarget(id)}
