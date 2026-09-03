@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
 import { Modal } from "@/components/ui/modal";
 import { useToast } from "@/components/ui/toast";
+import { useConfirm } from "@/components/ui/confirm";
 import { formatDate } from "@/lib/utils";
 import { apiFetch } from "@/lib/api-client";
 
@@ -32,6 +33,7 @@ type ApiKeyRow = {
 
 export function ApiKeysManager() {
   const { toast } = useToast();
+  const confirm = useConfirm();
   const queryClient = useQueryClient();
   const [createOpen, setCreateOpen] = useState(false);
   const [name, setName] = useState("");
@@ -110,7 +112,16 @@ export function ApiKeysManager() {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => revokeMutation.mutate(key.id)}
+              onClick={async () => {
+                const ok = await confirm({
+                  title: `Revoke "${key.name}"?`,
+                  description:
+                    "Any app still calling the API with this key starts getting 401s immediately. Keys can't be restored — you'd have to issue a new one.",
+                  confirmLabel: "Revoke",
+                  tone: "danger",
+                });
+                if (ok) revokeMutation.mutate(key.id);
+              }}
               aria-label="Revoke key"
             >
               <Trash2 className="size-4" />

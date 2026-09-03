@@ -9,6 +9,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { useToast } from "@/components/ui/toast";
+import { useConfirm } from "@/components/ui/confirm";
 import { useMe } from "@/hooks/use-me";
 import { TIER_INFO, type Tier } from "@/lib/constants";
 import { apiFetch } from "@/lib/api-client";
@@ -34,6 +35,7 @@ function useTeam() {
 
 export function TeamManager() {
   const { toast } = useToast();
+  const confirm = useConfirm();
   const queryClient = useQueryClient();
   const { data: me } = useMe();
   const { data, isLoading } = useTeam();
@@ -176,7 +178,20 @@ export function TeamManager() {
                 You&apos;re a member — {data.organization.ownerName} owns this team and its billing.
               </p>
             </div>
-            <Button variant="secondary" onClick={() => leaveMutation.mutate()} loading={leaveMutation.isPending}>
+            <Button
+              variant="secondary"
+              onClick={async () => {
+                const ok = await confirm({
+                  title: `Leave ${data.organization.name}?`,
+                  description:
+                    "You lose access to the shared credit pool and go back to your own plan's credits. Only an owner can invite you back.",
+                  confirmLabel: "Leave team",
+                  tone: "danger",
+                });
+                if (ok) leaveMutation.mutate();
+              }}
+              loading={leaveMutation.isPending}
+            >
               Leave team
             </Button>
           </div>
@@ -243,7 +258,16 @@ export function TeamManager() {
             key={m.id}
             member={m}
             isOwnerView
-            onRemove={() => removeMemberMutation.mutate(m.id)}
+            onRemove={async () => {
+              const ok = await confirm({
+                title: `Remove ${m.name} from the team?`,
+                description:
+                  "They lose access to the shared credit pool right away. Their own generations are untouched, and you can re-invite them later.",
+                confirmLabel: "Remove",
+                tone: "danger",
+              });
+              if (ok) removeMemberMutation.mutate(m.id);
+            }}
           />
         ))}
         {data.invites.map((invite) => (
@@ -257,7 +281,15 @@ export function TeamManager() {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => cancelInviteMutation.mutate(invite.id)}
+              onClick={async () => {
+                const ok = await confirm({
+                  title: `Cancel the invite to ${invite.email}?`,
+                  description: "The link they were sent stops working. You can invite them again.",
+                  confirmLabel: "Cancel invite",
+                  cancelLabel: "Keep it",
+                });
+                if (ok) cancelInviteMutation.mutate(invite.id);
+              }}
               aria-label="Cancel invite"
             >
               <X className="size-4" />

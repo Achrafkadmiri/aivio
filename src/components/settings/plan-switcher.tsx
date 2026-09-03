@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
+import { useConfirm } from "@/components/ui/confirm";
 import { TIERS, TIER_INFO, type Tier } from "@/lib/constants";
 import { PlanFeatureList } from "@/components/pricing/plan-feature-list";
 import { PlanPrice } from "@/components/pricing/plan-price";
@@ -12,10 +13,20 @@ import { useInvalidateCredits } from "@/hooks/use-credits";
 
 export function PlanSwitcher({ currentTier }: { currentTier: string }) {
   const { toast } = useToast();
+  const confirm = useConfirm();
   const invalidateCredits = useInvalidateCredits();
   const [loadingTier, setLoadingTier] = useState<string | null>(null);
 
   async function switchTo(tier: Tier) {
+    const target = TIER_INFO[tier];
+    const ok = await confirm({
+      title: `Switch to ${target.label}?`,
+      description:
+        "Your plan changes straight away and your monthly credit allowance is reset to the new plan's — moving down can leave you with fewer credits than you have now.",
+      confirmLabel: `Switch to ${target.label}`,
+    });
+    if (!ok) return;
+
     setLoadingTier(tier);
     try {
       const res = await apiFetch("/api/subscription/upgrade", {

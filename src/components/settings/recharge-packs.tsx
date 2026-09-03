@@ -5,6 +5,7 @@ import { Zap } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
+import { useConfirm } from "@/components/ui/confirm";
 import { useCurrency } from "@/components/providers/currency-provider";
 import { formatMoney } from "@/lib/currency";
 import { formatCredits } from "@/lib/utils";
@@ -16,11 +17,22 @@ import { useInvalidateCredits } from "@/hooks/use-credits";
 // Credits from these packs never expire, unlike a plan's monthly grant.
 export function RechargePacks() {
   const { toast } = useToast();
+  const confirm = useConfirm();
   const { currency } = useCurrency();
   const invalidateCredits = useInvalidateCredits();
   const [loadingPack, setLoadingPack] = useState<RechargePackId | null>(null);
 
   async function buy(packId: RechargePackId, credits: number) {
+    const pack = RECHARGE_PACKS.find((p) => p.id === packId);
+    const ok = await confirm({
+      title: `Buy ${formatCredits(credits)} credits?`,
+      description: pack
+        ? `You'll be charged ${formatMoney(pack.priceUsd, currency)}. The credits are added immediately and never expire.`
+        : "The credits are added immediately and never expire.",
+      confirmLabel: "Buy credits",
+    });
+    if (!ok) return;
+
     setLoadingPack(packId);
     try {
       const res = await apiFetch("/api/subscription/recharge", {

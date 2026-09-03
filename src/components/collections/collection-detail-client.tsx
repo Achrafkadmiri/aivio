@@ -9,9 +9,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Spinner } from "@/components/ui/spinner";
-import { Modal } from "@/components/ui/modal";
 import { GalleryGrid } from "@/components/gallery/gallery-grid";
 import { useToast } from "@/components/ui/toast";
+import { useConfirm } from "@/components/ui/confirm";
 import type { GalleryItem } from "@/components/gallery/generation-card";
 import { apiFetch } from "@/lib/api-client";
 import { useMe } from "@/hooks/use-me";
@@ -125,16 +125,57 @@ function CollectionEditor({
   deleting: boolean;
 }) {
   const { toast } = useToast();
+  const confirm = useConfirm();
   const { data: me } = useMe();
   const [name, setName] = useState(collection.name);
   const [isPublic, setIsPublic] = useState(collection.isPublic);
   const [saving, setSaving] = useState(false);
-  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
 
   async function handleSave(partial: Partial<{ name: string; isPublic: boolean }>) {
     setSaving(true);
     await onSave(partial);
     setSaving(false);
+  }
+
+  async function handleVisibility(checked: boolean) {
+    const ok = await confirm(
+      checked
+        ? {
+            title: "Publish this collection?",
+            description:
+              "Anyone with the share link will be able to view every generation in it, including private ones.",
+            confirmLabel: "Publish",
+          }
+        : {
+            title: "Turn off the share link?",
+            description:
+              "The existing link stops working immediately, for everyone you've already sent it to.",
+            confirmLabel: "Turn off",
+          },
+    );
+    if (!ok) return;
+    setIsPublic(checked);
+    await handleSave({ isPublic: checked });
+  }
+
+  async function handleRemoveItem(generationId: string) {
+    const ok = await confirm({
+      title: "Remove from this collection?",
+      description: "The generation itself stays in your gallery — only this collection changes.",
+      confirmLabel: "Remove",
+    });
+    if (ok) await onRemoveItem(generationId);
+  }
+
+  async function handleDelete() {
+    const ok = await confirm({
+      title: "Delete this collection?",
+      description:
+        "Generations inside it won't be deleted — only the collection itself. This can't be undone.",
+      confirmLabel: "Delete",
+      tone: "danger",
+    });
+    if (ok) await onDelete();
   }
 
   const shareUrl =
@@ -154,26 +195,10 @@ function CollectionEditor({
             <p className="mt-2 text-body-sm text-muted">{collection.description}</p>
           )}
         </div>
-        <Button variant="secondary" onClick={() => setConfirmDeleteOpen(true)}>
+        <Button variant="secondary" loading={deleting} onClick={handleDelete}>
           <Trash2 className="size-4" /> Delete
         </Button>
       </div>
-
-      <Modal
-        open={confirmDeleteOpen}
-        onOpenChange={setConfirmDeleteOpen}
-        title="Delete this collection?"
-        description="Generations inside it won't be deleted — only the collection itself."
-      >
-        <div className="flex justify-end gap-2">
-          <Button variant="secondary" onClick={() => setConfirmDeleteOpen(false)}>
-            Cancel
-          </Button>
-          <Button variant="primary" loading={deleting} onClick={onDelete}>
-            <Trash2 className="size-4" /> Delete
-          </Button>
-        </div>
-      </Modal>
 
       <Card
         variant="compact"
@@ -182,10 +207,7 @@ function CollectionEditor({
         <div className="flex items-center gap-3">
           <Switch
             checked={isPublic}
-            onCheckedChange={(checked) => {
-              setIsPublic(checked);
-              handleSave({ isPublic: checked });
-            }}
+            onCheckedChange={handleVisibility}
             disabled={saving}
           />
           <div>
@@ -221,7 +243,7 @@ function CollectionEditor({
           items={collection.items}
           author={me ? { name: me.name, avatarUrl: me.avatarUrl } : undefined}
           viewerIsOwner
-          onRemoveFromCollection={onRemoveItem}
+          onRemoveFromCollection={handleRemoveItem}
         />
       )}
     </div>

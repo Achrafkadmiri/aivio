@@ -4,6 +4,7 @@ import "./globals.css";
 import { QueryProvider } from "@/components/providers/query-provider";
 import { CurrencyProvider } from "@/components/providers/currency-provider";
 import { ToastProvider } from "@/components/ui/toast";
+import { ConfirmProvider } from "@/components/ui/confirm";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ReleaseAnnouncementModal } from "@/components/marketing/release-announcement-modal";
 
@@ -51,7 +52,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <QueryProvider>
           <CurrencyProvider>
             <TooltipProvider>
-              <ToastProvider>{children}</ToastProvider>
+              <ConfirmProvider>
+                <ToastProvider>{children}</ToastProvider>
+              </ConfirmProvider>
               <ReleaseAnnouncementModal />
             </TooltipProvider>
           </CurrencyProvider>

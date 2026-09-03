@@ -8,6 +8,7 @@ import { Select } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { useToast } from "@/components/ui/toast";
+import { useConfirm } from "@/components/ui/confirm";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useMe } from "@/hooks/use-me";
 import { GalleryGrid } from "./gallery-grid";
@@ -22,6 +23,7 @@ type GenerationsResponse = { items: GalleryItem[]; nextCursor: string | null; ha
 
 export function MyGalleryClient() {
   const { toast } = useToast();
+  const confirm = useConfirm();
   const { data: me } = useMe();
   const queryClient = useQueryClient();
   const [type, setType] = useState("");
@@ -177,16 +179,34 @@ export function MyGalleryClient() {
               items={items}
               author={me ? { name: me.name, avatarUrl: me.avatarUrl } : undefined}
               viewerIsOwner
-              onDelete={(id) => deleteMutation.mutate(id)}
+              onDelete={async (id) => {
+                const ok = await confirm({
+                  title: "Delete this generation?",
+                  description:
+                    "It's removed from your gallery and any collections it's in. The credits it cost aren't returned, and this can't be undone.",
+                  confirmLabel: "Delete",
+                  tone: "danger",
+                });
+                if (ok) deleteMutation.mutate(id);
+              }}
               onDuplicate={(id) => duplicateMutation.mutate(id)}
               onAddToCollection={(id) => setCollectionTarget(id)}
-              onTogglePublic={(id) => {
+              onTogglePublic={async (id) => {
                 const item = items.find((i) => i.id === id);
                 if (!item) return;
-                // Going public is the one direction that needs an answer
-                // first; unsharing is unambiguous.
-                if (item.isPublic) togglePublicMutation.mutate({ id, isPublic: false });
-                else setShareTarget(item);
+                // Going public already asks its own question (whose name it
+                // carries), so only the take-down needs one added.
+                if (!item.isPublic) {
+                  setShareTarget(item);
+                  return;
+                }
+                const ok = await confirm({
+                  title: "Remove from the community?",
+                  description:
+                    "It stops appearing in the public feed and its likes are lost. You can share it again later.",
+                  confirmLabel: "Remove",
+                });
+                if (ok) togglePublicMutation.mutate({ id, isPublic: false });
               }}
             />
             {query.hasNextPage && (
