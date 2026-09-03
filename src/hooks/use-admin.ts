@@ -88,7 +88,18 @@ export function useAdminStats() {
     queryFn: async (): Promise<AdminStats> => {
       const res = await apiFetch("/api/admin/stats");
       if (!res.ok) throw new Error("Failed to load stats");
-      return res.json();
+      const stats = (await res.json()) as AdminStats;
+      // The series arrays are newer than the counters, so a backend that
+      // hasn't been deployed yet answers without them. Default them to empty
+      // rather than letting the first `.reduce` take down the whole panel.
+      return {
+        ...stats,
+        generationSeries: stats.generationSeries ?? [],
+        signupSeries: stats.signupSeries ?? [],
+        creditSeries: stats.creditSeries ?? [],
+        tierSplit: stats.tierSplit ?? [],
+        byStatus: stats.byStatus ?? [],
+      };
     },
     retry: false,
   });
