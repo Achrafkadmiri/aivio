@@ -20,10 +20,8 @@ import { useInvalidateCredits, useUsage } from "@/hooks/use-credits";
 import { useLazyVideo } from "@/hooks/use-lazy-video";
 import { estimateVideoCredits } from "@/lib/credit-estimate";
 import {
-  PRESET_MODEL_ID,
-  buildPresetPrompt,
   resolvePresetSettings,
-  type ViralPreset,
+  type Preset,
 } from "@/lib/viral-presets";
 
 /**
@@ -35,7 +33,7 @@ import {
  * not editable. Someone who wants to change any of it belongs in the full
  * composer, not in a second half-composer bolted onto this page.
  */
-export function PresetStudio({ preset }: { preset: ViralPreset }) {
+export function PresetStudio({ preset }: { preset: Preset }) {
   const { toast } = useToast();
   const invalidateCredits = useInvalidateCredits();
   const usageQuery = useUsage();
@@ -53,11 +51,14 @@ export function PresetStudio({ preset }: { preset: ViralPreset }) {
 
   // The preset's settings, stepped down to whatever the current plan can
   // actually submit — see resolvePresetSettings for why this isn't silent.
+  // The server re-runs the same step-down for real (fitPresetToPlan); this
+  // is here so the price and the notes are right BEFORE anyone clicks.
   const settings = resolvePresetSettings(preset, usageQuery.data?.tier_info);
-  const credits = estimateVideoCredits(PRESET_MODEL_ID, settings.duration, settings.resolution);
-  // Never rendered — the recipe is the product here, so it goes straight to
-  // the request and is not surfaced anywhere in the UI.
-  const prompt = buildPresetPrompt(preset);
+  const credits = estimateVideoCredits(
+    preset.model,
+    settings.durationSeconds ?? 5,
+    settings.resolution ?? "720p",
+  );
 
   const busy = generation.status === "queued" || generation.status === "processing";
 
@@ -86,18 +87,15 @@ export function PresetStudio({ preset }: { preset: ViralPreset }) {
 
   const mutation = useMutation({
     mutationFn: async () => {
-      const res = await apiFetch("/api/generations/text-to-video", {
+      // Slug and image, nothing else. The recipe, the model and every
+      // parameter come from the "Preset" row on the server — see the
+      // /generations/preset handler. While this posted a composed prompt to
+      // /text-to-video, the "locked" recipe was locked only by this UI
+      // declining to show it.
+      const res = await apiFetch("/api/generations/preset", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: PRESET_MODEL_ID,
-          prompt,
-          image: imageUrl,
-          duration: settings.duration,
-          resolution: settings.resolution,
-          cameraFixed: preset.cameraFixed,
-          generateAudio: preset.generateAudio,
-        }),
+        body: JSON.stringify({ slug: preset.slug, image: imageUrl }),
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? "Something went wrong.");
@@ -224,7 +222,7 @@ export function PresetStudio({ preset }: { preset: ViralPreset }) {
 
 /** The preset itself, as a looping thumbnail with its name over it — the
  * "you picked this one" anchor, plus the way back to the gallery. */
-function PresetHeaderCard({ preset }: { preset: ViralPreset }) {
+function PresetHeaderCard({ preset }: { preset: Preset }) {
   const { containerRef, videoRef, hasLoadedOnce } = useLazyVideo();
 
   return (

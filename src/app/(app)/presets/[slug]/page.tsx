@@ -1,26 +1,22 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
-import { PresetStudio } from "@/components/presets/preset-studio";
-import { VIRAL_PRESETS, findPreset } from "@/lib/viral-presets";
+import { PresetStudioLoader } from "@/components/presets/preset-studio-loader";
 
-// The catalog is a static module (see viral-presets.ts), so every preset
-// route is known at build time — no reason to render these on demand.
-export function generateStaticParams() {
-  return VIRAL_PRESETS.map((preset) => ({ slug: preset.slug }));
-}
-
-export async function generateMetadata(
-  props: PageProps<"/presets/[slug]">,
-): Promise<Metadata> {
-  const { slug } = await props.params;
-  const preset = findPreset(slug);
-  if (!preset) return { title: "Preset" };
-  return { title: preset.title, description: preset.tagline };
-}
+// The catalogue lives in the database now, not in this bundle, so there is
+// no build-time list of slugs to pre-render from — generateStaticParams and
+// the per-preset generateMetadata both went with it. A recipe published from
+// the admin panel has to be reachable immediately, which a statically
+// generated route could not do.
+//
+// The title is generic for the same reason: naming the preset would mean
+// fetching it here, and this route sits behind auth in (app), so there is no
+// crawler to serve a better one to. The studio renders the preset's real
+// name as its heading.
+export const metadata: Metadata = {
+  title: "Preset",
+  description: "Upload one photo and run a finished video recipe.",
+};
 
 export default async function PresetDetailPage(props: PageProps<"/presets/[slug]">) {
   const { slug } = await props.params;
-  const preset = findPreset(slug);
-  if (!preset) notFound();
-  return <PresetStudio preset={preset} />;
+  return <PresetStudioLoader slug={slug} />;
 }

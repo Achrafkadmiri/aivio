@@ -302,3 +302,84 @@ export function useAdminAudit(params: { limit: number; offset: number }) {
     retry: false,
   });
 }
+
+// ── Presets ──────────────────────────────────────────────────────────────
+
+/** A preset as /api/admin/presets serves it — the recipe included, unlike
+ *  the public payload the app itself reads (see src/hooks/use-presets.ts). */
+export type AdminPresetRow = {
+  id: string;
+  slug: string;
+  title: string;
+  tagline: string;
+  category: string;
+  previewUrl: string;
+  badge: string | null;
+  referenceSubject: string;
+  prompt: string;
+  model: string;
+  parameters: Record<string, unknown>;
+  requiresImage: boolean;
+  published: boolean;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+  /** Generations attributed to this preset. Zero until the recipe is used —
+   *  it counts rows written since the presetId column existed, and cannot be
+   *  backfilled for anything made before that. */
+  usageCount: number;
+};
+
+/** Everything the create/edit form sends. The server re-validates all of it
+ *  against the chosen model, so this type is convenience, not enforcement. */
+export type AdminPresetInput = {
+  slug: string;
+  title: string;
+  tagline: string;
+  category: string;
+  previewUrl: string;
+  badge: "New" | null;
+  referenceSubject: string;
+  prompt: string;
+  model: string;
+  parameters: Record<string, unknown>;
+  requiresImage: boolean;
+  published: boolean;
+  sortOrder: number;
+};
+
+export function useAdminPresets(params: {
+  q?: string;
+  category?: string;
+  published?: string;
+  limit: number;
+  offset: number;
+}) {
+  return useQuery({
+    queryKey: ["admin-presets", params],
+    queryFn: () =>
+      get<{ presets: AdminPresetRow[]; total: number }>(`/api/admin/presets${qs(params)}`),
+    retry: false,
+  });
+}
+
+export function useCreatePreset() {
+  return useAdminMutation<AdminPresetInput, { preset: AdminPresetRow }>((vars) =>
+    post("/api/admin/presets", vars),
+  );
+}
+
+export function useUpdatePreset() {
+  return useAdminMutation<{ id: string; patch: Partial<AdminPresetInput> }, { preset: AdminPresetRow }>(
+    (vars) => post(`/api/admin/presets/${vars.id}`, vars.patch, "PATCH"),
+  );
+}
+
+export function useDeletePreset() {
+  return useAdminMutation<{ id: string }, { success: boolean }>(async (vars) => {
+    const res = await apiFetch(`/api/admin/presets/${vars.id}`, { method: "DELETE" });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(json.error ?? "Request failed");
+    return json;
+  });
+}

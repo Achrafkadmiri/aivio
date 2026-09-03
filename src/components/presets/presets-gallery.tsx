@@ -7,12 +7,15 @@ import { cn } from "@/lib/utils";
 import { useLazyVideo } from "@/hooks/use-lazy-video";
 import { estimateVideoCredits } from "@/lib/credit-estimate";
 import {
-  VIRAL_PRESETS,
   PRESET_CATEGORIES,
-  PRESET_MODEL_ID,
+  presetDurationLabel,
+  presetDurationSeconds,
+  presetResolution,
   type PresetCategory,
-  type ViralPreset,
+  type Preset,
 } from "@/lib/viral-presets";
+import { usePresets } from "@/hooks/use-presets";
+import { Spinner } from "@/components/ui/spinner";
 
 /** "All" is a UI-only filter value, not a category a preset can carry. */
 type Filter = "All" | PresetCategory;
@@ -58,8 +61,16 @@ function MetaChip({ icon: Icon, label }: { icon: typeof Clock; label: string }) 
   );
 }
 
-function PresetCard({ preset }: { preset: ViralPreset }) {
-  const credits = estimateVideoCredits(PRESET_MODEL_ID, preset.duration, preset.resolution);
+function PresetCard({ preset }: { preset: Preset }) {
+  // Duration and resolution now live in the model's own parameter blob
+  // rather than as columns on the preset, since every model spells them
+  // differently — hence the accessors instead of preset.duration.
+  const resolution = presetResolution(preset.parameters);
+  const credits = estimateVideoCredits(
+    preset.model,
+    presetDurationSeconds(preset.parameters) ?? 5,
+    resolution ?? "720p",
+  );
 
   return (
     <Link
@@ -82,9 +93,9 @@ function PresetCard({ preset }: { preset: ViralPreset }) {
           it — keeps every card the same height whatever the tagline runs to. */}
       <div className="absolute inset-x-0 bottom-0 p-4">
         <div className="mb-2 flex flex-wrap gap-1.5">
-          <MetaChip icon={Clock} label={`${preset.duration}s`} />
-          <MetaChip icon={Monitor} label={preset.resolution} />
-          <MetaChip icon={ImagePlus} label="1 photo" />
+          <MetaChip icon={Clock} label={presetDurationLabel(preset.parameters)} />
+          {resolution && <MetaChip icon={Monitor} label={resolution} />}
+          {preset.requiresImage && <MetaChip icon={ImagePlus} label="1 photo" />}
         </div>
         <h3 className="font-display text-feature-title font-bold text-ink">{preset.title}</h3>
         <p className="mt-1 text-caption text-white/70">{preset.tagline}</p>
@@ -95,8 +106,9 @@ function PresetCard({ preset }: { preset: ViralPreset }) {
 
 export function PresetsGallery() {
   const [filter, setFilter] = useState<Filter>("All");
-  const visible =
-    filter === "All" ? VIRAL_PRESETS : VIRAL_PRESETS.filter((p) => p.category === filter);
+  const { data: presets, isLoading, error } = usePresets();
+
+  const visible = (presets ?? []).filter((p) => filter === "All" || p.category === filter);
 
   return (
     <div className="space-y-6">
@@ -118,15 +130,31 @@ export function PresetsGallery() {
         ))}
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {visible.map((preset) => (
-          <PresetCard key={preset.slug} preset={preset} />
-        ))}
-      </div>
+      {isLoading ? (
+        <div className="flex items-center justify-center py-16">
+          <Spinner />
+        </div>
+      ) : error ? (
+        <p className="py-16 text-center text-body-sm text-muted">
+          Couldn&apos;t load the presets. Refresh to try again.
+        </p>
+      ) : visible.length === 0 ? (
+        <p className="py-16 text-center text-body-sm text-muted">
+          {presets?.length
+            ? "No presets in this category yet."
+            : "No presets published yet — check back soon."}
+        </p>
+      ) : (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {visible.map((preset) => (
+            <PresetCard key={preset.slug} preset={preset} />
+          ))}
+        </div>
+      )}
 
       <p className="text-caption text-muted">
-        Preview clips show the kind of shot each preset aims for — they are sample Seedance output,
-        not the result of running that exact preset.
+        Preview clips show the kind of shot each preset aims for — they are sample output, not the
+        result of running that exact preset.
       </p>
     </div>
   );
