@@ -9,16 +9,18 @@ import {
   Copy,
   Download,
   ExternalLink,
+  Link2,
   Loader2,
   Send,
   X,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
 import { useToast } from "@/components/ui/toast";
 import { useConfirm } from "@/components/ui/confirm";
 import { downloadGenerationResult } from "@/lib/download";
 import { cn } from "@/lib/utils";
+import { PlatformIcon, platformLabel } from "./platform-icons";
 import {
   useCancelSocialPost,
   useCreateSocialPost,
@@ -52,12 +54,6 @@ const TAG_STYLE: Record<SocialPlatform, "in-caption" | "separate"> = {
   youtube: "separate",
 };
 
-const PLATFORM_ACCENT: Record<SocialPlatform, string> = {
-  tiktok: "text-ink",
-  youtube: "text-accent",
-  facebook: "text-info",
-  instagram: "text-accent-amber",
-};
 
 // Module-level so the "still loading" fallback is referentially stable —
 // a fresh [] each render would invalidate the memos below every time.
@@ -215,7 +211,43 @@ export function CreatorTools({
         </p>
       )}
 
-      {/* Destinations */}
+      {/* Nothing linked yet. Four "Not connected" rows technically say this,
+          but they read as a broken list rather than a next step — so the
+          block collapses to one instruction with one button, and the export
+          fallback stays reachable underneath it. */}
+      {accounts.length === 0 ? (
+        <div className="rounded-xl border border-line bg-surface-3/40 p-5 text-center">
+          <span className="mx-auto flex size-11 items-center justify-center rounded-2xl bg-brand/10">
+            <Link2 className="size-5 text-brand" aria-hidden="true" />
+          </span>
+          <p className="mt-3 text-label text-ink">No accounts connected</p>
+          <p className="mx-auto mt-1 max-w-xs text-caption text-muted">
+            Link TikTok, YouTube, Facebook or Instagram once, and you can publish straight from
+            here — on a schedule if you want.
+          </p>
+          <Link href="/settings/social" className={buttonVariants({ size: "sm", className: "mt-4" })}>
+            <Link2 className="size-4" aria-hidden="true" />
+            Connect an account
+          </Link>
+          <div className="mt-4 border-t border-border-subtle pt-3">
+            <p className="text-caption text-muted">Or export and post by hand</p>
+            <div className="mt-2 flex flex-wrap justify-center gap-2">
+              {platforms.map((platform) => (
+                <Button
+                  key={platform.platform}
+                  variant="secondary"
+                  size="icon"
+                  aria-label={`Copy caption and download for ${platform.label}`}
+                  title={`Copy caption and download for ${platform.label}`}
+                  onClick={() => manualExport(platform)}
+                >
+                  <PlatformIcon platform={platform.platform} />
+                </Button>
+              ))}
+            </div>
+          </div>
+        </div>
+      ) : (
       <div>
         <p className="text-caption text-muted">Post to</p>
         <div className="mt-2 space-y-2">
@@ -229,10 +261,8 @@ export function CreatorTools({
                   key={platform.platform}
                   className="flex items-center justify-between gap-3 rounded-xl border border-line px-3 py-2"
                 >
-                  <div className="min-w-0">
-                    <p className={cn("text-label", PLATFORM_ACCENT[platform.platform])}>
-                      {platform.label}
-                    </p>
+                  <div className="flex min-w-0 items-center gap-2.5">
+                    <PlatformIcon platform={platform.platform} labelled />
                     <p className="text-caption text-muted">
                       {!takesThis
                         ? `Doesn't take ${mediaKind} from this app`
@@ -278,11 +308,9 @@ export function CreatorTools({
                     stale && "opacity-60",
                   )}
                 >
-                  <div className="min-w-0">
-                    <p className={cn("text-label", PLATFORM_ACCENT[platform.platform])}>
-                      {platform.label}
-                    </p>
-                    <p className="truncate text-caption text-muted">
+                  <div className="flex min-w-0 items-center gap-2.5">
+                    <PlatformIcon platform={platform.platform} labelled />
+                    <p className="truncate text-body-sm text-ink-soft">
                       {stale ? "Reconnect this account in Settings" : account.displayName}
                     </p>
                   </div>
@@ -293,6 +321,7 @@ export function CreatorTools({
           })}
         </div>
       </div>
+      )}
 
       {/* Caption */}
       <div>
@@ -397,8 +426,9 @@ export function CreatorTools({
           {posts.map((post) => (
             <div key={post.id} className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <p className="text-body-sm text-ink-soft">
-                  {post.accountName ?? post.platform}{" "}
+                <p className="flex items-center gap-2 text-body-sm text-ink-soft">
+                  <PlatformIcon platform={post.platform} className="size-4" labelled />
+                  {post.accountName ?? platformLabel(post.platform)}
                   <span className={cn("text-caption", statusTone(post.status))}>
                     · {post.status}
                   </span>

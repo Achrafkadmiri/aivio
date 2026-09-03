@@ -16,7 +16,6 @@ import {
   Info,
   Lock,
   RefreshCw,
-  Send,
   Share2,
   Sparkles,
   Trash2,
@@ -28,7 +27,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { useToast } from "@/components/ui/toast";
 import { cn, formatDate } from "@/lib/utils";
 import { downloadGenerationResult } from "@/lib/download";
-import { CreatorTools } from "@/components/social/creator-tools";
+import { PublishButton } from "@/components/social/publish-button";
 import { IMAGE_MODELS, SEEDANCE_DURATION_AUTO, VIDEO_MODELS } from "@/lib/constants";
 import type { GalleryItem } from "./generation-card";
 
@@ -221,9 +220,6 @@ function PreviewBody({
   const [promptOpen, setPromptOpen] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(true);
   const [saving, setSaving] = useState(false);
-  // Collapsed by default: the panel is a composer, and most opens of this
-  // modal are just to look at the result.
-  const [publishOpen, setPublishOpen] = useState(false);
   const isVideo = item.type !== "text-to-image";
   const hasPrev = index > 0;
   const hasNext = index < total - 1;
@@ -469,35 +465,6 @@ function PreviewBody({
             )}
           </section>
 
-          {/* Creator tools — only for the owner of a finished piece: there's
-              nothing to publish before it completes, and publishing someone
-              else's work from the public feed isn't ours to offer. */}
-          {viewerIsOwner && item.status === "completed" && item.resultUrl && (
-            <section className="border-t border-border-subtle p-4">
-              <button
-                type="button"
-                onClick={() => setPublishOpen((v) => !v)}
-                className="flex w-full items-center justify-between gap-2"
-                aria-expanded={publishOpen}
-              >
-                <span className="flex items-center gap-2 text-caption font-semibold tracking-wide text-text-tertiary uppercase">
-                  <Send className="size-3.5" aria-hidden="true" /> Creator tools
-                </span>
-                <ChevronDown
-                  className={cn("size-4 text-muted transition-transform", publishOpen && "rotate-180")}
-                  aria-hidden="true"
-                />
-              </button>
-              {publishOpen && (
-                <CreatorTools
-                  className="mt-3"
-                  generationId={item.id}
-                  isVideo={isVideo}
-                  defaultCaption={item.prompt}
-                />
-              )}
-            </section>
-          )}
         </div>
 
         {/* Actions */}
@@ -536,6 +503,16 @@ function PreviewBody({
                 <Download className="size-4" aria-hidden="true" />{" "}
                 {saving ? "Preparing…" : "Download"}
               </Button>
+            )}
+            {/* Publishing to the creator's own channels — distinct from
+                Share2 below, which posts to the community gallery. Owner
+                only, and only once there's a finished file to send. */}
+            {viewerIsOwner && item.status === "completed" && item.resultUrl && (
+              <PublishButton
+                generationId={item.id}
+                isVideo={isVideo}
+                defaultCaption={item.prompt}
+              />
             )}
             {onTogglePublic && (
               <Button

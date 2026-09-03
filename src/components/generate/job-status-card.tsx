@@ -1,12 +1,13 @@
+
 "use client";
 
 import { useState } from "react";
-import { CheckCircle2, XCircle, Sparkles, RotateCcw, Send, Download as DownloadIcon } from "lucide-react";
+import { CheckCircle2, XCircle, Sparkles, RotateCcw, Download as DownloadIcon } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
 import { downloadGenerationResult } from "@/lib/download";
-import { CreatorTools } from "@/components/social/creator-tools";
+import { PublishButton } from "@/components/social/publish-button";
 import { GenerationLoader } from "./generation-loader";
 import type { useGeneration } from "@/hooks/use-generation";
 
@@ -32,7 +33,6 @@ export function JobStatusCard({
 }) {
   const { toast } = useToast();
   const [saving, setSaving] = useState(false);
-  const [publishOpen, setPublishOpen] = useState(false);
 
   async function handleDownload() {
     if (!jobId) return;
@@ -137,30 +137,18 @@ export function JobStatusCard({
             {saving ? "Preparing…" : "Download"}
           </Button>
           {jobId && (
-            <Button
-              variant="secondary"
-              onClick={() => setPublishOpen((v) => !v)}
-              aria-expanded={publishOpen}
+            <PublishButton
+              generationId={jobId}
+              isVideo={isVideo}
+              variant="labelled"
               className="w-full sm:w-auto"
-            >
-              <Send className="size-4" aria-hidden="true" />
-              Publish
-            </Button>
+            />
           )}
           <Button variant="secondary" onClick={onReset} className="w-full sm:w-auto">
             <Sparkles className="size-4" aria-hidden="true" />
             Create another
           </Button>
         </div>
-
-        {/* Opened on demand rather than always shown: the card is height
-            constrained (see the note above) and the composer is taller than
-            the space the media would give up. */}
-        {publishOpen && jobId && (
-          <div className="max-h-72 shrink-0 overflow-y-auto border-t border-border-subtle pt-4">
-            <CreatorTools generationId={jobId} isVideo={isVideo} />
-          </div>
-        )}
       </Card>
     );
   }

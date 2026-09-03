@@ -9,6 +9,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { useToast } from "@/components/ui/toast";
 import { useConfirm } from "@/components/ui/confirm";
 import { formatDate } from "@/lib/utils";
+import { PlatformIcon } from "@/components/social/platform-icons";
 import {
   useConnectSocial,
   useDisconnectSocial,
@@ -91,13 +92,20 @@ export function SocialAccounts() {
           return (
             <div key={platform.platform} className="p-4">
               <div className="flex flex-wrap items-start justify-between gap-3">
-                <div className="min-w-0">
+                <div className="flex min-w-0 gap-3">
+                  <PlatformIcon platform={platform.platform} className="mt-0.5 size-6" labelled />
+                  <div className="min-w-0">
+                  {/* Name kept alongside the mark here, unlike the composer:
+                      this is the screen where you decide which platform to
+                      set up, and each row carries a paragraph of its own
+                      requirements that needs a subject. */}
                   <p className="text-label text-ink">{platform.label}</p>
                   <p className="mt-1 text-caption text-muted">
                     {platform.configured
                       ? REQUIREMENTS[platform.platform]
                       : "No credentials on this server yet — you can still export the caption and file and post by hand."}
                   </p>
+                  </div>
                 </div>
                 <Button
                   variant="secondary"
