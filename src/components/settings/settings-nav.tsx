@@ -8,6 +8,7 @@ const ITEMS = [
   { href: "/settings", label: "Profile" },
   { href: "/settings/billing", label: "Billing" },
   { href: "/settings/team", label: "Team" },
+  { href: "/settings/social", label: "Social" },
   { href: "/settings/api-keys", label: "API Keys" },
   { href: "/settings/security", label: "Security" },
 ];
