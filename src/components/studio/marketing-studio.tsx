@@ -478,6 +478,7 @@ export function MarketingStudio() {
             <div className="h-full min-h-[24rem] w-full">
               <JobStatusCard
                 generation={generation}
+                jobId={activeJobId}
                 hasJob
                 isVideo={activeIsVideo}
                 onReset={() => setActiveJobId(null)}

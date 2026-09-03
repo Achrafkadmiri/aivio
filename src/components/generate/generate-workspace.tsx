@@ -198,6 +198,7 @@ export function GenerateStudio({ type }: { type: GenerationType }) {
             <div className="h-full min-h-[24rem] w-full">
               <JobStatusCard
                 generation={generation}
+                jobId={activeJobId}
                 hasJob={hasJob}
                 isVideo={activeIsVideo}
                 onReset={handleReset}

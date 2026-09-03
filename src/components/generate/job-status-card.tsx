@@ -1,8 +1,11 @@
 "use client";
 
+import { useState } from "react";
 import { CheckCircle2, XCircle, Sparkles, RotateCcw, Download as DownloadIcon } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/components/ui/toast";
+import { downloadGenerationResult } from "@/lib/download";
 import { GenerationLoader } from "./generation-loader";
 import type { useGeneration } from "@/hooks/use-generation";
 
@@ -10,17 +13,37 @@ type Generation = ReturnType<typeof useGeneration>;
 
 export function JobStatusCard({
   generation,
+  jobId,
   hasJob,
   isVideo,
   onReset,
 }: {
   generation: Generation;
+  /** The generation this card is showing. Needed to ask the API for a
+   * download URL — see downloadGenerationResult for why the result URL on
+   * its own can't be saved. */
+  jobId: string | null;
   hasJob: boolean;
   isVideo: boolean;
   /** Clears the active job so the idle hero + composer reappear — wired to
    * "Create another" (completed) and "Try again" (failed) below. */
   onReset: () => void;
 }) {
+  const { toast } = useToast();
+  const [saving, setSaving] = useState(false);
+
+  async function handleDownload() {
+    if (!jobId) return;
+    setSaving(true);
+    try {
+      await downloadGenerationResult(jobId, generation.result?.resultUrl);
+    } catch (error) {
+      toast({ title: (error as Error).message, variant: "error" });
+    } finally {
+      setSaving(false);
+    }
+  }
+
   if (!hasJob) {
     // Canvas-style empty placeholder — a dashed frame rather than a plain
     // filled card, so it reads as "this is where your result will render"
@@ -107,18 +130,10 @@ export function JobStatusCard({
         </div>
 
         <div className="flex flex-col gap-2 sm:flex-row">
-          <a
-            href={generation.result.resultUrl}
-            download
-            target="_blank"
-            rel="noreferrer"
-            className="sm:flex-1"
-          >
-            <Button className="w-full">
-              <DownloadIcon className="size-4" aria-hidden="true" />
-              Download
-            </Button>
-          </a>
+          <Button className="w-full sm:flex-1" disabled={saving} onClick={handleDownload}>
+            <DownloadIcon className="size-4" aria-hidden="true" />
+            {saving ? "Preparing…" : "Download"}
+          </Button>
           <Button variant="secondary" onClick={onReset} className="w-full sm:w-auto">
             <Sparkles className="size-4" aria-hidden="true" />
             Create another

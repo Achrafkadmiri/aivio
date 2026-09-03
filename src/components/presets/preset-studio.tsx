@@ -213,6 +213,7 @@ export function PresetStudio({ preset }: { preset: Preset }) {
             <div className="h-full min-h-[24rem]">
               <JobStatusCard
                 generation={generation}
+                jobId={activeJobId}
                 hasJob={Boolean(activeJobId)}
                 isVideo
                 onReset={() => setActiveJobId(null)}

@@ -26,6 +26,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { useToast } from "@/components/ui/toast";
 import { cn, formatDate } from "@/lib/utils";
+import { downloadGenerationResult } from "@/lib/download";
 import { IMAGE_MODELS, SEEDANCE_DURATION_AUTO, VIDEO_MODELS } from "@/lib/constants";
 import type { GalleryItem } from "./generation-card";
 
@@ -213,6 +214,7 @@ function PreviewBody({
   const { toast } = useToast();
   const [promptOpen, setPromptOpen] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(true);
+  const [saving, setSaving] = useState(false);
   const isVideo = item.type !== "text-to-image";
   const hasPrev = index > 0;
   const hasNext = index < total - 1;
@@ -476,15 +478,25 @@ function PreviewBody({
           </div>
           <div className="flex gap-2">
             {item.resultUrl && (
-              <a
-                href={item.resultUrl}
-                download
-                target="_blank"
-                rel="noreferrer"
-                className={buttonVariants({ variant: "secondary", size: "sm", className: "flex-1" })}
+              <Button
+                variant="secondary"
+                size="sm"
+                className="flex-1"
+                disabled={saving}
+                onClick={async () => {
+                  setSaving(true);
+                  try {
+                    await downloadGenerationResult(item.id, item.resultUrl);
+                  } catch (error) {
+                    toast({ title: (error as Error).message, variant: "error" });
+                  } finally {
+                    setSaving(false);
+                  }
+                }}
               >
-                <Download className="size-4" aria-hidden="true" /> Download
-              </a>
+                <Download className="size-4" aria-hidden="true" />{" "}
+                {saving ? "Preparing…" : "Download"}
+              </Button>
             )}
             {onTogglePublic && (
               <Button
