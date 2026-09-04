@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type RefObject } from "react";
 import Link from "next/link";
 import { Clock, ImagePlus, Monitor, Sparkles, Wand2 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -21,9 +21,17 @@ import { Spinner } from "@/components/ui/spinner";
 type Filter = "All" | PresetCategory;
 const FILTERS: Filter[] = ["All", ...PRESET_CATEGORIES];
 
-function PresetPreview({ url }: { url: string }) {
-  const { containerRef, videoRef, hasLoadedOnce } = useLazyVideo();
-
+function PresetPreview({
+  url,
+  containerRef,
+  videoRef,
+  hasLoadedOnce,
+}: {
+  url: string;
+  containerRef: RefObject<HTMLDivElement | null>;
+  videoRef: RefObject<HTMLVideoElement | null>;
+  hasLoadedOnce: boolean;
+}) {
   return (
     // 9:16 rather than the composer's landscape frame — presets are aimed at
     // social output, and a portrait tile also lets six of them sit on one
@@ -39,7 +47,11 @@ function PresetPreview({ url }: { url: string }) {
           muted
           loop
           playsInline
-          preload="none"
+          // "metadata" rather than "none": the tile now sits paused on its
+          // first frame until hovered, and a browser told to preload nothing
+          // has no frame to show — the card would be a grey box until pointed
+          // at. Metadata is a few KB per clip, not the clip itself.
+          preload="metadata"
         >
           <source src={url} type="video/mp4" />
         </video>
@@ -71,12 +83,26 @@ function PresetCard({ preset }: { preset: Preset }) {
     resolution,
   });
 
+  // Hover handlers belong on the card, not on the clip: the badges, chips
+  // and title are absolutely positioned *over* the preview, so a pointer
+  // moving onto the tagline would count as leaving the video and stop it
+  // mid-shot.
+  const { containerRef, videoRef, hasLoadedOnce, hoverProps } = useLazyVideo({
+    playOnHover: true,
+  });
+
   return (
     <Link
       href={`/presets/${preset.slug}`}
       className="group relative flex flex-col overflow-hidden rounded-2xl border border-line bg-surface-2 transition-[border-color,box-shadow,transform] duration-300 hover:-translate-y-1 hover:border-brand/40 hover:shadow-glow-sm"
+      {...hoverProps}
     >
-      <PresetPreview url={preset.previewUrl} />
+      <PresetPreview
+        url={preset.previewUrl}
+        containerRef={containerRef}
+        videoRef={videoRef}
+        hasLoadedOnce={hasLoadedOnce}
+      />
 
       {preset.badge && (
         <span className="absolute top-3 left-3 rounded-full border border-brand/30 bg-brand/15 px-2.5 py-0.5 text-caption font-semibold text-brand backdrop-blur-sm">
