@@ -23,13 +23,11 @@ import { CreatorTools } from "./creator-tools";
 export function PublishButton({
   generationId,
   isVideo,
-  defaultCaption,
   variant = "icon",
   className,
 }: {
   generationId: string;
   isVideo: boolean;
-  defaultCaption?: string;
   /** "icon" for a crowded action row, "labelled" where there's room for the
    *  word and the action deserves the emphasis. */
   variant?: "icon" | "labelled";
@@ -113,11 +111,7 @@ export function PublishButton({
                 a long list of past posts shouldn't push the way out of the
                 dialog off-screen. */}
             <div className="min-h-0 flex-1 overflow-y-auto p-5">
-              <CreatorTools
-                generationId={generationId}
-                isVideo={isVideo}
-                defaultCaption={defaultCaption}
-              />
+              <CreatorTools generationId={generationId} isVideo={isVideo} />
             </div>
           </Dialog.Content>
         </Dialog.Portal>

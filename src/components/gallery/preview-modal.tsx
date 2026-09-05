@@ -511,7 +511,6 @@ function PreviewBody({
               <PublishButton
                 generationId={item.id}
                 isVideo={isVideo}
-                defaultCaption={item.prompt}
               />
             )}
             {onTogglePublic && (

@@ -78,14 +78,10 @@ function toLocalInputValue(date: Date) {
 export function CreatorTools({
   generationId,
   isVideo,
-  defaultCaption,
   className,
 }: {
   generationId: string;
   isVideo: boolean;
-  /** Seeds the caption from the generation's prompt — the creator almost
-   *  always rewrites it, but an empty box is a worse starting point. */
-  defaultCaption?: string;
   className?: string;
 }) {
   const { toast } = useToast();
@@ -96,7 +92,11 @@ export function CreatorTools({
   const cancelPost = useCancelSocialPost();
 
   const [selected, setSelected] = useState<string[]>([]);
-  const [caption, setCaption] = useState(defaultCaption?.slice(0, 2200) ?? "");
+  // Deliberately empty rather than seeded from the generation's prompt. A
+  // prompt is instructions for a model — camera moves, lighting, shot
+  // length — and a thousand characters of it under someone's video reads as
+  // noise to their audience. The placeholder asks the right question.
+  const [caption, setCaption] = useState("");
   const [tags, setTags] = useState<string[]>([]);
   const [tagDraft, setTagDraft] = useState("");
   const [scheduled, setScheduled] = useState(false);
