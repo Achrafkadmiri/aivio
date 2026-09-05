@@ -5,6 +5,20 @@ import { apiFetch } from "@/lib/api-client";
 
 export type SocialPlatform = "tiktok" | "youtube" | "facebook" | "instagram";
 
+/**
+ * How a YouTube upload is presented.
+ *
+ * There is no API flag for this — YouTube decides what is a Short from the
+ * file itself (vertical or square, three minutes or less). What the choice
+ * controls is the `#Shorts` hint the server puts in the description, and
+ * whether it is applied at all. Mirrored in the API's lib/social/types.ts.
+ */
+export type YouTubeFormat = "short" | "video";
+
+/** Per-platform presentation choices carried with a post. Closed shape: the
+ *  server rejects unknown keys rather than storing a setting nothing reads. */
+export type PublishOptions = { youtubeFormat?: YouTubeFormat };
+
 export type PlatformInfo = {
   platform: SocialPlatform;
   label: string;
@@ -36,6 +50,7 @@ export type SocialPost = {
   platform: SocialPlatform;
   caption: string;
   tags: string[];
+  options: PublishOptions | null;
   scheduledFor: string;
   status: "scheduled" | "publishing" | "published" | "failed" | "cancelled";
   attemptCount: number;
@@ -128,6 +143,7 @@ export function useCreateSocialPost() {
       caption: string;
       tags: string[];
       scheduledFor?: string;
+      options?: PublishOptions;
     }) => {
       const res = await apiFetch("/api/social/posts", {
         method: "POST",

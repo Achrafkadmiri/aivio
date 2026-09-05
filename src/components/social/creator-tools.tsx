@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import {
   AlertTriangle,
@@ -11,13 +12,16 @@ import {
   ExternalLink,
   Link2,
   Loader2,
+  Monitor,
   Send,
+  Smartphone,
   X,
 } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
 import { useToast } from "@/components/ui/toast";
 import { useConfirm } from "@/components/ui/confirm";
+import { apiFetch } from "@/lib/api-client";
 import { downloadGenerationResult } from "@/lib/download";
 import { cn } from "@/lib/utils";
 import { PlatformIcon, platformLabel } from "./platform-icons";
@@ -30,6 +34,7 @@ import {
   type SocialAccount,
   type SocialPlatform,
   type SocialPost,
+  type YouTubeFormat,
 } from "@/hooks/use-social";
 
 /**
@@ -59,6 +64,105 @@ const TAG_STYLE: Record<SocialPlatform, "in-caption" | "separate"> = {
 // a fresh [] each render would invalidate the memos below every time.
 const NO_ACCOUNTS: SocialAccount[] = [];
 const NO_PLATFORMS: PlatformInfo[] = [];
+
+/** YouTube's own rule for what can be a Short: square or taller, and no
+ *  longer than three minutes. Neither is something this app can influence —
+ *  they're properties of the file — which is why the composer reports them
+ *  rather than offering to change them. */
+const SHORTS_MAX_SECONDS = 180;
+
+/**
+ * The two ways a YouTube upload can be presented.
+ *
+ * The hints are worded to describe what the creator gets, not what the API
+ * does — "adds #Shorts to the description" is true and useless. What matters
+ * to them is which surface the video lands on.
+ */
+const YOUTUBE_FORMAT_OPTIONS: {
+  value: YouTubeFormat;
+  label: string;
+  hint: string;
+  icon: typeof Smartphone;
+}[] = [
+  {
+    value: "short",
+    label: "Short",
+    hint: "Vertical, up to 3 min. Shows on the Shorts feed.",
+    icon: Smartphone,
+  },
+  {
+    value: "video",
+    label: "Regular video",
+    hint: "Lands on your channel as a standard upload.",
+    icon: Monitor,
+  },
+];
+
+type MediaShape = { width: number; height: number; duration: number };
+
+/**
+ * The finished file's real dimensions and length.
+ *
+ * Read from the media itself rather than from the generation's parameters:
+ * every model spells its aspect ratio differently (`aspect_ratio`, `ratio`,
+ * a `size` string), providers routinely miss the duration they were asked
+ * for, and a studio edit has no model parameters at all. The one thing that
+ * is always true is the file, so that is what gets measured.
+ *
+ * Only the metadata is fetched — `preload="metadata"` stops after the header
+ * — and the result is cached for the session, so this costs a few KB once.
+ */
+function useMediaShape(generationId: string, enabled: boolean) {
+  return useQuery({
+    queryKey: ["media-shape", generationId],
+    enabled,
+    staleTime: Infinity,
+    retry: false,
+    queryFn: async (): Promise<MediaShape | null> => {
+      const res = await apiFetch(`/api/generations/${generationId}`);
+      if (!res.ok) return null;
+      const { resultUrl } = (await res.json()) as { resultUrl: string | null };
+      if (!resultUrl) return null;
+
+      return await new Promise<MediaShape | null>((resolve) => {
+        const video = document.createElement("video");
+        video.preload = "metadata";
+        video.muted = true;
+        // No crossOrigin: reading intrinsic dimensions needs no CORS (only
+        // pulling pixels back off a canvas does), and asking for it would
+        // make the load fail against R2's signed URLs, which carry none.
+        const done = (shape: MediaShape | null) => {
+          video.removeAttribute("src");
+          resolve(shape);
+        };
+        video.onloadedmetadata = () =>
+          done({
+            width: video.videoWidth,
+            height: video.videoHeight,
+            duration: Number.isFinite(video.duration) ? video.duration : 0,
+          });
+        // A shape we can't read must not block posting — the picker just
+        // stops showing its eligibility note.
+        video.onerror = () => done(null);
+        video.src = resultUrl;
+      });
+    },
+  });
+}
+
+/** Why this file can't be a Short, or null if it can. Deliberately returns
+ *  the reason rather than a boolean: "it's landscape" and "it's too long"
+ *  need different things done about them. */
+function shortsBlocker(shape: MediaShape | null | undefined): string | null {
+  if (!shape || !shape.width || !shape.height) return null;
+  if (shape.width > shape.height) {
+    return "This clip is landscape, so YouTube will publish it as a regular video whichever you pick. Re-frame it as 9:16 in the editing studio to post a Short.";
+  }
+  if (shape.duration > SHORTS_MAX_SECONDS) {
+    return `This clip is ${Math.round(shape.duration)}s. YouTube only treats videos of ${SHORTS_MAX_SECONDS}s or less as Shorts, so this will go out as a regular video.`;
+  }
+  return null;
+}
 
 function statusTone(status: SocialPost["status"]) {
   if (status === "published") return "text-success";
@@ -103,6 +207,11 @@ export function CreatorTools({
   const [scheduledAt, setScheduledAt] = useState(() =>
     toLocalInputValue(new Date(Date.now() + 60 * 60 * 1000)),
   );
+  // Defaults to Short because that is what this app mostly makes — vertical
+  // clips of a few seconds — and because it is what every YouTube upload was
+  // published as before this choice existed. Changing that default silently
+  // would change the behaviour of the button people already know.
+  const [youtubeFormat, setYoutubeFormat] = useState<YouTubeFormat>("short");
 
   const accounts = data?.accounts ?? NO_ACCOUNTS;
   const platforms = data?.platforms ?? NO_PLATFORMS;
@@ -128,6 +237,14 @@ export function CreatorTools({
   }, [platforms, accounts, selected]);
 
   const overLimit = caption.length > captionLimit;
+
+  // The format picker is only meaningful with a YouTube destination chosen,
+  // and measuring the file is only worth a request once one is.
+  const youtubeSelected = accounts.some(
+    (a) => selected.includes(a.id) && a.platform === "youtube",
+  );
+  const { data: mediaShape } = useMediaShape(generationId, youtubeSelected && isVideo);
+  const blocker = shortsBlocker(mediaShape);
 
   function toggleAccount(id: string) {
     setSelected((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
@@ -155,6 +272,10 @@ export function CreatorTools({
         // Only sent when actually scheduling — the server reads its absence
         // as "now", which keeps both paths on one code path.
         scheduledFor: scheduled ? new Date(scheduledAt).toISOString() : undefined,
+        // Sent only when a YouTube account is actually in the batch, so a
+        // TikTok-only post isn't recorded as carrying a YouTube setting it
+        // never had a chance to use.
+        options: youtubeSelected ? { youtubeFormat } : undefined,
       });
       setSelected([]);
       toast({
@@ -321,6 +442,62 @@ export function CreatorTools({
           })}
         </div>
       </div>
+      )}
+
+      {/* How the YouTube upload is presented. Only shown once a YouTube
+          account is actually selected — it is meaningless otherwise, and a
+          permanently visible YouTube-specific control in a four-platform
+          composer reads as clutter to everyone not posting there. */}
+      {youtubeSelected && (
+        <div>
+          <p className="text-caption text-muted">Post to YouTube as</p>
+          <div className="mt-2 grid grid-cols-2 gap-2">
+            {YOUTUBE_FORMAT_OPTIONS.map((option) => {
+              const active = youtubeFormat === option.value;
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => setYoutubeFormat(option.value)}
+                  aria-pressed={active}
+                  className={cn(
+                    "rounded-xl border px-3 py-2.5 text-left transition-colors",
+                    active ? "border-brand bg-brand/10" : "border-line hover:border-border-strong",
+                  )}
+                >
+                  <span className="flex items-center gap-1.5">
+                    <option.icon
+                      className={cn("size-3.5 shrink-0", active ? "text-brand" : "text-muted")}
+                      aria-hidden="true"
+                    />
+                    <span
+                      className={cn(
+                        "text-body-sm font-medium",
+                        active ? "text-ink" : "text-ink-soft",
+                      )}
+                    >
+                      {option.label}
+                    </span>
+                  </span>
+                  <span className="mt-0.5 block text-caption text-muted">{option.hint}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* YouTube classifies Shorts from the file, not from anything the
+              API lets us send. Saying so here — while the choice is being
+              made — beats letting someone discover it on their channel. */}
+          {youtubeFormat === "short" && blocker && (
+            <p className="mt-2 flex items-start gap-2 rounded-xl border border-warning/40 bg-warning/5 p-2.5 text-caption text-ink-soft">
+              <AlertTriangle
+                className="mt-0.5 size-3.5 shrink-0 text-warning"
+                aria-hidden="true"
+              />
+              {blocker}
+            </p>
+          )}
+        </div>
       )}
 
       {/* Caption */}
