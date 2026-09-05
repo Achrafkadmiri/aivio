@@ -14,6 +14,7 @@ import {
   Images,
   FolderKanban,
   Megaphone,
+  Scissors,
   Settings,
   LogOut,
   Menu,
@@ -79,6 +80,9 @@ const NAV_SECTIONS: { label: string; items: { href: string; label: string; icon:
       { href: "/generate", label: "Generate", icon: Sparkles },
       { href: "/presets", label: "Presets", icon: Wand2 },
       { href: "/studio", label: "Marketing", icon: Megaphone },
+      // Sits in Workspace rather than Library because editing is something
+      // you DO, like generating — Library is where finished things are kept.
+      { href: "/editor", label: "Editing", icon: Scissors },
     ],
   },
   {

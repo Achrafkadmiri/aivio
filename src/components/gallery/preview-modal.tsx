@@ -16,6 +16,7 @@ import {
   Info,
   Lock,
   RefreshCw,
+  Scissors,
   Share2,
   Sparkles,
   Trash2,
@@ -29,6 +30,7 @@ import { cn, formatDate } from "@/lib/utils";
 import { downloadGenerationResult } from "@/lib/download";
 import { PublishButton } from "@/components/social/publish-button";
 import { IMAGE_MODELS, SEEDANCE_DURATION_AUTO, VIDEO_MODELS } from "@/lib/constants";
+import { EDIT_GENERATION_MODEL } from "@/lib/editor/types";
 import type { GalleryItem } from "./generation-card";
 
 export type PreviewAuthor = { name: string; avatarUrl: string | null };
@@ -56,6 +58,9 @@ const STATUS_VARIANT: Record<string, BadgeVariant> = {
 };
 
 function modelLabel(id: string) {
+  // A studio edit has no model behind it, so it is not in either catalogue —
+  // without this the details panel would show the raw internal id.
+  if (id === EDIT_GENERATION_MODEL) return "Editing studio";
   const match = [...VIDEO_MODELS, ...IMAGE_MODELS].find((m) => m.id === id);
   return match?.label ?? id;
 }
@@ -482,6 +487,19 @@ function PreviewBody({
               </Button>
             )}
           </div>
+          {/* Owner-only, and video-only: the studio cuts and combines
+              clips, so it has nothing to do with a still image. The clip is
+              appended to whichever edit is already open rather than starting
+              a new one — collecting several videos into one piece is the
+              main reason to come here from the gallery. */}
+          {viewerIsOwner && isVideo && item.status === "completed" && item.resultUrl && (
+            <Link
+              href={`/editor?add=${item.id}`}
+              className={buttonVariants({ variant: "secondary", size: "sm", className: "w-full" })}
+            >
+              <Scissors className="size-4" aria-hidden="true" /> Edit in studio
+            </Link>
+          )}
           <div className="flex gap-2">
             {item.resultUrl && (
               <Button

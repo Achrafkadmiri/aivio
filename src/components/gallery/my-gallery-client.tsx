@@ -16,6 +16,7 @@ import { AddToCollectionModal } from "./add-to-collection-modal";
 import { ShareIdentityModal } from "./share-identity-modal";
 import type { GalleryItem } from "./generation-card";
 import { GENERATION_TYPES, GENERATION_STATUSES } from "@/lib/constants";
+import { EDIT_GENERATION_TYPE } from "@/lib/editor/types";
 import { apiFetch } from "@/lib/api-client";
 import { cn } from "@/lib/utils";
 
@@ -137,6 +138,11 @@ export function MyGalleryClient() {
               {t.replace(/-/g, " ")}
             </option>
           ))}
+          {/* Appended rather than added to GENERATION_TYPES: that list is the
+              set of things the generator can run, and an edit is assembled in
+              the studio rather than produced by a model — but it is still a
+              row in this gallery, so it needs to be filterable here. */}
+          <option value={EDIT_GENERATION_TYPE}>studio edit</option>
         </Select>
         <Select value={status} onChange={(e) => setStatus(e.target.value)} className="sm:w-40">
           <option value="">All statuses</option>
