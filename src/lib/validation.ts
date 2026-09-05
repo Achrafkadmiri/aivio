@@ -12,6 +12,7 @@ import {
   IMAGE_STYLE_PRESETS,
   MOTION_INTENSITIES,
   CAMERA_MOVEMENTS,
+  PROMPT_MAX_LENGTH,
   SEEDANCE_DURATION_MIN,
   SEEDANCE_DURATION_MAX,
   SEEDANCE_DURATION_AUTO,
@@ -106,7 +107,7 @@ export type TextToVideoInput = z.infer<typeof textToVideoSchema>;
 // for the user to choose — the server fills them in when calling Cloudflare.
 export const seedanceVideoSchema = z
   .object({
-    prompt: z.string().trim().max(2000).optional(),
+    prompt: z.string().trim().max(PROMPT_MAX_LENGTH).optional(),
     image: z.string().min(1).optional(),
     lastFrameImage: z.string().min(1).optional(),
     duration: z
@@ -140,7 +141,7 @@ export type SeedanceVideoInput = z.infer<typeof seedanceVideoSchema>;
 // cameraFixed toggle, and no outputFormat choice.
 export const seedance2VideoSchema = z
   .object({
-    prompt: z.string().trim().max(2000).optional(),
+    prompt: z.string().trim().max(PROMPT_MAX_LENGTH).optional(),
     image: z.string().min(1).optional(),
     lastFrameImage: z.string().min(1).optional(),
     // Motion/style source — the clip the generation is conditioned on. The
@@ -222,8 +223,8 @@ export type TextToImageInput = z.infer<typeof textToImageSchema>;
 export function buildDynamicSchema(config: CloudflareModelConfig) {
   const shape: Record<string, z.ZodTypeAny> = {
     prompt: config.promptRequired
-      ? z.string().trim().min(1, { error: "Prompt is required." }).max(2000)
-      : z.string().trim().max(2000).optional(),
+      ? z.string().trim().min(1, { error: "Prompt is required." }).max(PROMPT_MAX_LENGTH)
+      : z.string().trim().max(PROMPT_MAX_LENGTH).optional(),
   };
 
   if (config.image !== "none") {
