@@ -76,7 +76,10 @@ export function PreviewStage({
         </div>
       </div>
 
-      <div className="flex items-center gap-3 border-t border-border-subtle px-4 py-2.5">
+      {/* Tighter gutters on a phone: at 375px the default spacing plus the
+          range input's intrinsic ~129px min-width pushed the timecode off
+          the right edge. */}
+      <div className="flex items-center gap-2 border-t border-border-subtle px-3 py-2.5 sm:gap-3 sm:px-4">
         <Tooltip content="Back to start (Home)">
           <button
             type="button"
@@ -134,7 +137,10 @@ export function PreviewStage({
           onChange={(e) => onSeek(Number(e.target.value))}
           disabled={empty}
           aria-label="Playhead"
-          className="h-1 flex-1 cursor-pointer appearance-none rounded-full bg-line accent-[var(--color-brand)] disabled:opacity-30"
+          // min-w-0 is load-bearing: a range input's default min-width is
+          // its intrinsic size, so flex-1 alone will not let it shrink and
+          // the whole row overflows on narrow screens.
+          className="h-1 min-w-0 flex-1 cursor-pointer appearance-none rounded-full bg-line accent-[var(--color-brand)] disabled:opacity-30"
         />
 
         <span className="shrink-0 font-mono text-caption text-muted tabular-nums">

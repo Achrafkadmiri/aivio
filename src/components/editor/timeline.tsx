@@ -131,7 +131,10 @@ export function Timeline({
         />
 
         <div className="ml-auto flex items-center gap-1">
-          <span className="mr-2 font-mono text-caption text-muted tabular-nums">
+          {/* Hidden on phones — the same timecode already sits in the
+              transport bar directly above, and at this width the duplicate
+              wrapped the toolbar onto three lines. */}
+          <span className="mr-2 hidden font-mono text-caption text-muted tabular-nums sm:inline">
             {formatTimecode(time)} / {formatTimecode(layout.duration)}
           </span>
           <ToolbarButton label="Zoom out" icon={ZoomOut} onClick={() => zoom(1 / 1.5)} />
@@ -342,7 +345,7 @@ function ClipLane({
     <div className="relative" style={{ height: CLIP_LANE_HEIGHT }}>
       {layout.placed.length === 0 && (
         <p className="absolute inset-0 flex items-center justify-center text-body-sm text-muted">
-          Add a video from the left to start your edit.
+          Add a video from your library to start your edit.
         </p>
       )}
 
