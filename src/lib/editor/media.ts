@@ -17,6 +17,8 @@
  *     re-signs and re-fetches without ever finding a stale entry.
  */
 
+import { IMAGE_CLIP_MAX_DURATION, type ClipKind } from "./types";
+
 export function studioMediaUrl(signedUrl: string): string {
   return `/api/studio/media?url=${encodeURIComponent(signedUrl)}`;
 }
@@ -61,6 +63,50 @@ export function releaseAllSources() {
 }
 
 export type ProbeResult = { duration: number; width: number; height: number };
+
+/**
+ * What the canvas actually draws from. `drawImage` accepts both, so the
+ * renderer barely cares which it has — but the two disagree on where their
+ * intrinsic size lives, and only one of them can seek.
+ */
+export type MediaEl = HTMLVideoElement | HTMLImageElement;
+
+export function isVideoEl(el: MediaEl): el is HTMLVideoElement {
+  return el instanceof HTMLVideoElement;
+}
+
+/** Intrinsic pixel size, whichever kind of element this is. Zero until the
+ *  element has decoded, which is also the "is it drawable yet" test. */
+export function naturalSize(el: MediaEl): { width: number; height: number } {
+  return isVideoEl(el)
+    ? { width: el.videoWidth, height: el.videoHeight }
+    : { width: el.naturalWidth, height: el.naturalHeight };
+}
+
+/** Size and trim ceiling for a still. There is no real duration to read, so
+ *  IMAGE_CLIP_MAX_DURATION stands in as how far it may be stretched. */
+export function probeImage(objectUrl: string): Promise<ProbeResult> {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    image.onload = () =>
+      resolve({
+        duration: IMAGE_CLIP_MAX_DURATION,
+        width: image.naturalWidth,
+        height: image.naturalHeight,
+      });
+    image.onerror = () => reject(new Error("That image could not be decoded."));
+    image.src = objectUrl;
+  });
+}
+
+/** An `<img>` the renderer can draw from, mirroring createDecodeVideo. */
+export function createDecodeImage(objectUrl: string): HTMLImageElement {
+  const image = new Image();
+  image.crossOrigin = "anonymous";
+  image.decoding = "async";
+  image.src = objectUrl;
+  return image;
+}
 
 /**
  * Reads a clip's real length and pixel size.
@@ -141,7 +187,9 @@ export const PREVIEW_DRIFT_TOLERANCE = 0.22;
  * fire `seeked` for a time inside the last partial frame of a file, and an
  * export must not hang forever on the final frame of a clip.
  */
-export function seekTo(video: HTMLVideoElement, time: number, timeoutMs = 4000): Promise<void> {
+export function seekTo(video: MediaEl, time: number, timeoutMs = 4000): Promise<void> {
+  // A still is always already showing the only frame it has.
+  if (!isVideoEl(video)) return Promise.resolve();
   const target = Math.max(0, Math.min(time, Math.max(0, (video.duration || 0) - 0.001)));
 
   // Already there — re-seeking would still cost a decode round trip.
@@ -165,7 +213,18 @@ export function seekTo(video: HTMLVideoElement, time: number, timeoutMs = 4000):
 }
 
 /** Resolves once the element has enough data to be drawn at all. */
-export function waitForReady(video: HTMLVideoElement, timeoutMs = 15000): Promise<void> {
+export function waitForReady(video: MediaEl, timeoutMs = 15000): Promise<void> {
+  if (!isVideoEl(video)) {
+    if (video.complete && video.naturalWidth > 0) return Promise.resolve();
+    return new Promise((resolve, reject) => {
+      const timer = setTimeout(() => reject(new Error("Timed out loading an image.")), timeoutMs);
+      video.addEventListener("load", () => { clearTimeout(timer); resolve(); }, { once: true });
+      video.addEventListener("error", () => {
+        clearTimeout(timer);
+        reject(new Error("An image failed to load."));
+      }, { once: true });
+    });
+  }
   if (video.readyState >= 2) return Promise.resolve();
   return new Promise((resolve, reject) => {
     const timer = setTimeout(() => reject(new Error("Timed out loading a clip.")), timeoutMs);
@@ -196,34 +255,36 @@ export function waitForReady(video: HTMLVideoElement, timeoutMs = 15000): Promis
  * buffer for the rest of the session.
  */
 export class VideoPool {
-  private elements = new Map<string, HTMLVideoElement>();
+  private elements = new Map<string, MediaEl>();
 
-  ensure(clipId: string, objectUrl: string): HTMLVideoElement {
+  ensure(clipId: string, objectUrl: string, kind: ClipKind = "video"): MediaEl {
     const existing = this.elements.get(clipId);
     if (existing && existing.src === objectUrl) return existing;
-    existing?.removeAttribute("src");
-    const video = createDecodeVideo(objectUrl);
-    this.elements.set(clipId, video);
-    return video;
+    if (existing && isVideoEl(existing)) existing.removeAttribute("src");
+    const el = kind === "image" ? createDecodeImage(objectUrl) : createDecodeVideo(objectUrl);
+    this.elements.set(clipId, el);
+    return el;
   }
 
-  get(clipId: string): HTMLVideoElement | null {
+  get(clipId: string): MediaEl | null {
     return this.elements.get(clipId) ?? null;
   }
 
   /** Drops decoders for clips that are no longer in the project. */
   retain(clipIds: Set<string>) {
-    for (const [id, video] of this.elements) {
+    for (const [id, el] of this.elements) {
       if (clipIds.has(id)) continue;
-      video.pause();
-      video.removeAttribute("src");
-      video.load();
+      if (isVideoEl(el)) {
+        el.pause();
+        el.removeAttribute("src");
+        el.load();
+      }
       this.elements.delete(id);
     }
   }
 
   pauseAll() {
-    for (const video of this.elements.values()) video.pause();
+    for (const el of this.elements.values()) if (isVideoEl(el)) el.pause();
   }
 
   dispose() {

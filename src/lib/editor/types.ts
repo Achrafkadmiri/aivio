@@ -148,8 +148,22 @@ export const FILTER_PRESETS: { id: string; label: string; values: ClipFilters }[
   },
 ];
 
+/** A still behaves like a clip whose frame never changes: no seeking, no
+ *  audio, and a length the user chooses rather than one the file dictates. */
+export type ClipKind = "video" | "image";
+
+/** How long a still lands on the timeline, and the ceiling the trim handles
+ *  allow it to be stretched to. A video's ceiling is its real duration; an
+ *  image has none, so one is invented — generous enough to hold a title card
+ *  or an outro, short enough that the default timeline stays sane. */
+export const IMAGE_CLIP_DEFAULT_DURATION = 4;
+export const IMAGE_CLIP_MAX_DURATION = 30;
+
 export type Clip = {
   id: string;
+  /** Optional so projects saved before stills existed still load — absent
+   *  means "video", which is what every stored clip was. */
+  kind?: ClipKind;
   /** The Generation this came from. Kept so the export can record what it
    *  was built out of, and so a reopened project can re-sign its URL — the
    *  stored playback URL is a short-lived signed R2 link and WILL be dead. */
@@ -373,17 +387,24 @@ export function defaultClip(input: {
   sourceUrl: string;
   posterUrl: string | null;
   label: string;
+  /** For a video, its real length. For an image, the trim ceiling. */
   duration: number;
+  kind?: ClipKind;
+  /** Initial timeline length. Defaults to the whole source, which is right
+   *  for a video but far too long for a still. */
+  initialOut?: number;
 }): Clip {
+  const kind = input.kind ?? "video";
   return {
     id: crypto.randomUUID(),
+    kind,
     sourceId: input.sourceId,
     sourceUrl: input.sourceUrl,
     posterUrl: input.posterUrl,
     label: input.label,
     sourceDuration: input.duration,
     in: 0,
-    out: input.duration,
+    out: Math.min(input.initialOut ?? input.duration, input.duration),
     speed: 1,
     fit: "cover",
     scale: 1,
@@ -391,7 +412,9 @@ export function defaultClip(input: {
     offsetY: 0,
     kenBurns: "none",
     filters: { ...NEUTRAL_FILTERS },
-    volume: 1,
+    // Stills carry no audio track, so a volume of 1 would put a live-looking
+    // slider on a clip that can never make a sound.
+    volume: kind === "image" ? 0 : 1,
     // A cut, not a dissolve: the first thing anyone does after adding two
     // clips is watch them, and an unrequested crossfade reads as a bug.
     transition: { type: "none", duration: 0.5 },

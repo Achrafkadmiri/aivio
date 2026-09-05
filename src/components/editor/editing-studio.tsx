@@ -24,7 +24,7 @@ import { BottomSheet } from "@/components/ui/bottom-sheet";
 import { useConfirm } from "@/components/ui/confirm";
 import { useToast } from "@/components/ui/toast";
 import { Tooltip } from "@/components/ui/tooltip";
-import { loadSource, probeVideo } from "@/lib/editor/media";
+import { loadSource, probeVideo, probeImage } from "@/lib/editor/media";
 import {
   addOverlay,
   duplicateClip,
@@ -52,6 +52,8 @@ import {
   defaultOverlay,
   emptyProject,
   type Project,
+  IMAGE_CLIP_DEFAULT_DURATION,
+  type ClipKind,
 } from "@/lib/editor/types";
 import { cn, formatRelativeTime, truncate } from "@/lib/utils";
 import { ExportDialog } from "./export-dialog";
@@ -286,14 +288,19 @@ export function EditingStudio() {
         // the trim handles and the fit maths, and `parameters.duration` on
         // the generation is what was *asked for*, which providers miss.
         const objectUrl = await loadSource(item.id, item.resultUrl);
-        const probe = await probeVideo(objectUrl);
+        // A still has no duration to read, so it is probed for size only and
+        // given a chosen length instead — see IMAGE_CLIP_DEFAULT_DURATION.
+        const kind: ClipKind = item.type === "text-to-image" ? "image" : "video";
+        const probe = kind === "image" ? await probeImage(objectUrl) : await probeVideo(objectUrl);
 
         const clip = defaultClip({
           sourceId: item.id,
           sourceUrl: item.resultUrl,
           posterUrl: item.thumbnailUrl,
-          label: truncate(item.prompt || "Clip", 40),
+          label: truncate(item.prompt || (kind === "image" ? "Image" : "Clip"), 40),
           duration: probe.duration,
+          kind,
+          initialOut: kind === "image" ? IMAGE_CLIP_DEFAULT_DURATION : undefined,
         });
 
         // Not routed through `commit`: this runs after an await, so the
@@ -534,7 +541,7 @@ export function EditingStudio() {
       <header className="flex shrink-0 flex-wrap items-center gap-2 border-b border-line px-3 py-2.5">
         {/* Collapses the docked aside. Hidden below lg, where that aside is
             display:none and this button therefore toggled nothing visible. */}
-        <Tooltip content={libraryOpen ? "Hide your videos" : "Show your videos"}>
+        <Tooltip content={libraryOpen ? "Hide your library" : "Show your library"}>
           <button
             type="button"
             onClick={() => setLibraryOpen((v) => !v)}
@@ -554,7 +561,7 @@ export function EditingStudio() {
         <button
           type="button"
           onClick={() => setMobilePanel("library")}
-          aria-label="Show your videos"
+          aria-label="Show your library"
           className="rounded-lg p-1.5 text-muted transition-colors hover:bg-white/5 hover:text-ink lg:hidden"
         >
           <PanelLeftOpen className="size-4" />
@@ -698,7 +705,7 @@ export function EditingStudio() {
       <BottomSheet
         open={mobilePanel === "library"}
         onOpenChange={(open) => setMobilePanel(open ? "library" : null)}
-        title="Your videos"
+        title="Your library"
       >
         <div className="-mx-5 h-[60dvh]">{libraryPanel}</div>
       </BottomSheet>

@@ -7,6 +7,7 @@ import {
   VideoPool,
   loadSource,
   waitForReady,
+  isVideoEl,
 } from "@/lib/editor/media";
 import { clipsAt, sourceTimeFor, timelineLayout } from "@/lib/editor/project";
 import { drawFrame } from "@/lib/editor/render";
@@ -83,7 +84,7 @@ export function useStudioEngine(project: Project) {
           const objectUrl = await loadSource(clip.sourceId, clip.sourceUrl);
           if (cancelled) return;
           urlsRef.current.set(clip.id, objectUrl);
-          await waitForReady(pool.ensure(clip.id, objectUrl));
+          await waitForReady(pool.ensure(clip.id, objectUrl, clip.kind ?? "video"));
           if (cancelled) return;
           setLoadState((prev) => ({ ...prev, [clip.id]: "ready" }));
         } catch {
@@ -128,6 +129,9 @@ export function useStudioEngine(project: Project) {
       for (const placed of layoutRef.current.placed) {
         const video = pool.get(placed.clip.id);
         if (!video) continue;
+        // A still has no playhead: nothing to seek, pause or rate-limit, and
+        // it is already showing the only frame it will ever show.
+        if (!isVideoEl(video)) continue;
 
         if (!visible.has(placed.clip.id)) {
           if (!video.paused) video.pause();

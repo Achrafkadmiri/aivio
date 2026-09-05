@@ -459,18 +459,22 @@ function ClipPanel({
         )}
       </PanelSection>
 
-      <PanelSection title="Sound">
-        <SliderRow
-          label="Clip volume"
-          value={clip.volume}
-          min={0}
-          max={1.5}
-          step={0.01}
-          onChange={(volume) => onPatch({ volume })}
-          format={(v) => `${Math.round(v * 100)}%`}
-          defaultValue={1}
-        />
-      </PanelSection>
+      {/* Stills have no audio track, so a working-looking volume slider that
+          can never do anything is worse than no slider. */}
+      {clip.kind !== "image" && (
+        <PanelSection title="Sound">
+          <SliderRow
+            label="Clip volume"
+            value={clip.volume}
+            min={0}
+            max={1.5}
+            step={0.01}
+            onChange={(volume) => onPatch({ volume })}
+            format={(v) => `${Math.round(v * 100)}%`}
+            defaultValue={1}
+          />
+        </PanelSection>
+      )}
     </>
   );
 }
