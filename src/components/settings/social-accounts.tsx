@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { useToast } from "@/components/ui/toast";
 import { useConfirm } from "@/components/ui/confirm";
-import { formatDate } from "@/lib/utils";
+import { cn, formatDate } from "@/lib/utils";
 import { PlatformIcon } from "@/components/social/platform-icons";
 import {
   useConnectSocial,
@@ -90,26 +90,34 @@ export function SocialAccounts() {
         {data.platforms.map((platform) => {
           const linked = byPlatform.get(platform.platform) ?? [];
           return (
-            <div key={platform.platform} className="p-4">
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div className="flex min-w-0 gap-3">
-                  <PlatformIcon platform={platform.platform} className="mt-0.5 size-6" labelled />
-                  <div className="min-w-0">
+            <div key={platform.platform} className="p-4 sm:p-5">
+              {/* Three fixed columns — mark, copy, action — rather than a
+                  wrapping row. Wrapping meant the button dropped below the
+                  text on the platforms with a long requirement line and
+                  stayed inline on the short one, so no two rows agreed on
+                  where the action lived. */}
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+                <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-white/5">
+                  <PlatformIcon platform={platform.platform} labelled />
+                </span>
+
+                <div className="min-w-0 flex-1">
                   {/* Name kept alongside the mark here, unlike the composer:
                       this is the screen where you decide which platform to
                       set up, and each row carries a paragraph of its own
                       requirements that needs a subject. */}
                   <p className="text-label text-ink">{platform.label}</p>
-                  <p className="mt-1 text-caption text-muted">
+                  <p className="mt-1 max-w-prose text-caption text-muted">
                     {platform.configured
                       ? REQUIREMENTS[platform.platform]
                       : "No credentials on this server yet — you can still export the caption and file and post by hand."}
                   </p>
-                  </div>
                 </div>
+
                 <Button
-                  variant="secondary"
+                  variant={linked.length > 0 ? "secondary" : "primary"}
                   size="sm"
+                  className="w-full shrink-0 sm:w-auto"
                   disabled={!platform.configured || connect.isPending}
                   onClick={() =>
                     connect.mutate(platform.platform, {
@@ -127,14 +135,22 @@ export function SocialAccounts() {
                 </Button>
               </div>
 
+              {/* Indented to the copy column on wide screens, so a linked
+                  account reads as belonging to the platform above it rather
+                  than as another row in the list. */}
               {linked.map((account) => (
                 <div
                   key={account.id}
-                  className="mt-3 flex items-center justify-between gap-3 rounded-xl bg-surface-3 px-3 py-2"
+                  className="mt-3 flex items-center justify-between gap-3 rounded-xl bg-surface-3 px-3 py-2 sm:ml-14"
                 >
                   <div className="min-w-0">
                     <p className="truncate text-body-sm text-ink-soft">{account.displayName}</p>
-                    <p className="text-caption text-muted">
+                    <p
+                      className={cn(
+                        "text-caption",
+                        account.status === "active" ? "text-muted" : "text-warning",
+                      )}
+                    >
                       {account.status === "active"
                         ? `Connected ${formatDate(account.connectedAt)}`
                         : "Access expired — reconnect to keep posting"}
