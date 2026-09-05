@@ -323,6 +323,19 @@ export const CAMERA_MOVEMENTS = ["none", "subtle", "dynamic"] as const;
 // VIDEO_DURATIONS/VIDEO_RESOLUTIONS/VIDEO_ASPECT_RATIOS above rather than
 // merged, since the allowed values genuinely differ per model (e.g. 480p/
 // 720p only, no 1080p; duration is a continuous 4-30 range plus -1 "auto").
+
+// Longest prompt the composer accepts, enforced by every generation schema
+// that takes free-form prompt text (the two Seedance schemas and
+// buildDynamicSchema, i.e. the whole model catalog).
+//
+// This is OUR cap, not a provider-documented one: no model in
+// cloudflare-models.ts declares a prompt-length constraint, so nothing here
+// is derived from what Cloudflare, ByteDance or Recraft actually accept.
+// Raising it moves where an over-long prompt fails — a request past a
+// provider's own (unknown) ceiling comes back as a failed, already-billed
+// generation rather than a validation error at submit time.
+export const PROMPT_MAX_LENGTH = 4000;
+
 export const SEEDANCE_MODEL_ID = "bytedance/seedance-2.5";
 export const SEEDANCE_DURATION_MIN = 4;
 export const SEEDANCE_DURATION_MAX = 30;

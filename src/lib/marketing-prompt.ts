@@ -10,6 +10,7 @@
 // structured is the reference image, and even that is a single slot
 // (`inputImageUrl`), which is why the sheet note below has to exist at all.
 
+import { PROMPT_MAX_LENGTH } from "@/lib/constants";
 import type { MarketingKind, MarketingStyle } from "@/lib/marketing-styles";
 
 /**
@@ -23,10 +24,10 @@ import type { MarketingKind, MarketingStyle } from "@/lib/marketing-styles";
  */
 export type ReferenceUse = "none" | "product" | "talent" | "sheet";
 
-/** Hard cap on what we submit. The shared dynamic schema allows 2000
- *  characters (see buildDynamicSchema); staying under it keeps a long
- *  description from turning into a validation error at submit time. */
-const MAX_PROMPT_LENGTH = 1900;
+/** Hard cap on what we submit. Kept a margin under the schema's own cap
+ *  (see buildDynamicSchema) so a long description gets trimmed here, with an
+ *  ellipsis, rather than turning into a validation error at submit time. */
+const MAX_PROMPT_LENGTH = PROMPT_MAX_LENGTH - 100;
 
 function referenceNote(kind: MarketingKind, reference: ReferenceUse): string | undefined {
   if (reference === "none") return undefined;

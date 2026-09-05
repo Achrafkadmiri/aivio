@@ -24,6 +24,7 @@ import {
   upgradeHint,
 } from "@/lib/tier-limits";
 import {
+  PROMPT_MAX_LENGTH,
   SEEDANCE_MODEL_ID,
   SEEDANCE_DURATION_MIN,
   SEEDANCE_DURATION_MAX,
@@ -307,7 +308,7 @@ export function SeedanceVideoForm({
                 }}
                 onSubmit={submit}
                 placeholder="Describe the scene you imagine"
-                maxLength={2000}
+                maxLength={PROMPT_MAX_LENGTH}
               />
             )}
           />

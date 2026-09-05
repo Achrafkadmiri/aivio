@@ -48,7 +48,7 @@ import {
   valueHint,
 } from "@/lib/composer-fields";
 import { applyImageStyle } from "@/lib/image-styles";
-import { IMAGE_STYLE_PRESETS, type TierInfo } from "@/lib/constants";
+import { IMAGE_STYLE_PRESETS, PROMPT_MAX_LENGTH, type TierInfo } from "@/lib/constants";
 import {
   PanelSection,
   PanelPromptField,
@@ -407,7 +407,7 @@ export function DynamicModelForm<T extends string>({
                       ? "Describe the image you imagine"
                       : "Describe the scene you imagine"
                 }
-                maxLength={2000}
+                maxLength={PROMPT_MAX_LENGTH}
               />
             )}
           />

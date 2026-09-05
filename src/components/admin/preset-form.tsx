@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { apiFetch } from "@/lib/api-client";
 import { CLOUDFLARE_MODELS, getCloudflareModel, type DynamicField } from "@/lib/cloudflare-models";
 import {
+  PROMPT_MAX_LENGTH,
   SEEDANCE_MODEL_ID,
   SEEDANCE_RESOLUTIONS,
   SEEDANCE_ASPECT_RATIOS,
@@ -320,7 +321,7 @@ export function PresetForm({
 
       <Field
         label="Recipe"
-        hint={`The locked prompt. Never shown to users. With the @image line prepended this will send ${composedPromptLength} of 2000 characters.`}
+        hint={`The locked prompt. Never shown to users. With the @image line prepended this will send ${composedPromptLength} of ${PROMPT_MAX_LENGTH} characters.`}
       >
         <Textarea
           value={value.prompt}
