@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { Film, Plus, Search, Wand2 } from "lucide-react";
+import { Film, Image as ImageIcon, Plus, Search, Wand2 } from "lucide-react";
 
 import { apiFetch } from "@/lib/api-client";
 import { Button } from "@/components/ui/button";
@@ -10,7 +10,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { SearchInput } from "@/components/ui/search-input";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { EDIT_GENERATION_TYPE } from "@/lib/editor/types";
-import { cn, truncate } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 
 export type LibraryItem = {
   id: string;
@@ -132,12 +132,23 @@ function LibraryCard({
   onAdd: () => void;
 }) {
   const isEdit = item.type === EDIT_GENERATION_TYPE;
+  // Every generation type except a straight text-to-image run produces a
+  // playable clip (text-to-video, image-to-video, and a studio export all
+  // do) — so "not an image" is the correct default for anything new added
+  // to GENERATION_TYPES later, rather than a list of video types that has
+  // to be remembered to keep in sync.
+  const isImage = item.type === "text-to-image";
 
   return (
     <button
       type="button"
       onClick={onAdd}
       disabled={busy}
+      // The prompt used to be the card's only visible text — now that it's
+      // shown as an icon instead, it becomes the accessible name so a
+      // screen reader still hears what the clip actually is.
+      aria-label={item.prompt}
+      title={item.prompt}
       className={cn(
         "group relative aspect-[9/16] overflow-hidden rounded-xl border bg-surface-3 text-left transition-colors",
         used ? "border-brand/40" : "border-line hover:border-border-strong",
@@ -165,7 +176,7 @@ function LibraryCard({
         />
       )}
 
-      <div className="absolute inset-0 flex flex-col justify-between bg-gradient-to-t from-black/85 via-transparent to-black/40 p-2">
+      <div className="absolute inset-0 flex flex-col justify-between p-2">
         <div className="flex justify-end">
           {isEdit && (
             <span className="flex items-center gap-1 rounded-full bg-black/60 px-1.5 py-0.5 text-[10px] font-semibold text-brand">
@@ -173,7 +184,18 @@ function LibraryCard({
             </span>
           )}
         </div>
-        <p className="text-[11px] leading-snug text-white/90">{truncate(item.prompt, 52)}</p>
+        <div className="flex justify-start">
+          <span
+            className="flex size-5 items-center justify-center rounded-full bg-black/60 text-white/90"
+            aria-hidden="true"
+          >
+            {isImage ? (
+              <ImageIcon className="size-3" />
+            ) : (
+              <Film className="size-3" />
+            )}
+          </span>
+        </div>
       </div>
 
       <span
