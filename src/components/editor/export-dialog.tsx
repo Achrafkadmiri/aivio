@@ -3,10 +3,11 @@
 import { type MediaEl } from "@/lib/editor/media";
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { AlertCircle, CheckCircle2, Download, Film, Library, VolumeX } from "lucide-react";
+import { AlertCircle, CheckCircle2, Download, Film, Library, Send, VolumeX } from "lucide-react";
 
 import { Modal } from "@/components/ui/modal";
 import { Button, buttonVariants } from "@/components/ui/button";
+import { PublishButton } from "@/components/social/publish-button";
 import { useToast } from "@/components/ui/toast";
 import {
   ExportCancelledError,
@@ -137,8 +138,12 @@ function ExportBody({
     }
   }, [objectUrlFor, onBeforeRender, project, videoFor]);
 
+  // Owned here, not inside PublishButton, so a save that was started by
+  // "Publish" can open the composer as soon as it has an id to hand it.
+  const [publishOpen, setPublishOpen] = useState(false);
+
   const save = useCallback(
-    async (blob: Blob) => {
+    async (blob: Blob, hasAudio: boolean, publishAfter = false) => {
       setStage({ kind: "saving", label: "Uploading your video" });
       try {
         // The poster is drawn from the same decoders the render just used, so
@@ -154,12 +159,18 @@ function ExportBody({
               label: s === "uploading" ? "Uploading your video" : "Adding it to your gallery",
             }),
         });
-        setStage({ kind: "done", blob, hasAudio: true, savedId: saved.id });
+        // hasAudio is carried through rather than assumed: hard-coding true
+        // here made the "no audio track" warning vanish the moment you saved,
+        // on exactly the renders that needed it.
+        setStage({ kind: "done", blob, hasAudio, savedId: saved.id });
         toast({ title: "Saved to your gallery", variant: "success" });
+        // "Publish" saves first because the composer needs a real generation
+        // to attach to — opening it here is what makes that one press.
+        if (publishAfter) setPublishOpen(true);
       } catch (error) {
         // The render survives a failed save — back to the done state so the
         // user can download it or try again rather than losing it.
-        setStage({ kind: "done", blob, hasAudio: true, savedId: null });
+        setStage({ kind: "done", blob, hasAudio, savedId: null });
         toast({
           title: "Couldn't save that",
           description: error instanceof Error ? error.message : undefined,
@@ -192,7 +203,12 @@ function ExportBody({
           hasAudio={stage.hasAudio}
           savedId={stage.savedId}
           name={project.name}
-          onSave={() => void save(stage.blob)}
+          onSave={() => void save(stage.blob, stage.hasAudio)}
+          onPublish={() =>
+            stage.savedId ? setPublishOpen(true) : void save(stage.blob, stage.hasAudio, true)
+          }
+          publishOpen={publishOpen}
+          onPublishOpenChange={setPublishOpen}
           onRerender={() => void render()}
         />
       ) : (
@@ -278,6 +294,9 @@ function Done({
   savedId,
   name,
   onSave,
+  onPublish,
+  publishOpen,
+  onPublishOpenChange,
   onRerender,
 }: {
   blob: Blob;
@@ -285,6 +304,10 @@ function Done({
   savedId: string | null;
   name: string;
   onSave: () => void;
+  /** Saves first when needed, then opens the creator composer. */
+  onPublish: () => void;
+  publishOpen: boolean;
+  onPublishOpenChange: (open: boolean) => void;
   onRerender: () => void;
 }) {
   const filename = `${name.replace(/[^a-z0-9]+/gi, "-").toLowerCase() || "edit"}.mp4`;
@@ -315,17 +338,45 @@ function Done({
           // Button has no `asChild`, so a link that should look like one
           // takes the shared class factory instead — same pattern as the
           // gallery preview modal.
-          <Link href="/my-gallery" className={buttonVariants({ variant: "accent" })}>
+          <Link href="/my-gallery" className={buttonVariants({ variant: "secondary" })}>
             <Library className="size-4" />
             In your gallery
           </Link>
         ) : (
-          <Button variant="accent" disabled={tooBig} onClick={onSave}>
+          <Button variant="secondary" disabled={tooBig} onClick={onSave}>
             <Library className="size-4" />
             Save to gallery
           </Button>
         )}
       </div>
+
+      {/* Straight to the creator tools. It takes the accent because posting
+          is the point of most edits, and Download/Save are the ways of
+          keeping it rather than doing something with it.
+
+          Publishing needs a real generation to attach the media to, so this
+          saves to the gallery first when it hasn't been saved yet — which is
+          why it carries the same 50MB ceiling as Save. The button is
+          rendered whether or not there's an id: PublishButton is only
+          mounted with one once savedId exists, and until then this is a
+          plain Button that kicks off the save. */}
+      {savedId ? (
+        <PublishButton
+          generationId={savedId}
+          isVideo
+          variant="labelled"
+          buttonVariant="accent"
+          label="Post to your channels"
+          className="w-full"
+          open={publishOpen}
+          onOpenChange={onPublishOpenChange}
+        />
+      ) : (
+        <Button variant="accent" className="w-full" disabled={tooBig} onClick={onPublish}>
+          <Send className="size-4" aria-hidden="true" />
+          Post to your channels
+        </Button>
+      )}
 
       {tooBig && !savedId && (
         <Notice tone="warn">
@@ -336,8 +387,8 @@ function Done({
 
       {savedId && (
         <p className="text-caption text-muted">
-          It behaves like any other generation now — share it, collect it, or publish it straight
-          to your social accounts.
+          It behaves like any other generation now — share it, collect it, or post it again later
+          from your gallery.
         </p>
       )}
 

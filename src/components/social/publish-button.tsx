@@ -24,6 +24,10 @@ export function PublishButton({
   generationId,
   isVideo,
   variant = "icon",
+  label,
+  buttonVariant = "secondary",
+  open: controlledOpen,
+  onOpenChange,
   className,
 }: {
   generationId: string;
@@ -31,9 +35,24 @@ export function PublishButton({
   /** "icon" for a crowded action row, "labelled" where there's room for the
    *  word and the action deserves the emphasis. */
   variant?: "icon" | "labelled";
+  /** Overrides the labelled variant's wording where a surface needs to name
+   *  the destination rather than the verb. */
+  label?: string;
+  buttonVariant?: "secondary" | "accent";
+  /** Optional controlled mode. The export dialog uses it to open the
+   *  composer by itself the moment a save finishes, so "save and publish"
+   *  is one press rather than two. Uncontrolled everywhere else. */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
   className?: string;
 }) {
-  const [open, setOpen] = useState(false);
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
+  const isControlled = controlledOpen !== undefined;
+  const open = isControlled ? controlledOpen : uncontrolledOpen;
+  const setOpen = (next: boolean) => {
+    if (!isControlled) setUncontrolledOpen(next);
+    onOpenChange?.(next);
+  };
   const openedAtRef = useRef(0);
 
   /**
@@ -64,7 +83,7 @@ export function PublishButton({
         </Button>
       ) : (
         <Button
-          variant="secondary"
+          variant={buttonVariant}
           className={className}
           onClick={() => {
             openedAtRef.current = Date.now();
@@ -72,7 +91,7 @@ export function PublishButton({
           }}
         >
           <Send className="size-4" aria-hidden="true" />
-          Publish
+          {label ?? "Publish"}
         </Button>
       )}
 
