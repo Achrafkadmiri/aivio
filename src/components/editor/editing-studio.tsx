@@ -10,6 +10,7 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Plus,
+  SlidersHorizontal,
   Redo2,
   Trash2,
   Undo2,
@@ -19,6 +20,7 @@ import { apiFetch } from "@/lib/api-client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Modal } from "@/components/ui/modal";
+import { BottomSheet } from "@/components/ui/bottom-sheet";
 import { useConfirm } from "@/components/ui/confirm";
 import { useToast } from "@/components/ui/toast";
 import { Tooltip } from "@/components/ui/tooltip";
@@ -322,6 +324,12 @@ export function EditingStudio() {
   // Deep link from the gallery: /editor?add=<generation id>. Handled once,
   // and only after the stored project has loaded, so the clip lands in the
   // resumed edit rather than in an empty one that is about to be replaced.
+  // Which panel is showing in a sheet on narrow screens. Below lg the
+  // library aside and below xl the inspector aside are display:none, so
+  // without this the editor is unusable on a phone — no way to add a clip
+  // and no way to change anything about one.
+  const [mobilePanel, setMobilePanel] = useState<"library" | "inspector" | null>(null);
+
   const consumedDeepLink = useRef(false);
   useEffect(() => {
     const id = searchParams.get("add");
@@ -466,16 +474,72 @@ export function EditingStudio() {
     setProjectsOpen(false);
   }, [pause]);
 
+  // Defined once and rendered in two places — the desktop asides and the
+  // mobile sheets — so the two can never drift into different behaviour.
+  const libraryPanel = (
+    <MediaLibrary
+      onAdd={(item) => {
+        void addFromLibrary(item);
+        // On a phone the sheet covers the timeline, so it closes on pick:
+        // the point of adding a clip is to see it land.
+        setMobilePanel(null);
+      }}
+      addingId={addingId}
+      usedSourceIds={usedSourceIds}
+    />
+  );
+
+  const inspectorPanel = (
+    <Inspector
+      project={project}
+      duration={duration}
+      selection={selection}
+      tab={tab}
+      onTabChange={setTab}
+      onSelect={setSelection}
+      onPatchProject={(patch) => commit(patchProject(project, patch), { transient: true })}
+      onPatchClip={(clipId, patch) =>
+        commit(updateClip(project, clipId, patch), { transient: true })
+      }
+      onPatchOverlay={(id, patch) =>
+        commit(updateOverlay(project, id, patch), { transient: true })
+      }
+      onAddOverlay={() => {
+        const overlay = defaultOverlay(time, Math.min(duration, time + 3));
+        commit(addOverlay(project, overlay));
+        setSelection({ kind: "overlay", id: overlay.id });
+      }}
+      onRemoveOverlay={(id) => {
+        commit(removeOverlay(project, id));
+        setSelection(null);
+      }}
+      onDeleteClip={(clipId) => {
+        commit(removeClip(project, clipId));
+        setSelection(null);
+      }}
+    />
+  );
+
   return (
-    <div className="flex h-[calc(100vh-8rem)] min-h-[560px] flex-col overflow-hidden rounded-2xl border border-line bg-surface-2">
+    // dvh, not vh: on mobile Safari/Chrome the URL bar collapses on scroll
+    // and a vh-sized editor would resize under the user mid-drag. The 6rem
+    // below lg matches AppShell's h-16 header plus its p-4 padding; 8rem is
+    // the same sum once that padding grows to p-8.
+    <div className="flex h-[calc(100dvh-6rem)] min-h-[30rem] flex-col overflow-hidden rounded-2xl border border-line bg-surface-2 lg:h-[calc(100dvh-8rem)] lg:min-h-[35rem]">
       {/* -------------------------------------------------------- header */}
-      <header className="flex shrink-0 items-center gap-2 border-b border-line px-3 py-2.5">
+      {/* Wraps instead of overflowing: at 375px the action cluster alone is
+          ~267px, which squeezed the name field down to an unusable 34px and
+          still pushed Export off the edge. On a narrow screen the actions
+          simply take their own row. */}
+      <header className="flex shrink-0 flex-wrap items-center gap-2 border-b border-line px-3 py-2.5">
+        {/* Collapses the docked aside. Hidden below lg, where that aside is
+            display:none and this button therefore toggled nothing visible. */}
         <Tooltip content={libraryOpen ? "Hide your videos" : "Show your videos"}>
           <button
             type="button"
             onClick={() => setLibraryOpen((v) => !v)}
             aria-label={libraryOpen ? "Hide library" : "Show library"}
-            className="rounded-lg p-1.5 text-muted transition-colors hover:bg-white/5 hover:text-ink"
+            className="hidden rounded-lg p-1.5 text-muted transition-colors hover:bg-white/5 hover:text-ink lg:block"
           >
             {libraryOpen ? (
               <PanelLeftClose className="size-4" />
@@ -485,11 +549,22 @@ export function EditingStudio() {
           </button>
         </Tooltip>
 
+        {/* The same library, as a sheet, for the viewports where the aside
+            can't exist. */}
+        <button
+          type="button"
+          onClick={() => setMobilePanel("library")}
+          aria-label="Show your videos"
+          className="rounded-lg p-1.5 text-muted transition-colors hover:bg-white/5 hover:text-ink lg:hidden"
+        >
+          <PanelLeftOpen className="size-4" />
+        </button>
+
         <Input
           value={project.name}
           onChange={(e) => commit(patchProject(project, { name: e.target.value }), { transient: true })}
           aria-label="Project name"
-          className="h-9 w-48 py-1.5 text-label sm:w-64"
+          className="h-9 min-w-28 flex-1 py-1.5 text-label sm:w-56 sm:flex-none lg:w-64"
         />
 
         <span className="hidden items-center gap-1 text-caption text-text-tertiary sm:flex">
@@ -524,6 +599,19 @@ export function EditingStudio() {
             </button>
           </Tooltip>
 
+          {/* Below xl the inspector aside is display:none, so every clip,
+              text and audio control was unreachable. Same panel, in a sheet. */}
+          <Tooltip content="Edit settings">
+            <button
+              type="button"
+              onClick={() => setMobilePanel("inspector")}
+              aria-label="Edit settings"
+              className="rounded-lg p-1.5 text-muted transition-colors hover:bg-white/5 hover:text-ink xl:hidden"
+            >
+              <SlidersHorizontal className="size-4" />
+            </button>
+          </Tooltip>
+
           <div className="mx-1 h-5 w-px bg-line" />
 
           <Button variant="secondary" size="sm" onClick={() => setProjectsOpen(true)}>
@@ -547,11 +635,7 @@ export function EditingStudio() {
         {libraryOpen && (
           <aside className="hidden w-64 shrink-0 flex-col border-r border-line lg:flex">
             <LibraryHeader count={project.clips.length} />
-            <MediaLibrary
-              onAdd={(item) => void addFromLibrary(item)}
-              addingId={addingId}
-              usedSourceIds={usedSourceIds}
-            />
+            {libraryPanel}
           </aside>
         )}
 
@@ -566,7 +650,7 @@ export function EditingStudio() {
             onSeek={seek}
             emptyHint={
               libraryOpen
-                ? "Pick a video from the left to start your edit."
+                ? "Pick a video from your library to start your edit."
                 : "Open the library to add a video."
             }
           />
@@ -604,36 +688,28 @@ export function EditingStudio() {
         </div>
 
         <aside className="hidden w-72 shrink-0 border-l border-line xl:block">
-          <Inspector
-            project={project}
-            duration={duration}
-            selection={selection}
-            tab={tab}
-            onTabChange={setTab}
-            onSelect={setSelection}
-            onPatchProject={(patch) => commit(patchProject(project, patch), { transient: true })}
-            onPatchClip={(clipId, patch) =>
-              commit(updateClip(project, clipId, patch), { transient: true })
-            }
-            onPatchOverlay={(id, patch) =>
-              commit(updateOverlay(project, id, patch), { transient: true })
-            }
-            onAddOverlay={() => {
-              const overlay = defaultOverlay(time, Math.min(duration, time + 3));
-              commit(addOverlay(project, overlay));
-              setSelection({ kind: "overlay", id: overlay.id });
-            }}
-            onRemoveOverlay={(id) => {
-              commit(removeOverlay(project, id));
-              setSelection(null);
-            }}
-            onDeleteClip={(clipId) => {
-              commit(removeClip(project, clipId));
-              setSelection(null);
-            }}
-          />
+          {inspectorPanel}
         </aside>
       </div>
+
+      {/* Height is pinned so the panels' own internal scrollers work — both
+          are `h-full min-h-0 flex-col` and would collapse in an auto-height
+          sheet. */}
+      <BottomSheet
+        open={mobilePanel === "library"}
+        onOpenChange={(open) => setMobilePanel(open ? "library" : null)}
+        title="Your videos"
+      >
+        <div className="-mx-5 h-[60dvh]">{libraryPanel}</div>
+      </BottomSheet>
+
+      <BottomSheet
+        open={mobilePanel === "inspector"}
+        onOpenChange={(open) => setMobilePanel(open ? "inspector" : null)}
+        title="Settings"
+      >
+        <div className="-mx-5 h-[60dvh]">{inspectorPanel}</div>
+      </BottomSheet>
 
       <ExportDialog
         open={exportOpen}

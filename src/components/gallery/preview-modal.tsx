@@ -226,6 +226,10 @@ function PreviewBody({
   const [detailsOpen, setDetailsOpen] = useState(true);
   const [saving, setSaving] = useState(false);
   const isVideo = item.type !== "text-to-image";
+  // Whether /editor can actually open this one — owner, finished, and a
+  // video, since the studio's timeline only holds video clips.
+  const canEditInStudio =
+    viewerIsOwner && isVideo && item.status === "completed" && Boolean(item.resultUrl);
   const hasPrev = index > 0;
   const hasNext = index < total - 1;
 
@@ -474,6 +478,15 @@ function PreviewBody({
 
         {/* Actions */}
         <div className="flex flex-col gap-2 border-t border-border-subtle p-4">
+          {/* "Edit in studio" takes the second slot whenever the studio can
+              actually open this result, and Re-run falls back to it when it
+              can't. Editing a finished piece is the more useful next step
+              than rolling the dice again, so it gets the prominent position
+              — but the studio cuts and combines *clips*, and its clip model
+              has no still-image kind (lib/editor/types.ts), so pointing an
+              image at /editor would only produce "that clip could not be
+              decoded". Images therefore keep Re-run until the timeline
+              learns to hold a still. */}
           <div className="flex gap-2">
             <Link
               href={recreateHref(item)}
@@ -481,25 +494,25 @@ function PreviewBody({
             >
               <Sparkles className="size-4" aria-hidden="true" /> Recreate
             </Link>
-            {onDuplicate && (
-              <Button variant="secondary" size="sm" className="flex-1" onClick={onDuplicate}>
-                <RefreshCw className="size-4" aria-hidden="true" /> Re-run
-              </Button>
+            {canEditInStudio ? (
+              <Link
+                href={`/editor?add=${item.id}`}
+                className={buttonVariants({
+                  variant: "secondary",
+                  size: "sm",
+                  className: "flex-1",
+                })}
+              >
+                <Scissors className="size-4" aria-hidden="true" /> Edit in studio
+              </Link>
+            ) : (
+              onDuplicate && (
+                <Button variant="secondary" size="sm" className="flex-1" onClick={onDuplicate}>
+                  <RefreshCw className="size-4" aria-hidden="true" /> Re-run
+                </Button>
+              )
             )}
           </div>
-          {/* Owner-only, and video-only: the studio cuts and combines
-              clips, so it has nothing to do with a still image. The clip is
-              appended to whichever edit is already open rather than starting
-              a new one — collecting several videos into one piece is the
-              main reason to come here from the gallery. */}
-          {viewerIsOwner && isVideo && item.status === "completed" && item.resultUrl && (
-            <Link
-              href={`/editor?add=${item.id}`}
-              className={buttonVariants({ variant: "secondary", size: "sm", className: "w-full" })}
-            >
-              <Scissors className="size-4" aria-hidden="true" /> Edit in studio
-            </Link>
-          )}
           <div className="flex gap-2">
             {item.resultUrl && (
               <Button
