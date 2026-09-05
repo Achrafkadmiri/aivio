@@ -121,15 +121,11 @@ export function SocialAccounts() {
             key={platform.platform}
             platform={platform}
             linked={byPlatform.get(platform.platform) ?? []}
-<<<<<<< HEAD
             // Scoped to the card that was actually clicked. `isPending` on
             // its own is one flag shared by all four, so a click on TikTok
             // put every button in a spinner and disabled the lot —
             // `variables` is the platform this in-flight call was fired for.
             connecting={connect.isPending && connect.variables === platform.platform}
-=======
-            connecting={connect.isPending}
->>>>>>> 1d6385aa7ea0ca2ffb249af5dcdc648937cfe523
             onConnect={() =>
               connect.mutate(platform.platform, {
                 onError: (err) => toast({ title: (err as Error).message, variant: "error" }),
