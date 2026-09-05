@@ -326,15 +326,22 @@ export const CAMERA_MOVEMENTS = ["none", "subtle", "dynamic"] as const;
 
 // Longest prompt the composer accepts, enforced by every generation schema
 // that takes free-form prompt text (the two Seedance schemas and
-// buildDynamicSchema, i.e. the whole model catalog).
+// buildDynamicSchema, i.e. the whole model catalog) and by the preset
+// editor's composed-recipe check in routes/admin-presets.ts.
 //
-// This is OUR cap, not a provider-documented one: no model in
-// cloudflare-models.ts declares a prompt-length constraint, so nothing here
-// is derived from what Cloudflare, ByteDance or Recraft actually accept.
-// Raising it moves where an over-long prompt fails — a request past a
-// provider's own (unknown) ceiling comes back as a failed, already-billed
-// generation rather than a validation error at submit time.
-export const PROMPT_MAX_LENGTH = 4000;
+// 2000 is the PROVIDER's ceiling, not a round number of ours. Confirmed live:
+// raising this to 4000 made Cloudflare reject the run outright with
+//
+//   Cloudflare AI request failed (400): Model execution failed (User Input
+//   Error): Invalid value at prompt: Too big: expected string to have <=2000
+//   characters
+//
+// — and by then the generation had already been created and billed (the
+// refund in failGeneration is what gets the credits back). So this cap is
+// what keeps an over-long prompt a free validation error at submit time
+// instead of a failed job. Don't raise it without a provider change to point
+// at.
+export const PROMPT_MAX_LENGTH = 2000;
 
 export const SEEDANCE_MODEL_ID = "bytedance/seedance-2.5";
 export const SEEDANCE_DURATION_MIN = 4;
