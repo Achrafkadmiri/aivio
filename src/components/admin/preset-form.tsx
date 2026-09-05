@@ -145,6 +145,14 @@ export function PresetForm({
       : EMPTY,
   );
 
+  // Kept beside the form value rather than in it: what gets SAVED is the
+  // durable reference (`r2://<key>`), what gets SHOWN is a signed bucket URL
+  // that expires. Submitting the playable one would write an expiry into the
+  // catalogue, so the two never share a field.
+  const [previewPlaybackUrl, setPreviewPlaybackUrl] = useState<string | null>(
+    initial?.previewPlaybackUrl ?? null,
+  );
+
   const set = <K extends keyof AdminPresetInput>(key: K, next: AdminPresetInput[K]) =>
     setValue((v) => ({ ...v, [key]: next }));
 
@@ -257,7 +265,14 @@ export function PresetForm({
         </Field>
       </div>
 
-      <PreviewUrlField value={value.previewUrl} onChange={(url) => set("previewUrl", url)} />
+      <PreviewUrlField
+        value={value.previewUrl}
+        playbackUrl={previewPlaybackUrl}
+        onChange={(next) => {
+          set("previewUrl", next.url);
+          setPreviewPlaybackUrl(next.playbackUrl);
+        }}
+      />
 
       <Field label="Model" hint="Any video model in the catalogue. Changing it rebuilds the parameters below.">
         <Select value={value.model} onChange={(e) => set("model", e.target.value)}>
@@ -509,20 +524,36 @@ function ParameterField({
   );
 }
 
+/** The scheme the backend stores a bucket object under (lib/r2.ts). Such a
+ *  value is a reference, not a URL — no element can load it. */
+const R2_KEY_SCHEME = "r2://";
+
 /**
- * The preview clip: paste a bucket URL, or upload an MP4 and get one.
+ * The preview clip: upload one into the bucket, or paste a URL you host
+ * elsewhere.
  *
  * Upload goes through the same /api/upload endpoint the app uses for
- * reference images — it accepts MP4/MOV up to 50MB and now accepts an admin
+ * reference images — it accepts MP4/MOV up to 50MB and accepts an admin
  * session as well as a user one, so an operator doesn't have to also be
  * signed in as a customer to add a clip.
+ *
+ * What it keeps from that response is `ref` (`r2://<key>`), NOT the endpoint's
+ * own proxy URL. The proxy streams the object back through the edge function,
+ * which cuts the response off after a few KB — every preset stored that way
+ * showed a dead player in the gallery. The bucket URL the server signs on
+ * read comes straight from R2, with the Range support `<video>` wants.
+ *
+ * That reference can't be played by a `<video>`, so the signed URL rides
+ * alongside it for the thumbnail below and travels no further.
  */
 function PreviewUrlField({
   value,
+  playbackUrl,
   onChange,
 }: {
   value: string;
-  onChange: (url: string) => void;
+  playbackUrl: string | null;
+  onChange: (next: { url: string; playbackUrl: string | null }) => void;
 }) {
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -537,7 +568,7 @@ function PreviewUrlField({
       const res = await apiFetch("/api/upload", { method: "POST", body: formData });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(json.error ?? "Upload failed.");
-      onChange(json.url);
+      onChange({ url: json.ref ?? json.url, playbackUrl: json.playbackUrl ?? json.url ?? null });
     } catch (err) {
       setUploadError((err as Error).message);
     } finally {
@@ -545,13 +576,17 @@ function PreviewUrlField({
     }
   }
 
+  const storedInBucket = value.startsWith(R2_KEY_SCHEME);
+  // A pasted URL plays as itself; an uploaded one only through its signature.
+  const previewSrc = playbackUrl ?? (storedInBucket ? null : value || null);
+
   return (
     <div className="space-y-1.5">
       <Label>Preview video</Label>
       <div className="flex gap-2">
         <Input
           value={value}
-          onChange={(e) => onChange(e.target.value)}
+          onChange={(e) => onChange({ url: e.target.value, playbackUrl: null })}
           placeholder="https://your-bucket.r2.dev/clip.mp4"
           required
         />
@@ -581,15 +616,21 @@ function PreviewUrlField({
         </Button>
       </div>
       <p className="text-caption text-muted">
-        Paste a bucket URL, or upload an MP4/MOV (max 50MB) to fill it in. The clip shows the kind
-        of shot the preset aims for — the gallery says so, so it does not have to be this preset&apos;s
-        own output.
+        Upload an MP4/MOV (max 50MB) to store it in the bucket, or paste a URL you host elsewhere.
+        The clip shows the kind of shot the preset aims for — the gallery says so, so it does not
+        have to be this preset&apos;s own output.
       </p>
+      {storedInBucket && (
+        <p className="text-caption text-muted">
+          Stored in the bucket. The gallery streams it from there through a signed link, so this
+          reference is what gets saved — leave it as is.
+        </p>
+      )}
       {uploadError && <FieldError>{uploadError}</FieldError>}
-      {value && (
+      {previewSrc && (
         <video
-          key={value}
-          src={value}
+          key={previewSrc}
+          src={previewSrc}
           className="mt-2 aspect-video w-48 rounded-lg border border-line object-cover"
           muted
           loop

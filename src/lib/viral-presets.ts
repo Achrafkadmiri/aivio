@@ -42,10 +42,12 @@ export type Preset = {
   title: string;
   tagline: string;
   category: string;
-  /** Style-preview clip — an R2 bucket URL, or one of the app's own bundled
-   * /media/videos clips for the recipes that predate the table. It shows the
-   * KIND of shot the preset aims for and the UI must keep framing it that
-   * way; it is not this preset's own output. */
+  /** Style-preview clip, ready to play: a signed R2 bucket URL for anything
+   * an operator uploaded, or one of the app's own bundled /media/videos
+   * clips for the recipes that predate the table. The signature is minted
+   * per response and expires, so this is not a value to persist anywhere.
+   * It shows the KIND of shot the preset aims for and the UI must keep
+   * framing it that way; it is not this preset's own output. */
   previewUrl: string;
   badge: string | null;
   /** Any video model in the catalogue — no longer always Seedance. */

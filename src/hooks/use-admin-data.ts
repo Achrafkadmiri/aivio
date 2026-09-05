@@ -313,7 +313,14 @@ export type AdminPresetRow = {
   title: string;
   tagline: string;
   category: string;
+  /** As stored: an `r2://<key>` reference for a clip uploaded to the bucket,
+   *  or a plain URL/path for one pasted in. This is the value the form edits
+   *  and sends back — never previewPlaybackUrl, whose signature expires. */
   previewUrl: string;
+  /** The same clip, signed for playback straight from the bucket. Display
+   *  only. The public catalogue serves this shape as `previewUrl`, since the
+   *  app never edits it. */
+  previewPlaybackUrl: string;
   badge: string | null;
   referenceSubject: string;
   prompt: string;
