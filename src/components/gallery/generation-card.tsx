@@ -104,6 +104,12 @@ export type GalleryItem = {
   // because a few local call sites build GalleryItems by hand. The preview
   // modal reads them for its prompt/details panel.
   negativePrompt?: string | null;
+  /** The still an image-to-video (or an image edit) started from, signed by
+   *  the API into something an <img> can load. Only the creator's own
+   *  surfaces get a usable link — see serializeWithSocial in the backend —
+   *  so on the public feed this is a reference the browser can't fetch, and
+   *  the preview panel leaves it alone. */
+  inputImageUrl?: string | null;
   seed?: number | null;
   parameters?: Record<string, unknown> | null;
   costCredits?: number;

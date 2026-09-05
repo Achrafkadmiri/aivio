@@ -13,6 +13,7 @@ import {
   FolderMinus,
   FolderPlus,
   Globe,
+  Image as ImageIcon,
   Info,
   Lock,
   RefreshCw,
@@ -225,7 +226,17 @@ function PreviewBody({
   const [promptOpen, setPromptOpen] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(true);
   const [saving, setSaving] = useState(false);
+  // A signed link expires (six hours, see toViewableInputUrl), and a panel
+  // left open outlives that — so the source thumbnail takes itself out
+  // rather than leaving a broken frame behind. Reset per item by the key on
+  // this component.
+  const [sourceImageBroken, setSourceImageBroken] = useState(false);
   const isVideo = item.type !== "text-to-image";
+  // The creator's own reference upload, not the piece they published, so
+  // the API only signs it into a loadable link on their own surfaces — on
+  // the community feed it stays a reference an <img> would break on. Gated
+  // on the same flag rather than on presence for exactly that reason.
+  const sourceImageUrl = viewerIsOwner ? (item.inputImageUrl ?? null) : null;
   // Whether /editor can actually open this one — owner, finished, and a
   // video, since the studio's timeline only holds video clips.
   const canEditInStudio =
@@ -445,6 +456,36 @@ function PreviewBody({
               </p>
             )}
           </section>
+
+          {/* Source image — what an image-to-video (or an image edit) was
+              made from. Set by the API for exactly those input-driven
+              types, so nothing here has to test item.type. */}
+          {sourceImageUrl && !sourceImageBroken && (
+            <section className="border-b border-border-subtle p-4">
+              <span className="flex items-center gap-2 text-caption font-semibold tracking-wide text-text-tertiary uppercase">
+                <ImageIcon className="size-3.5" aria-hidden="true" /> Source image
+              </span>
+              <a
+                href={sourceImageUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-3 block overflow-hidden rounded-xl border border-line bg-surface-3 transition-colors hover:border-border-strong"
+                title="Open the original at full size"
+              >
+                {/* Plain <img> for the same reason as the media pane above:
+                    R2's signed URLs aren't in next/image's remotePatterns
+                    allowlist, and its optimizer can't fetch them anyway. */}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={sourceImageUrl}
+                  alt="The image this generation started from"
+                  loading="lazy"
+                  onError={() => setSourceImageBroken(true)}
+                  className="max-h-52 w-full object-contain"
+                />
+              </a>
+            </section>
+          )}
 
           {/* Details */}
           <section className="p-4">
