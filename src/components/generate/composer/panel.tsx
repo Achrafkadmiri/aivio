@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState, type ReactNode } from "react";
-import { ImagePlus, X } from "lucide-react";
+import { FileVideo, ImagePlus, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 /**
@@ -38,11 +38,14 @@ export function PanelSection({
 }
 
 /** How the upload slot is being used: one image guiding the whole
- * generation, or a first/last keyframe pair the video interpolates
- * between. The caller owns the actual upload state for every slot and is
- * responsible for clearing whichever fields don't apply to the newly
- * selected mode. */
-export type ReferenceMode = "reference" | "keyframe";
+ * generation, a first/last keyframe pair the video interpolates between, or
+ * a clip whose motion the generation is conditioned on. The caller owns the
+ * actual upload state for every slot and is responsible for clearing
+ * whichever fields don't apply to the newly selected mode.
+ *
+ * Not every model offers all three — a form passes SegmentedTabs only the
+ * modes its model actually accepts (only Seedance 2.0 takes "video"). */
+export type ReferenceMode = "reference" | "keyframe" | "video";
 
 /** Compact segmented control — the panel's equivalent of the reference
  * design's sub-tabs ("Image à Vidéo / Texte à Vidéo"), used here to switch
@@ -145,6 +148,7 @@ export function PanelDropzone({
   disabled,
   disabledHint,
   compact,
+  mediaKind = "image",
   previewMode = "cover",
   className,
 }: {
@@ -156,6 +160,10 @@ export function PanelDropzone({
   onRemove: () => void;
   disabled?: boolean;
   disabledHint?: string;
+  /** What this slot takes. Drives the file picker's filter, the resting
+   * icon, and whether the preview renders as an <img> or a muted, looping
+   * <video> — /api/upload accepts MP4/MOV alongside the image types. */
+  mediaKind?: "image" | "video";
   /** Keyframe pair tiles — shorter box, no sublabel, smaller icon. */
   compact?: boolean;
   /**
@@ -213,7 +221,9 @@ export function PanelDropzone({
       <input
         ref={inputRef}
         type="file"
-        accept="image/jpeg,image/png,image/webp"
+        accept={
+          mediaKind === "video" ? "video/mp4,video/quicktime" : "image/jpeg,image/png,image/webp"
+        }
         className="hidden"
         disabled={disabled}
         onChange={(e) => {
@@ -227,7 +237,20 @@ export function PanelDropzone({
         // Local blob: URL or already-uploaded remote URL filling a fixed
         // slot, so a plain <img> is the right tool — next/image would
         // force/crop dimensions we don't know here.
-        previewMode === "showcase" ? (
+        mediaKind === "video" ? (
+          // Muted + looping so the tile reads as "this is the clip you
+          // attached" at a glance; controls stay off because the slot is an
+          // input, not a player. showcase's blurred backdrop isn't worth a
+          // second decode of the same file, so video always covers.
+          <video
+            src={previewUrl}
+            className="absolute inset-0 h-full w-full object-cover"
+            muted
+            loop
+            playsInline
+            autoPlay
+          />
+        ) : previewMode === "showcase" ? (
           <>
             {/* Blurred, dimmed copy of the same file behind the real one, so
                 whatever shape it is fills the slot instead of leaving voids.
@@ -271,6 +294,8 @@ export function PanelDropzone({
           >
             {uploading ? (
               <span className="size-3.5 animate-spin rounded-full border-2 border-brand/30 border-t-brand" />
+            ) : mediaKind === "video" ? (
+              <FileVideo className={compact ? "size-4" : "size-5"} aria-hidden="true" />
             ) : (
               <ImagePlus className={compact ? "size-4" : "size-5"} aria-hidden="true" />
             )}

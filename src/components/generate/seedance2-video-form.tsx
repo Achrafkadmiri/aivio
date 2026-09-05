@@ -27,6 +27,7 @@ import {
   SEEDANCE2_DURATION_MAX,
   SEEDANCE2_RESOLUTIONS,
   SEEDANCE2_ASPECT_RATIOS,
+  SEEDANCE2_REFERENCE_IMAGES_MAX,
   type VideoModelId,
   type TierInfo,
 } from "@/lib/constants";
@@ -90,7 +91,17 @@ export function Seedance2VideoForm({
   const [preview, setPreview] = useState<string | null>(null);
   const [uploadingEndFrame, setUploadingEndFrame] = useState(false);
   const [endFramePreview, setEndFramePreview] = useState<string | null>(null);
+  const [uploadingRefVideo, setUploadingRefVideo] = useState(false);
+  const [refVideoPreview, setRefVideoPreview] = useState<string | null>(null);
   const [refMode, setRefMode] = useState<ReferenceMode>("reference");
+  // Character references are a growable list rather than fixed slots: the
+  // form only ever holds the ones actually uploaded, so referenceImages stays
+  // a dense array and removing the second of three doesn't leave a hole the
+  // provider would have to interpret. The blob: preview is kept beside each
+  // URL so a tile renders the picked file itself rather than re-fetching the
+  // upload it was just made from.
+  const [characters, setCharacters] = useState<{ url: string; preview: string }[]>([]);
+  const [uploadingCharacter, setUploadingCharacter] = useState(false);
 
   const {
     register,
@@ -117,8 +128,15 @@ export function Seedance2VideoForm({
   const resolution = watch("resolution");
   const aspectRatio = watch("aspectRatio");
   const image = watch("image");
-  const hasReference = Boolean(image);
-  const estimatedCredits = estimateVideoCredits(SEEDANCE2_MODEL_ID, duration, resolution);
+  const referenceVideo = watch("referenceVideo");
+  // Both pin the output's shape: a still is composed into, a clip is followed.
+  const hasReference = Boolean(image) || Boolean(referenceVideo);
+  // Reference-video mode bills off the provider's higher per-second table, so
+  // the quote has to know about it — otherwise the pill under-prices the very
+  // request the server is about to charge for. See credit-estimate.ts.
+  const estimatedCredits = estimateVideoCredits(SEEDANCE2_MODEL_ID, duration, resolution, {
+    hasReferenceVideo: Boolean(referenceVideo),
+  });
 
   // Defaults are 720p / 5s, and the free plan caps at 480p — so the composer
   // used to open on a resolution the server would reject, with a 403 after
@@ -144,18 +162,29 @@ export function Seedance2VideoForm({
       ? upgradeHint(minTierForDuration(duration), duration + "s clips")
       : undefined;
 
+  /** Shared by every upload slot this form owns — first frame, last frame,
+   * reference video and the character stills. Throws so each caller can undo
+   * its own optimistic preview. */
+  async function uploadFile(file: File): Promise<string> {
+    const formData = new FormData();
+    formData.append("file", file);
+    const res = await apiFetch("/api/upload", { method: "POST", body: formData });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error ?? "Upload failed.");
+    return json.url as string;
+  }
+
+  function reportUploadFailure(err: unknown) {
+    toast({ title: "Upload failed", description: (err as Error).message, variant: "error" });
+  }
+
   async function handleFile(file: File) {
     setUploading(true);
     setPreview(URL.createObjectURL(file));
     try {
-      const formData = new FormData();
-      formData.append("file", file);
-      const res = await apiFetch("/api/upload", { method: "POST", body: formData });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error ?? "Upload failed.");
-      setValue("image", json.url, { shouldValidate: true });
+      setValue("image", await uploadFile(file), { shouldValidate: true });
     } catch (err) {
-      toast({ title: "Upload failed", description: (err as Error).message, variant: "error" });
+      reportUploadFailure(err);
       setPreview(null);
     } finally {
       setUploading(false);
@@ -166,27 +195,77 @@ export function Seedance2VideoForm({
     setUploadingEndFrame(true);
     setEndFramePreview(URL.createObjectURL(file));
     try {
-      const formData = new FormData();
-      formData.append("file", file);
-      const res = await apiFetch("/api/upload", { method: "POST", body: formData });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error ?? "Upload failed.");
-      setValue("lastFrameImage", json.url, { shouldValidate: true });
+      setValue("lastFrameImage", await uploadFile(file), { shouldValidate: true });
     } catch (err) {
-      toast({ title: "Upload failed", description: (err as Error).message, variant: "error" });
+      reportUploadFailure(err);
       setEndFramePreview(null);
     } finally {
       setUploadingEndFrame(false);
     }
   }
 
+  async function handleRefVideoFile(file: File) {
+    setUploadingRefVideo(true);
+    setRefVideoPreview(URL.createObjectURL(file));
+    try {
+      setValue("referenceVideo", await uploadFile(file), { shouldValidate: true });
+    } catch (err) {
+      reportUploadFailure(err);
+      setRefVideoPreview(null);
+    } finally {
+      setUploadingRefVideo(false);
+    }
+  }
+
+  function clearRefVideo() {
+    setRefVideoPreview(null);
+    setValue("referenceVideo", undefined, { shouldValidate: true });
+  }
+
+  async function handleCharacterFile(file: File) {
+    if (characters.length >= SEEDANCE2_REFERENCE_IMAGES_MAX) return;
+    setUploadingCharacter(true);
+    try {
+      const url = await uploadFile(file);
+      const next = [...characters, { url, preview: URL.createObjectURL(file) }];
+      setCharacters(next);
+      setValue(
+        "referenceImages",
+        next.map((c) => c.url),
+        { shouldValidate: true },
+      );
+    } catch (err) {
+      reportUploadFailure(err);
+    } finally {
+      setUploadingCharacter(false);
+    }
+  }
+
+  function removeCharacter(index: number) {
+    const next = characters.filter((_, i) => i !== index);
+    setCharacters(next);
+    // Undefined rather than [] once the last one goes: the schema treats the
+    // field as absent, where an empty array would still reach the provider.
+    setValue("referenceImages", next.length ? next.map((c) => c.url) : undefined, {
+      shouldValidate: true,
+    });
+  }
+
+  /** The three modes are mutually exclusive on the wire — the model follows
+   * a video reference instead of frame references, not alongside them — so
+   * leaving a mode drops whatever only that mode could set. Character
+   * references survive the switch: they are additive to all three. */
   function handleModeChange(next: ReferenceMode) {
     setRefMode(next);
-    // A last frame without a mode that supports it isn't a valid pairing —
-    // switching back to "Reference" drops whatever end frame was set.
-    if (next === "reference") {
+    if (next !== "keyframe") {
       setEndFramePreview(null);
       setValue("lastFrameImage", undefined, { shouldValidate: true });
+    }
+    if (next !== "video") {
+      clearRefVideo();
+    } else {
+      setPreview(null);
+      setValue("image", undefined, { shouldValidate: true });
     }
   }
 
@@ -232,19 +311,21 @@ export function Seedance2VideoForm({
         </PanelSection>
 
         <PanelSection
-          label="Upload an image"
+          label="Reference"
           action={
             <SegmentedTabs
               value={refMode}
-              options={["reference", "keyframe"] as const}
+              options={["reference", "keyframe", "video"] as const}
               onChange={handleModeChange}
-              renderLabel={(m) => (m === "reference" ? "Reference" : "Keyframe")}
+              renderLabel={(m) => (m === "reference" ? "Image" : m === "keyframe" ? "Keyframe" : "Video")}
             />
           }
           hint={
             refMode === "keyframe"
               ? "First and last frame — the video interpolates between them."
-              : "Optional — JPG, PNG or WEBP. Guides the whole generation."
+              : refMode === "video"
+                ? "Optional — MP4 or MOV, up to 50MB. The clip's motion and framing drive the generation; this mode bills at the model's higher reference-video rate."
+                : "Optional — JPG, PNG or WEBP. Guides the whole generation."
           }
         >
           {refMode === "keyframe" ? (
@@ -288,6 +369,19 @@ export function Seedance2VideoForm({
                 disabledHint="Add a first frame first."
               />
             </div>
+          ) : refMode === "video" ? (
+            <>
+              <PanelDropzone
+                mediaKind="video"
+                label="Click or drag to upload"
+                sublabel="MP4 or MOV"
+                previewUrl={refVideoPreview}
+                uploading={uploadingRefVideo}
+                onFile={handleRefVideoFile}
+                onRemove={clearRefVideo}
+              />
+              <FieldError>{errors.referenceVideo?.message}</FieldError>
+            </>
           ) : (
             <PanelDropzone
               label="Click or drag to upload"
@@ -303,6 +397,41 @@ export function Seedance2VideoForm({
               }}
             />
           )}
+        </PanelSection>
+
+        {/* Subject references, not a fourth reference mode: these say who or
+            what appears and travel with whichever mode is selected above. */}
+        <PanelSection
+          label="Characters"
+          hint={`Optional — up to ${SEEDANCE2_REFERENCE_IMAGES_MAX} people or objects to keep recognisable across the clip. Refer to them in the prompt.`}
+        >
+          <div className="grid grid-cols-4 gap-1.5">
+            {characters.map((character, index) => (
+              <PanelDropzone
+                key={character.url}
+                compact
+                className="h-20"
+                label={`Character ${index + 1}`}
+                previewUrl={character.preview}
+                // A filled tile is never clickable (see PanelDropzone's
+                // `clickable`), so it can't pick a replacement — remove it and
+                // add another instead.
+                onFile={() => {}}
+                onRemove={() => removeCharacter(index)}
+              />
+            ))}
+            {characters.length < SEEDANCE2_REFERENCE_IMAGES_MAX && (
+              <PanelDropzone
+                compact
+                className="h-20"
+                label="Add"
+                uploading={uploadingCharacter}
+                onFile={handleCharacterFile}
+                onRemove={() => {}}
+              />
+            )}
+          </div>
+          <FieldError>{errors.referenceImages?.message}</FieldError>
         </PanelSection>
 
         <PanelSection label="Prompt">
@@ -353,7 +482,9 @@ export function Seedance2VideoForm({
 
             <FieldRow
               label="Aspect ratio"
-              description={hasReference ? "Ignored while a reference image is set." : undefined}
+              description={
+                hasReference ? "Ignored while a reference image or video is set." : undefined
+              }
             >
               <PillSelect
                 icon={RectangleHorizontal}
@@ -361,7 +492,7 @@ export function Seedance2VideoForm({
                 options={SEEDANCE2_ASPECT_RATIOS}
                 onChange={(a) => setValue("aspectRatio", a, { shouldValidate: true })}
                 disabled={hasReference}
-                disabledHint="Ignored while a reference image is set — the video inherits its aspect ratio."
+                disabledHint="Ignored while a reference image or video is set — the video inherits its aspect ratio."
               />
             </FieldRow>
 
@@ -413,7 +544,14 @@ export function Seedance2VideoForm({
         <CreditsSubmitPill
           fullWidth
           credits={estimatedCredits}
-          loading={mutation.isPending || busy || uploading}
+          loading={
+            mutation.isPending ||
+            busy ||
+            uploading ||
+            uploadingEndFrame ||
+            uploadingRefVideo ||
+            uploadingCharacter
+          }
           balance={creditBalance}
           blockedReason={blockedReason}
         />
