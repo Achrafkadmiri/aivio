@@ -360,3 +360,10 @@ export const SEEDANCE2_ASPECT_RATIOS = [
   "21:9",
   "9:21",
 ] as const;
+
+// Seedance 2.0's subject-reference slots: up to four stills of the people or
+// objects that must stay recognisable across the clip (`reference_images` on
+// the wire). Distinct from the single `image`, which is a whole-frame
+// reference the model composes from — these say "this is who/what appears",
+// not "this is what the shot looks like".
+export const SEEDANCE2_REFERENCE_IMAGES_MAX = 4;

@@ -22,6 +22,7 @@ import {
   SEEDANCE2_DURATION_MAX,
   SEEDANCE2_RESOLUTIONS,
   SEEDANCE2_ASPECT_RATIOS,
+  SEEDANCE2_REFERENCE_IMAGES_MAX,
 } from "@/lib/constants";
 import type { CloudflareModelConfig } from "@/lib/cloudflare-models";
 
@@ -142,6 +143,21 @@ export const seedance2VideoSchema = z
     prompt: z.string().trim().max(2000).optional(),
     image: z.string().min(1).optional(),
     lastFrameImage: z.string().min(1).optional(),
+    // Motion/style source — the clip the generation is conditioned on. The
+    // provider bills this mode off its own, higher per-second table (see
+    // estimateVideoCredits' hasReferenceVideo), and the model reads a video
+    // reference in place of a frame reference rather than alongside one, so
+    // it is exclusive with image/lastFrameImage instead of combinable.
+    referenceVideo: z.string().min(1).optional(),
+    // Subject references — the people or objects that must stay recognisable
+    // across the clip. Additive: they combine with any of the media inputs
+    // above, since they answer "who appears", not "what the shot looks like".
+    referenceImages: z
+      .array(z.string().min(1))
+      .max(SEEDANCE2_REFERENCE_IMAGES_MAX, {
+        error: `Up to ${SEEDANCE2_REFERENCE_IMAGES_MAX} character references.`,
+      })
+      .optional(),
     duration: z
       .number()
       .int()
@@ -160,13 +176,17 @@ export const seedance2VideoSchema = z
     useVirtualAvatar: z.boolean().default(false),
     seed: z.number().int().min(-9007199254740991).max(9007199254740991).optional(),
   })
-  .refine((data) => Boolean(data.prompt?.trim()) || Boolean(data.image), {
-    error: "Add a prompt or a reference image.",
-    path: ["prompt"],
-  })
+  .refine(
+    (data) => Boolean(data.prompt?.trim()) || Boolean(data.image) || Boolean(data.referenceVideo),
+    { error: "Add a prompt, a reference image or a reference video.", path: ["prompt"] },
+  )
   .refine((data) => !data.lastFrameImage || Boolean(data.image), {
     error: "Add a start frame before setting an end frame.",
     path: ["lastFrameImage"],
+  })
+  .refine((data) => !data.referenceVideo || (!data.image && !data.lastFrameImage), {
+    error: "A reference video can't be combined with a reference image or keyframes.",
+    path: ["referenceVideo"],
   });
 export type Seedance2VideoInput = z.infer<typeof seedance2VideoSchema>;
 
