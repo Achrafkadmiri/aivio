@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 /**
  * Backs every "don't load this video until it's about to be on screen" spot
@@ -23,12 +23,41 @@ import { useEffect, useRef, useState } from "react";
  * Single shared implementation for every video tile on the page (showcase
  * grid, model carousel, capability/feature cards, how-it-works result,
  * stats strip, CTA section) so this tuning only needs to happen in one place.
+ *
+ * `playOnHover` narrows that further for grids where every tile is a video
+ * and playing them all at once is noise rather than life — the presets
+ * gallery, where a dozen unrelated clips moving in parallel makes the page
+ * unreadable. In that mode the clip holds its first frame until the pointer
+ * (or keyboard focus) is on the tile, and rewinds on the way out so the next
+ * hover starts the shot from the top rather than resuming mid-motion.
+ *
+ * Hover is a capability, not an assumption: a touch device has no hover
+ * state, so `(hover: hover)` decides, and where it doesn't hold the tile
+ * falls back to the in-view autoplay above rather than showing a clip that
+ * can never be played. Checked with matchMedia rather than CSS because the
+ * decision drives `play()`/`pause()`, not styling — and re-checked on
+ * change, since a tablet with a keyboard attached flips this at runtime.
  */
-export function useLazyVideo<Container extends HTMLElement = HTMLDivElement>() {
+export function useLazyVideo<Container extends HTMLElement = HTMLDivElement>({
+  playOnHover = false,
+}: { playOnHover?: boolean } = {}) {
   const containerRef = useRef<Container>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const [inView, setInView] = useState(false);
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
+  const [active, setActive] = useState(false);
+  // Starts false so the server-rendered pass and the first client pass agree;
+  // an effect is the only place `window` may be read.
+  const [canHover, setCanHover] = useState(false);
+
+  useEffect(() => {
+    if (!playOnHover) return;
+    const query = window.matchMedia("(hover: hover) and (pointer: fine)");
+    const sync = () => setCanHover(query.matches);
+    sync();
+    query.addEventListener("change", sync);
+    return () => query.removeEventListener("change", sync);
+  }, [playOnHover]);
 
   useEffect(() => {
     const el = containerRef.current;
@@ -44,12 +73,37 @@ export function useLazyVideo<Container extends HTMLElement = HTMLDivElement>() {
     return () => observer.disconnect();
   }, []);
 
+  const hoverGated = playOnHover && canHover;
+  const shouldPlay = hoverGated ? inView && active : inView;
+
   useEffect(() => {
     const videoEl = videoRef.current;
     if (!videoEl) return;
-    if (inView) videoEl.play().catch(() => {});
-    else videoEl.pause();
-  }, [inView, hasLoadedOnce]);
+    if (shouldPlay) {
+      void videoEl.play().catch(() => {});
+    } else {
+      videoEl.pause();
+      // Only in hover mode: scrolling a landing-page tile out and back should
+      // resume, but a second hover should replay the shot from its first frame.
+      if (hoverGated) videoEl.currentTime = 0;
+    }
+  }, [shouldPlay, hasLoadedOnce, hoverGated]);
 
-  return { containerRef, videoRef, hasLoadedOnce };
+  const start = useCallback(() => setActive(true), []);
+  const stop = useCallback(() => setActive(false), []);
+
+  /**
+   * Spread on whatever element the user actually points at — usually the
+   * card, not the video, since overlaid text and badges would otherwise
+   * count as leaving the clip. Focus/blur are included so the same tile
+   * plays when tabbed to, which is the keyboard equivalent of hovering.
+   */
+  const hoverProps = {
+    onPointerEnter: start,
+    onPointerLeave: stop,
+    onFocus: start,
+    onBlur: stop,
+  };
+
+  return { containerRef, videoRef, hasLoadedOnce, hoverProps, isPlaying: shouldPlay };
 }
