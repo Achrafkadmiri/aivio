@@ -1,5 +1,6 @@
 "use client";
 
+import { type MediaEl } from "@/lib/editor/media";
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { AlertCircle, CheckCircle2, Download, Film, Library, VolumeX } from "lucide-react";
@@ -54,7 +55,7 @@ export function ExportDialog(props: {
   onOpenChange: (open: boolean) => void;
   project: Project;
   duration: number;
-  videoFor: (clipId: string) => HTMLVideoElement | null;
+  videoFor: (clipId: string) => MediaEl | null;
   objectUrlFor: (clipId: string) => string | null;
   /** Stops preview playback — the export seeks the very same decoders, and a
    *  running preview would fight it for every one of them. */
@@ -88,7 +89,7 @@ function ExportBody({
 }: {
   project: Project;
   duration: number;
-  videoFor: (clipId: string) => HTMLVideoElement | null;
+  videoFor: (clipId: string) => MediaEl | null;
   objectUrlFor: (clipId: string) => string | null;
   onBeforeRender: () => void;
 }) {

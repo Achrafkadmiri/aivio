@@ -20,6 +20,7 @@ import {
   type PlacedClip,
   type TimelineLayout,
 } from "./project";
+import { naturalSize, type MediaEl } from "./media";
 import {
   TEXT_FONTS,
   type Clip,
@@ -33,7 +34,7 @@ import {
  *  a playing `<video>`; the export hands over the same element parked on an
  *  exact frame. Returning null draws the background, which is what should
  *  happen while a source is still buffering. */
-export type FrameSource = (clip: Clip) => HTMLVideoElement | null;
+export type FrameSource = (clip: Clip) => MediaEl | null;
 
 export type DrawContext = CanvasRenderingContext2D;
 
@@ -238,7 +239,7 @@ export function drawFrame(
   for (const placed of visible) {
     const index = layout.placed.indexOf(placed);
     const video = source(placed.clip);
-    if (!video || !video.videoWidth) continue;
+    if (!video || !naturalSize(video).width) continue;
 
     const blend = transitionBlend(placed, time);
     const alpha = blend.alpha * backgroundBlend(layout, placed, index, time);
@@ -273,7 +274,7 @@ export function drawFrame(
 function drawClip(
   ctx: DrawContext,
   placed: PlacedClip,
-  video: HTMLVideoElement,
+  video: MediaEl,
   blend: Blend,
   alpha: number,
   width: number,
@@ -283,7 +284,10 @@ function drawClip(
 ) {
   const clip = placed.clip;
   const progress = placed.duration > 0 ? (time - placed.start) / placed.duration : 0;
-  const rect = fitRect(clip, video.videoWidth, video.videoHeight, width, height, progress);
+  // Reads naturalWidth on a still and videoWidth on a clip — the two element
+  // kinds disagree about where their intrinsic size lives.
+  const source = naturalSize(video);
+  const rect = fitRect(clip, source.width, source.height, width, height, progress);
 
   ctx.save();
   ctx.globalAlpha = alpha;
@@ -305,7 +309,7 @@ function drawClip(
   if (clip.fit === "blur") {
     ctx.save();
     ctx.filter = `blur(${(shortSide * 0.06).toFixed(2)}px) brightness(0.55)`;
-    const cover = coverRect(video.videoWidth, video.videoHeight, width, height, 1.25);
+    const cover = coverRect(source.width, source.height, width, height, 1.25);
     ctx.drawImage(video, cover.x + dx, cover.y, cover.w, cover.h);
     ctx.restore();
   }

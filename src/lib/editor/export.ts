@@ -28,7 +28,7 @@
 import { ArrayBufferTarget, Muxer } from "mp4-muxer";
 
 import { MIX_CHANNELS, MIX_SAMPLE_RATE, mixProjectAudio } from "./audio";
-import { seekTo, waitForReady } from "./media";
+import { seekTo, waitForReady, isVideoEl, type MediaEl } from "./media";
 import { clipsAt, sourceTimeFor, timelineLayout } from "./project";
 import { drawFrame, primeWatermark } from "./render";
 import { canvasSize, EXPORT_QUALITIES, type Project } from "./types";
@@ -116,7 +116,7 @@ async function waitForQueue(encoder: { encodeQueueSize: number }) {
  */
 export async function exportProject(options: {
   project: Project;
-  videoFor: (clipId: string) => HTMLVideoElement | null;
+  videoFor: (clipId: string) => MediaEl | null;
   objectUrlFor: (clipId: string) => string | null;
   onProgress?: (progress: ExportProgress) => void;
   signal?: AbortSignal;
@@ -163,7 +163,8 @@ export async function exportProject(options: {
     const video = videoFor(clip.id);
     if (!video) throw new Error(`"${clip.label}" isn't loaded yet. Give it a moment and retry.`);
     await waitForReady(video);
-    video.pause();
+    // Stills have no playback to stop.
+    if (isVideoEl(video)) video.pause();
   }
 
   /* ---------------------------------------------------------- audio */
@@ -388,7 +389,7 @@ function throwIfAborted(signal?: AbortSignal) {
  */
 export async function renderPoster(options: {
   project: Project;
-  videoFor: (clipId: string) => HTMLVideoElement | null;
+  videoFor: (clipId: string) => MediaEl | null;
 }): Promise<Blob | null> {
   const { project, videoFor } = options;
   const layout = timelineLayout(project);

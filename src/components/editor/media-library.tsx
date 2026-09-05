@@ -53,25 +53,25 @@ export function MediaLibrary({
       if (debounced) params.set("search", debounced);
       if (pageParam) params.set("cursor", pageParam);
       const res = await apiFetch(`/api/generations?${params.toString()}`);
-      if (!res.ok) throw new Error("Failed to load your videos");
+      if (!res.ok) throw new Error("Failed to load your library");
       return (await res.json()) as Page;
     },
     initialPageParam: "" as string,
     getNextPageParam: (last) => last.nextCursor ?? undefined,
   });
 
-  // Filtered here rather than through the API's `type` parameter because
-  // that takes one value and this needs "any of the video kinds" — the list
-  // endpoint has no not-equals filter.
+  // Everything finished with a file behind it. Stills are included now that
+  // the timeline can hold them — they land as a fixed-length card rather
+  // than a playing clip (see IMAGE_CLIP_DEFAULT_DURATION).
   const items = (query.data?.pages.flatMap((p) => p.items) ?? []).filter(
-    (item) => item.type !== "text-to-image" && item.resultUrl,
+    (item) => Boolean(item.resultUrl),
   );
 
   return (
     <div className="flex h-full min-h-0 flex-col">
       <div className="border-b border-border-subtle p-3">
         <SearchInput
-          placeholder="Search your videos…"
+          placeholder="Search your library…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
@@ -86,7 +86,7 @@ export function MediaLibrary({
           <div className="px-2 py-12 text-center">
             <Film className="mx-auto mb-3 size-7 text-text-tertiary" aria-hidden="true" />
             <p className="text-body-sm text-muted">
-              {debounced ? "No videos match that search." : "You haven't generated any videos yet."}
+              {debounced ? "Nothing matches that search." : "You haven't generated anything yet."}
             </p>
           </div>
         ) : (
@@ -200,7 +200,7 @@ export function LibraryHeader({ count }: { count: number }) {
   return (
     <div className="flex items-center gap-2 border-b border-border-subtle px-4 py-3">
       <Search className="size-4 text-text-tertiary" aria-hidden="true" />
-      <h2 className="text-label font-semibold text-ink">Your videos</h2>
+      <h2 className="text-label font-semibold text-ink">Your library</h2>
       {count > 0 && <span className="text-caption text-muted">{count} in this edit</span>}
     </div>
   );
