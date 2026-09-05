@@ -2,18 +2,20 @@
 
 import { useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { AlertTriangle, Link2, Loader2, Unplug } from "lucide-react";
-import { Card } from "@/components/ui/card";
+import { AlertTriangle, Check, Link2, Loader2, Unplug } from "lucide-react";
+import { Badge, type BadgeVariant } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { useToast } from "@/components/ui/toast";
 import { useConfirm } from "@/components/ui/confirm";
+import { useSpotlight } from "@/hooks/use-spotlight";
 import { cn, formatDate } from "@/lib/utils";
-import { PlatformIcon } from "@/components/social/platform-icons";
+import { PlatformIcon, platformTint } from "@/components/social/platform-icons";
 import {
   useConnectSocial,
   useDisconnectSocial,
   useSocialAccounts,
+  type PlatformInfo,
   type SocialAccount,
 } from "@/hooks/use-social";
 
@@ -25,6 +27,27 @@ const REQUIREMENTS: Record<string, string> = {
   youtube: "Needs a YouTube channel on the Google account. Uploads stay private until Google verifies the app.",
   facebook: "Posts to a Facebook Page you manage — Facebook's API can't post to a personal profile.",
   instagram: "Needs an Instagram Business or Creator account linked to a Facebook Page.",
+};
+
+/**
+ * Each card's state, as one value rather than three booleans read at four
+ * different points in the markup. Colour never carries this on its own —
+ * every pill pairs its tint with a word, and the two that matter also carry
+ * an icon.
+ */
+type CardState = "connected" | "expired" | "available" | "unavailable";
+
+function cardState(platform: PlatformInfo, linked: SocialAccount[]): CardState {
+  if (!platform.configured) return "unavailable";
+  if (linked.length === 0) return "available";
+  return linked.some((a) => a.status !== "active") ? "expired" : "connected";
+}
+
+const STATUS: Record<CardState, { label: string; variant: BadgeVariant }> = {
+  connected: { label: "Connected", variant: "success" },
+  expired: { label: "Reconnect", variant: "accent" },
+  available: { label: "Not connected", variant: "outline" },
+  unavailable: { label: "Unavailable", variant: "neutral" },
 };
 
 export function SocialAccounts() {
@@ -70,8 +93,10 @@ export function SocialAccounts() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-subheading font-semibold text-ink">Social accounts</h2>
-        <p className="mt-1 text-body-sm text-muted">
+        <h2 className="font-display text-subheading font-bold tracking-tight text-ink">
+          Social accounts
+        </h2>
+        <p className="mt-1 max-w-prose text-body-sm text-muted">
           Connect a platform to publish finished generations straight from the app — with a
           description, tags and a scheduled time.
         </p>
@@ -86,106 +111,162 @@ export function SocialAccounts() {
         </p>
       )}
 
-      <Card variant="standard" className="divide-y divide-line p-0">
-        {data.platforms.map((platform) => {
-          const linked = byPlatform.get(platform.platform) ?? [];
-          return (
-            <div key={platform.platform} className="p-4 sm:p-5">
-              {/* Three fixed columns — mark, copy, action — rather than a
-                  wrapping row. Wrapping meant the button dropped below the
-                  text on the platforms with a long requirement line and
-                  stayed inline on the short one, so no two rows agreed on
-                  where the action lived. */}
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
-                <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-white/5">
-                  <PlatformIcon platform={platform.platform} labelled />
+      {/* A grid rather than a stack of full-width rows: four peers with no
+          ordering between them read better side by side, each one sized by
+          its own content instead of every row stretching to the longest
+          requirement line. Collapses to one column on narrow screens. */}
+      <div className="grid gap-4 sm:grid-cols-2">
+        {data.platforms.map((platform) => (
+          <PlatformCard
+            key={platform.platform}
+            platform={platform}
+            linked={byPlatform.get(platform.platform) ?? []}
+            connecting={connect.isPending}
+            onConnect={() =>
+              connect.mutate(platform.platform, {
+                onError: (err) => toast({ title: (err as Error).message, variant: "error" }),
+              })
+            }
+            onDisconnect={async (account) => {
+              const ok = await confirm({
+                title: `Disconnect ${account.displayName}?`,
+                description:
+                  "Anything still scheduled to this account is cancelled. Posts already published stay up.",
+                confirmLabel: "Disconnect",
+                tone: "danger",
+              });
+              if (ok) {
+                disconnect.mutate(account.id, {
+                  onError: (err) => toast({ title: (err as Error).message, variant: "error" }),
+                  onSuccess: () => toast({ title: "Disconnected", variant: "success" }),
+                });
+              }
+            }}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function PlatformCard({
+  platform,
+  linked,
+  connecting,
+  onConnect,
+  onDisconnect,
+}: {
+  platform: PlatformInfo;
+  linked: SocialAccount[];
+  connecting: boolean;
+  onConnect: () => void;
+  onDisconnect: (account: SocialAccount) => void;
+}) {
+  const spotlight = useSpotlight<HTMLDivElement>();
+  const state = cardState(platform, linked);
+  const tint = platformTint(platform.platform);
+  const status = STATUS[state];
+
+  return (
+    <div
+      {...spotlight}
+      className={cn(
+        "group relative flex flex-col overflow-hidden rounded-2xl border border-line bg-surface-2 p-5 shadow-card",
+        "transition-[border-color,box-shadow] duration-300 ease-out hover:border-border-strong hover:shadow-floating",
+      )}
+    >
+      {/* Cursor-tracked glow in the platform's own colour — a blurred solid,
+          not a radial-gradient(), matching every other glow in this app.
+          Decoration only: nothing here is reachable by hover alone. */}
+      <div
+        className={cn(
+          "pointer-events-none absolute size-40 -translate-x-1/2 -translate-y-1/2 rounded-full opacity-0 blur-3xl transition-opacity duration-300 group-hover:opacity-10",
+          tint.glow,
+        )}
+        style={{ left: "var(--spot-x, 50%)", top: "var(--spot-y, 0%)" }}
+        aria-hidden="true"
+      />
+
+      <div className="relative flex items-start gap-3">
+        <span
+          className={cn("flex size-11 shrink-0 items-center justify-center rounded-xl", tint.tile)}
+        >
+          <PlatformIcon platform={platform.platform} className="size-5.5" labelled />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="text-label font-semibold text-ink">{platform.label}</p>
+          {/* Word first, colour second — the pill never carries the state on
+              tint alone, and the two states worth acting on carry a glyph. */}
+          <Badge variant={status.variant} className="mt-1.5">
+            {state === "connected" && <Check className="size-3" aria-hidden="true" />}
+            {state === "expired" && <AlertTriangle className="size-3" aria-hidden="true" />}
+            {status.label}
+          </Badge>
+        </div>
+      </div>
+
+      <p className="relative mt-3 flex-1 text-caption leading-relaxed text-muted">
+        {platform.configured
+          ? REQUIREMENTS[platform.platform]
+          : "No credentials on this server yet — you can still export the caption and file from any generation and post by hand."}
+      </p>
+
+      {linked.length > 0 && (
+        <ul className="relative mt-3 space-y-1.5">
+          {linked.map((account) => (
+            <li
+              key={account.id}
+              className="flex items-center justify-between gap-2 rounded-lg bg-surface-3 py-1.5 pr-1.5 pl-3"
+            >
+              <span className="min-w-0">
+                <span className="block truncate text-caption text-ink-soft">
+                  {account.displayName}
                 </span>
-
-                <div className="min-w-0 flex-1">
-                  {/* Name kept alongside the mark here, unlike the composer:
-                      this is the screen where you decide which platform to
-                      set up, and each row carries a paragraph of its own
-                      requirements that needs a subject. */}
-                  <p className="text-label text-ink">{platform.label}</p>
-                  <p className="mt-1 max-w-prose text-caption text-muted">
-                    {platform.configured
-                      ? REQUIREMENTS[platform.platform]
-                      : "No credentials on this server yet — you can still export the caption and file and post by hand."}
-                  </p>
-                </div>
-
-                <Button
-                  variant={linked.length > 0 ? "secondary" : "primary"}
-                  size="sm"
-                  className="w-full shrink-0 sm:w-auto"
-                  disabled={!platform.configured || connect.isPending}
-                  onClick={() =>
-                    connect.mutate(platform.platform, {
-                      onError: (err) =>
-                        toast({ title: (err as Error).message, variant: "error" }),
-                    })
-                  }
-                >
-                  {connect.isPending ? (
-                    <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
-                  ) : (
-                    <Link2 className="size-3.5" aria-hidden="true" />
+                <span
+                  className={cn(
+                    "block text-[11px]",
+                    account.status === "active" ? "text-muted" : "text-accent",
                   )}
-                  {linked.length > 0 ? "Connect another" : "Connect"}
-                </Button>
-              </div>
-
-              {/* Indented to the copy column on wide screens, so a linked
-                  account reads as belonging to the platform above it rather
-                  than as another row in the list. */}
-              {linked.map((account) => (
-                <div
-                  key={account.id}
-                  className="mt-3 flex items-center justify-between gap-3 rounded-xl bg-surface-3 px-3 py-2 sm:ml-14"
                 >
-                  <div className="min-w-0">
-                    <p className="truncate text-body-sm text-ink-soft">{account.displayName}</p>
-                    <p
-                      className={cn(
-                        "text-caption",
-                        account.status === "active" ? "text-muted" : "text-warning",
-                      )}
-                    >
-                      {account.status === "active"
-                        ? `Connected ${formatDate(account.connectedAt)}`
-                        : "Access expired — reconnect to keep posting"}
-                    </p>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    aria-label={`Disconnect ${account.displayName}`}
-                    title="Disconnect"
-                    onClick={async () => {
-                      const ok = await confirm({
-                        title: `Disconnect ${account.displayName}?`,
-                        description:
-                          "Anything still scheduled to this account is cancelled. Posts already published stay up.",
-                        confirmLabel: "Disconnect",
-                        tone: "danger",
-                      });
-                      if (ok) {
-                        disconnect.mutate(account.id, {
-                          onError: (err) =>
-                            toast({ title: (err as Error).message, variant: "error" }),
-                          onSuccess: () => toast({ title: "Disconnected", variant: "success" }),
-                        });
-                      }
-                    }}
-                  >
-                    <Unplug className="size-4" />
-                  </Button>
-                </div>
-              ))}
-            </div>
-          );
-        })}
-      </Card>
+                  {account.status === "active"
+                    ? `Since ${formatDate(account.connectedAt)}`
+                    : "Access expired"}
+                </span>
+              </span>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="shrink-0"
+                aria-label={`Disconnect ${account.displayName}`}
+                title="Disconnect"
+                onClick={() => onDisconnect(account)}
+              >
+                <Unplug className="size-4" />
+              </Button>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {/* Same place in every card regardless of how long the copy above ran,
+          so the eye doesn't hunt for the action between platforms. */}
+      <Button
+        variant={linked.length > 0 ? "secondary" : "primary"}
+        className="relative mt-4 w-full"
+        disabled={!platform.configured || connecting}
+        onClick={onConnect}
+      >
+        {connecting ? (
+          <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+        ) : (
+          <Link2 className="size-4" aria-hidden="true" />
+        )}
+        {state === "expired"
+          ? "Reconnect"
+          : linked.length > 0
+            ? "Connect another"
+            : "Connect"}
+      </Button>
     </div>
   );
 }
