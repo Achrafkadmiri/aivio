@@ -37,6 +37,7 @@ import {
   bestAllowedDuration,
   minTierForResolution,
   minTierForDuration,
+  modelLockReason,
   upgradeHint,
 } from "@/lib/tier-limits";
 import {
@@ -361,7 +362,13 @@ export function DynamicModelForm<T extends string>({
     <form onSubmit={submit} noValidate className="flex h-full min-h-0 flex-col">
       <div className="min-h-0 flex-1 space-y-5 overflow-y-auto p-4 sm:p-5">
         <PanelSection label="Model">
-          <ProviderModelPicker models={models} value={model} onChange={onModelChange} fullWidth />
+          <ProviderModelPicker
+            models={models}
+            value={model}
+            onChange={onModelChange}
+            fullWidth
+            lockReason={(id) => modelLockReason(id, tierInfo)}
+          />
         </PanelSection>
 
         {hasImage && (

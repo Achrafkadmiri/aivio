@@ -54,6 +54,7 @@ import {
   isResolutionLocked,
   minTierForDuration,
   minTierForResolution,
+  modelLockReason,
   upgradeHint,
 } from "@/lib/tier-limits";
 import {
@@ -396,6 +397,7 @@ export function MarketingStudio() {
               value={modelId}
               onChange={selectModel}
               fullWidth
+              lockReason={(id) => modelLockReason(id, tierInfo)}
             />
             <PanelFieldList>
               {pillFields.map((field) =>

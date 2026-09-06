@@ -2,9 +2,10 @@
 
 import { useRef, useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
-import { Send, X } from "lucide-react";
+import { Lock, Send, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { CreatorSuiteUpsell, useCreatorSuite } from "@/components/upgrade-gate";
 import { CreatorTools } from "./creator-tools";
 
 /**
@@ -46,6 +47,13 @@ export function PublishButton({
   onOpenChange?: (open: boolean) => void;
   className?: string;
 }) {
+  // Locked plans keep the button and the dialog: hiding the entry point
+  // would leave the tool invisible to exactly the people it is being sold
+  // to. The dialog opens onto the upsell instead of the composer, and the
+  // API refuses the publish endpoints regardless (routes/social.ts).
+  const { allowed: canPublish, isLoading: planLoading } = useCreatorSuite();
+  const locked = !planLoading && !canPublish;
+
   const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
   const isControlled = controlledOpen !== undefined;
   const open = isControlled ? controlledOpen : uncontrolledOpen;
@@ -72,14 +80,14 @@ export function PublishButton({
           variant="secondary"
           size="icon"
           className={className}
-          aria-label="Publish to social"
-          title="Publish to social"
+          aria-label={locked ? "Publish to social — Creator plan" : "Publish to social"}
+          title={locked ? "Publishing is included on Creator and Studio" : "Publish to social"}
           onClick={() => {
             openedAtRef.current = Date.now();
             setOpen(true);
           }}
         >
-          <Send className="size-4" />
+          {locked ? <Lock className="size-4" /> : <Send className="size-4" />}
         </Button>
       ) : (
         <Button
@@ -90,7 +98,11 @@ export function PublishButton({
             setOpen(true);
           }}
         >
-          <Send className="size-4" aria-hidden="true" />
+          {locked ? (
+            <Lock className="size-4" aria-hidden="true" />
+          ) : (
+            <Send className="size-4" aria-hidden="true" />
+          )}
           {label ?? "Publish"}
         </Button>
       )}
@@ -116,7 +128,9 @@ export function PublishButton({
                   Creator tools
                 </Dialog.Title>
                 <Dialog.Description className="mt-1 text-body-sm text-muted">
-                  Post this straight to your channels, now or on a schedule.
+                  {locked
+                    ? "Publishing from the app is included on Creator and Studio."
+                    : "Post this straight to your channels, now or on a schedule."}
                 </Dialog.Description>
               </div>
               <Dialog.Close asChild>
@@ -130,7 +144,14 @@ export function PublishButton({
                 a long list of past posts shouldn't push the way out of the
                 dialog off-screen. */}
             <div className="min-h-0 flex-1 overflow-y-auto p-5">
-              <CreatorTools generationId={generationId} isVideo={isVideo} />
+              {locked ? (
+                <CreatorSuiteUpsell
+                  feature="social-publishing"
+                  className="border-0 bg-transparent py-6 shadow-none"
+                />
+              ) : (
+                <CreatorTools generationId={generationId} isVideo={isVideo} />
+              )}
             </div>
           </Dialog.Content>
         </Dialog.Portal>

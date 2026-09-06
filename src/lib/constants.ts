@@ -36,7 +36,7 @@ const ESTIMATES_NOTE =
   "fast image models. Higher resolutions and the quality image models cost " +
   "more per generation, so the same credits stretch proportionally less far.";
 
-// Découverte can't reach Seedance 2.0 at all (its shortest clip costs 56
+// The Free plan can't reach Seedance 2.0 at all (its shortest clip costs 56
 // credits, past the 50-credit budget), so that card advertises the Mini variant
 // and its note says why.
 const ESTIMATES_NOTE_FREE =
@@ -62,6 +62,19 @@ export const TIER_INFO: Record<
     seats: number;
     priorityQueue: boolean;
     apiAccess: boolean;
+    /**
+     * Marketing studio, editing studio, and publishing to linked social
+     * accounts - the three tools the Creator card sells as one step up the
+     * ladder.
+     *
+     * One flag rather than three because they are priced as one step; split
+     * it the day they stop being. Every gate reads this and nothing else:
+     * the /studio and /editor routes and the publish button on the frontend,
+     * and the connect/publish endpoints in routes/social.ts on the API side.
+     * Before it existed the three were advertised on two plans and open to
+     * all four.
+     */
+    creatorSuite: boolean;
     features: string[];
     /** One disclosure for the whole card, see ESTIMATES_NOTE. */
     featuresNote: string;
@@ -83,7 +96,7 @@ export const TIER_INFO: Record<
   // concurrentGenerations/videoWatermark/priorityQueue/apiAccess are enforced
   // server-side (see aiVideo-backend's generations.ts).
   free: {
-    label: "Découverte",
+    label: "Free",
     priceMonthly: 0,
     monthlyCredits: 50,
     // Capped at 480p (not 720p): the cheapest 5s 720p clip is 113 credits,
@@ -101,6 +114,7 @@ export const TIER_INFO: Record<
     commercialLicense: false,
     seats: 1,
     priorityQueue: false,
+    creatorSuite: false,
     apiAccess: false,
     features: [
       "50 credits / month",
@@ -123,6 +137,7 @@ export const TIER_INFO: Record<
     commercialLicense: true,
     seats: 1,
     priorityQueue: false,
+    creatorSuite: false,
     apiAccess: false,
     features: [
       "1,000 credits / month",
@@ -138,7 +153,7 @@ export const TIER_INFO: Record<
     featuresNote: ESTIMATES_NOTE,
   },
   creator: {
-    label: "Créateur",
+    label: "Creator",
     priceMonthly: 24,
     monthlyCredits: 2500,
     maxResolution: "1080p",
@@ -149,17 +164,21 @@ export const TIER_INFO: Record<
     commercialLicense: true,
     seats: 1,
     priorityQueue: true,
+    creatorSuite: true,
     apiAccess: false,
     features: [
       "2,500 credits / month",
       "~833 images",
       "~178s Seedance 2.0 video",
       "~54s Seedance 2.5 video",
-      "Add credits as needed",
-      "Up to 1080p",
-      "Priority queue",
+      "Marketing studio for ad-ready campaigns",
+      "Editing studio: trim, caption, export",
+      "Publish to TikTok, Instagram, YouTube & Facebook",
+      "Up to 1080p, no watermark",
       "Commercial license",
+      "Priority queue",
       "Unused credits roll over 1 month",
+      "Add credits as needed",
     ],
     featuresNote: ESTIMATES_NOTE,
   },
@@ -176,6 +195,7 @@ export const TIER_INFO: Record<
     commercialLicense: true,
     seats: 3,
     priorityQueue: true,
+    creatorSuite: true,
     apiAccess: true,
     features: [
       "5,000 credits / month",
@@ -183,11 +203,15 @@ export const TIER_INFO: Record<
       "~357s Seedance 2.0 video",
       "~108s Seedance 2.5 video",
       "~32s Seedance 2.0 video (4K, exclusive)",
-      "Add credits as needed",
+      "Marketing studio for ad-ready campaigns",
+      "Editing studio: trim, caption, export",
+      "Publish to TikTok, Instagram, YouTube & Facebook",
       "Commercial license",
       "API access",
       "3 team seats",
       "Max priority queue",
+      "Unused credits roll over 1 month",
+      "Add credits as needed",
     ],
     featuresNote: ESTIMATES_NOTE,
   },
@@ -368,6 +392,29 @@ export const SEEDANCE_OUTPUT_FORMATS = ["mp4", "mov"] as const;
 // wider resolution ceiling (up to 4K), a real camera_fixed toggle (2.5
 // documents it as unsupported), and no output_format choice.
 export const SEEDANCE2_MODEL_ID = "bytedance/seedance-2.0";
+
+/**
+ * Whether a video model will actually carry the forced watermark a
+ * videoWatermark tier owes.
+ *
+ * Only some provider schemas accept the flag at all, so the old rule -
+ * set watermark=true if the payload happens to carry the key - silently
+ * produced clean video on every model that does not, making a plan limit
+ * depend on which model was picked rather than on the plan. Generation now
+ * refuses the combination outright (see lib/generations.ts), which needs a
+ * straight answer to whether a model can be watermarked at all.
+ *
+ * The two Seedance flagships are hand-wired routes rather than registry
+ * entries (their watermark field lives in the request schemas in
+ * validation.ts), so they are named here; every other model is read off the
+ * registry, so a new one answers correctly the day it lands.
+ */
+export function videoModelSupportsWatermark(modelId: string): boolean {
+  if (modelId === SEEDANCE_MODEL_ID || modelId === SEEDANCE2_MODEL_ID) return true;
+  const config = CLOUDFLARE_MODELS.find((m) => m.id === modelId);
+  if (!config || config.category === "text-to-image") return false;
+  return config.fields.some((f) => f.key === "watermark");
+}
 export const SEEDANCE2_DURATION_MIN = 4;
 export const SEEDANCE2_DURATION_MAX = 12;
 export const SEEDANCE2_RESOLUTIONS = ["480p", "720p", "1080p", "4k"] as const;

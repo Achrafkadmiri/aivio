@@ -13,6 +13,7 @@ import { estimateVideoCredits } from "@/lib/credit-estimate";
 import { seedance2VideoSchema, type Seedance2VideoInput } from "@/lib/validation";
 import { apiFetch } from "@/lib/api-client";
 import {
+  modelLockReason,
   isResolutionLocked,
   isDurationLocked,
   bestAllowedResolution,
@@ -308,7 +309,13 @@ export function Seedance2VideoForm({
     <form onSubmit={submit} noValidate className="flex h-full min-h-0 flex-col">
       <div className="min-h-0 flex-1 space-y-5 overflow-y-auto p-4 sm:p-5">
         <PanelSection label="Model">
-          <ProviderModelPicker models={models} value={model} onChange={onModelChange} fullWidth />
+          <ProviderModelPicker
+            models={models}
+            value={model}
+            onChange={onModelChange}
+            fullWidth
+            lockReason={(id) => modelLockReason(id, tierInfo)}
+          />
         </PanelSection>
 
         <PanelSection

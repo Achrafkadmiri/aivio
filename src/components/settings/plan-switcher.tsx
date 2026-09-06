@@ -41,7 +41,7 @@ function tierLabel(tier: string) {
 /**
  * Reports what the switch actually did.
  *
- * A toast was not enough here: "Switched to Créateur" is true and still
+ * A toast was not enough here: "Switched to Creator" is true and still
  * misleading on the no-grant path, where the user is left looking for
  * credits that were never coming. This states the outcome and the resulting
  * balance, and has to be dismissed.

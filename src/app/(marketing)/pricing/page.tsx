@@ -11,14 +11,21 @@ import { CurrencySelector } from "@/components/currency-selector";
 
 export const metadata: Metadata = { title: "Pricing" };
 
+// Plan names come from TIER_INFO rather than being written out here: this
+// list still said "Découverte"/"Créateur" after the cards had been renamed,
+// because the labels only lived in one of the two places.
 const FAQS = [
   {
     q: "What's a credit?",
     a: `Credits are consumed per generation based on model, resolution, and duration — video costs scale with the underlying compute, so a longer or higher-resolution clip costs more than a quick 480p one. Each credit is worth $${CREDIT_VALUE_USD} — shown in your chosen currency throughout the app, and the exact cost is always shown before you generate.`,
   },
   {
+    q: "Which plans include the marketing studio, editing studio, and social publishing?",
+    a: `${TIER_INFO.creator.label} and ${TIER_INFO.studio.label}. Both unlock the marketing studio (ad-ready images and video built from your own product and talent shots), the editing studio (trim, caption, add music, and export a finished MP4), and one-click publishing to TikTok, Instagram, YouTube, and Facebook. ${TIER_INFO.free.label} and ${TIER_INFO.starter.label} cover generation and your gallery.`,
+  },
+  {
     q: "Do unused credits roll over?",
-    a: "On Créateur and Studio, unused monthly credits roll over for 1 extra month. Découverte and Starter credits reset each month.",
+    a: `On ${TIER_INFO.creator.label} and ${TIER_INFO.studio.label}, unused monthly credits roll over for 1 extra month. ${TIER_INFO.free.label} and ${TIER_INFO.starter.label} credits reset each month.`,
   },
   {
     q: "Can I change plans anytime?",
@@ -26,7 +33,7 @@ const FAQS = [
   },
   {
     q: "Is there a free trial?",
-    a: "The Découverte plan gives you 50 credits every month at no cost, forever — no credit card required.",
+    a: `The ${TIER_INFO.free.label} plan gives you ${TIER_INFO.free.monthlyCredits} credits every month at no cost, forever — no credit card required.`,
   },
 ];
 

@@ -17,7 +17,7 @@ const FAQS = [
   },
   {
     question: "What's the pricing?",
-    answer: `Découverte starts at $0 with ${TIER_INFO.free.monthlyCredits} credits a month. Starter is $${TIER_INFO.starter.priceMonthly}/month, Créateur is $${TIER_INFO.creator.priceMonthly}/month, and Studio is $${TIER_INFO.studio.priceMonthly}/month — see the full comparison on the Pricing page.`,
+    answer: `${TIER_INFO.free.label} starts at $0 with ${TIER_INFO.free.monthlyCredits} credits a month. ${TIER_INFO.starter.label} is $${TIER_INFO.starter.priceMonthly}/month, ${TIER_INFO.creator.label} is $${TIER_INFO.creator.priceMonthly}/month, and ${TIER_INFO.studio.label} is $${TIER_INFO.studio.priceMonthly}/month. ${TIER_INFO.creator.label} and above also unlock the marketing studio, the editing studio, and publishing straight to TikTok, Instagram, YouTube, and Facebook — see the full comparison on the Pricing page.`,
   },
   {
     question: "Is there an API?",

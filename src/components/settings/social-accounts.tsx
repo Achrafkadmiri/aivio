@@ -1,14 +1,16 @@
 "use client";
 
 import { useEffect } from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { AlertTriangle, Check, Link2, Loader2, Unplug } from "lucide-react";
+import { AlertTriangle, Check, Link2, Loader2, Lock, Unplug } from "lucide-react";
 import { Badge, type BadgeVariant } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { useToast } from "@/components/ui/toast";
 import { useConfirm } from "@/components/ui/confirm";
 import { useSpotlight } from "@/hooks/use-spotlight";
+import { CreatorSuiteUpsell, useCreatorSuite } from "@/components/upgrade-gate";
 import { cn, formatDate } from "@/lib/utils";
 import { PlatformIcon, platformTint } from "@/components/social/platform-icons";
 import {
@@ -56,6 +58,7 @@ export function SocialAccounts() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { data, isLoading, isError } = useSocialAccounts();
+  const { allowed, isLoading: planLoading } = useCreatorSuite();
   const connect = useConnectSocial();
   const disconnect = useDisconnectSocial();
 
@@ -74,7 +77,7 @@ export function SocialAccounts() {
     router.replace("/settings/social");
   }, [connected, error, toast, router]);
 
-  if (isLoading) {
+  if (isLoading || planLoading) {
     return (
       <div className="flex justify-center py-16">
         <Spinner />
@@ -85,6 +88,21 @@ export function SocialAccounts() {
     return <p className="py-16 text-center text-body-sm text-muted">Couldn&apos;t load your accounts.</p>;
   }
 
+  // Connecting and publishing are gated (TIER_INFO.creatorSuite), disconnecting
+  // never is: someone who downgrades still owns the accounts they linked, and a
+  // page that hid them would leave a live token with no way to revoke it. So a
+  // locked plan with nothing linked gets the upsell and nothing else, while a
+  // locked plan with accounts still gets the cards — Connect disabled, Disconnect
+  // working. The API draws the same line (routes/social.ts).
+  if (!allowed && data.accounts.length === 0) {
+    return (
+      <div className="space-y-6">
+        <SectionHeading />
+        <CreatorSuiteUpsell feature="social-publishing" />
+      </div>
+    );
+  }
+
   const byPlatform = new Map<string, SocialAccount[]>();
   for (const account of data.accounts) {
     byPlatform.set(account.platform, [...(byPlatform.get(account.platform) ?? []), account]);
@@ -92,15 +110,21 @@ export function SocialAccounts() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="font-display text-subheading font-bold tracking-tight text-ink">
-          Social accounts
-        </h2>
-        <p className="mt-1 max-w-prose text-body-sm text-muted">
-          Connect a platform to publish finished generations straight from the app — with a
-          description, tags and a scheduled time.
+      <SectionHeading />
+
+      {!allowed && (
+        <p className="flex items-start gap-2 rounded-xl border border-line bg-surface-2 p-3 text-body-sm text-ink-soft">
+          <Lock className="mt-0.5 size-4 shrink-0 text-muted" aria-hidden="true" />
+          <span>
+            Your plan no longer includes publishing, so these accounts can&apos;t be used to post and
+            no new ones can be connected. Disconnecting still works.{" "}
+            <Link href="/settings/billing" className="text-brand hover:text-brand-hover">
+              See plans
+            </Link>
+            .
+          </span>
         </p>
-      </div>
+      )}
 
       {data.simulated && (
         <p className="flex items-start gap-2 rounded-xl border border-warning/40 bg-warning/5 p-3 text-body-sm text-ink-soft">
@@ -126,6 +150,7 @@ export function SocialAccounts() {
             // put every button in a spinner and disabled the lot —
             // `variables` is the platform this in-flight call was fired for.
             connecting={connect.isPending && connect.variables === platform.platform}
+            locked={!allowed}
             onConnect={() =>
               connect.mutate(platform.platform, {
                 onError: (err) => toast({ title: (err as Error).message, variant: "error" }),
@@ -153,16 +178,35 @@ export function SocialAccounts() {
   );
 }
 
+/** One copy of the page heading, shared by the upsell branch and the real
+ *  one so they can't drift apart. */
+function SectionHeading() {
+  return (
+    <div>
+      <h2 className="font-display text-subheading font-bold tracking-tight text-ink">
+        Social accounts
+      </h2>
+      <p className="mt-1 max-w-prose text-body-sm text-muted">
+        Connect a platform to publish finished generations straight from the app — with a
+        description, tags and a scheduled time.
+      </p>
+    </div>
+  );
+}
+
 function PlatformCard({
   platform,
   linked,
   connecting,
+  locked,
   onConnect,
   onDisconnect,
 }: {
   platform: PlatformInfo;
   linked: SocialAccount[];
   connecting: boolean;
+  /** Plan doesn't include publishing — see TIER_INFO.creatorSuite. */
+  locked: boolean;
   onConnect: () => void;
   onDisconnect: (account: SocialAccount) => void;
 }) {
@@ -257,19 +301,24 @@ function PlatformCard({
       <Button
         variant={linked.length > 0 ? "secondary" : "primary"}
         className="relative mt-4 w-full"
-        disabled={!platform.configured || connecting}
+        disabled={locked || !platform.configured || connecting}
+        title={locked ? "Publishing is included on Creator and Studio" : undefined}
         onClick={onConnect}
       >
         {connecting ? (
           <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+        ) : locked ? (
+          <Lock className="size-4" aria-hidden="true" />
         ) : (
           <Link2 className="size-4" aria-hidden="true" />
         )}
-        {state === "expired"
-          ? "Reconnect"
-          : linked.length > 0
-            ? "Connect another"
-            : "Connect"}
+        {locked
+          ? "Creator plan"
+          : state === "expired"
+            ? "Reconnect"
+            : linked.length > 0
+              ? "Connect another"
+              : "Connect"}
       </Button>
     </div>
   );

@@ -23,8 +23,10 @@ import {
   Wand2,
   Zap,
   ChevronLeft,
+  Lock,
 } from "lucide-react";
 import { cn, formatCredits } from "@/lib/utils";
+import { hasCreatorSuite } from "@/lib/tier-limits";
 import { Logo } from "./logo";
 import { Button } from "@/components/ui/button";
 import { Tooltip } from "@/components/ui/tooltip";
@@ -72,17 +74,27 @@ function CreditsBadge() {
 // Assets grouping, sized down to what this app actually has. The active
 // item always uses the one brand color (see NavItem below) — no per-section
 // wayfinding colors anymore.
-const NAV_SECTIONS: { label: string; items: { href: string; label: string; icon: typeof LayoutDashboard }[] }[] = [
+type NavEntry = {
+  href: string;
+  label: string;
+  icon: typeof LayoutDashboard;
+  /** Needs TIER_INFO.creatorSuite — shown to every plan with a lock, since
+   *  a tool nobody can see is a tool nobody upgrades for. The route itself
+   *  is what enforces it (see CreatorSuiteGate). */
+  creatorSuite?: true;
+};
+
+const NAV_SECTIONS: { label: string; items: NavEntry[] }[] = [
   {
     label: "Workspace",
     items: [
       { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
       { href: "/generate", label: "Generate", icon: Sparkles },
       { href: "/presets", label: "Presets", icon: Wand2 },
-      { href: "/studio", label: "Marketing", icon: Megaphone },
+      { href: "/studio", label: "Marketing", icon: Megaphone, creatorSuite: true },
       // Sits in Workspace rather than Library because editing is something
       // you DO, like generating — Library is where finished things are kept.
-      { href: "/editor", label: "Editing", icon: Scissors },
+      { href: "/editor", label: "Editing", icon: Scissors, creatorSuite: true },
     ],
   },
   {
@@ -121,11 +133,15 @@ function useLogout() {
 function NavItem({
   item,
   active,
+  locked,
   onNavigate,
   collapsed,
 }: {
-  item: (typeof NAV_SECTIONS)[number]["items"][number];
+  item: NavEntry;
   active: boolean;
+  /** On a plan without this tool. Still navigable — the route answers with
+   *  the upgrade screen, which is a better landing than a dead link. */
+  locked: boolean;
   onNavigate?: () => void;
   collapsed: boolean;
 }) {
@@ -163,13 +179,16 @@ function NavItem({
         <item.icon className={cn("size-4", active ? "text-brand" : "text-muted")} aria-hidden="true" />
       </span>
       {!collapsed && item.label}
+      {!collapsed && locked && (
+        <Lock className="ml-auto size-3.5 shrink-0 text-text-tertiary" aria-hidden="true" />
+      )}
     </Link>
   );
 
   // Icon-only rail needs the label back somewhere — a tooltip on hover.
   // Skipped when expanded since the label is already right there as text.
   return collapsed ? (
-    <Tooltip content={item.label} side="right">
+    <Tooltip content={locked ? `${item.label} — Creator plan` : item.label} side="right">
       {link}
     </Tooltip>
   ) : (
@@ -179,6 +198,9 @@ function NavItem({
 
 function NavLinks({ onNavigate, collapsed = false }: { onNavigate?: () => void; collapsed?: boolean }) {
   const pathname = usePathname();
+  // Same ["me"] query AppShell already has in cache, so this costs nothing.
+  const { data: me } = useMe();
+  const creatorSuite = hasCreatorSuite(me?.tier);
   return (
     <nav className="flex-1 space-y-6 p-4">
       {NAV_SECTIONS.map((section) => (
@@ -196,6 +218,7 @@ function NavLinks({ onNavigate, collapsed = false }: { onNavigate?: () => void; 
                   key={item.href}
                   item={item}
                   active={active}
+                  locked={item.creatorSuite === true && !creatorSuite}
                   onNavigate={onNavigate}
                   collapsed={collapsed}
                 />

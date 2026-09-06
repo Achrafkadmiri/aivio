@@ -1,7 +1,23 @@
 import type { Metadata } from "next";
 import { LegalDraftNotice } from "@/components/marketing/legal-draft-notice";
+import { TIERS, TIER_INFO } from "@/lib/constants";
 
 export const metadata: Metadata = { title: "Terms of Service" };
+
+// Plan names and the commercial-use split are read from TIER_INFO rather
+// than written out, so section 4 can never describe a different ladder than
+// the pricing page does.
+const COMMERCIAL_PLANS = TIERS.filter((t) => TIER_INFO[t].commercialLicense).map(
+  (t) => TIER_INFO[t].label,
+);
+const PERSONAL_PLANS = TIERS.filter((t) => !TIER_INFO[t].commercialLicense).map(
+  (t) => TIER_INFO[t].label,
+);
+
+function list(names: string[]): string {
+  if (names.length <= 1) return names[0] ?? "";
+  return `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
+}
 
 const SECTIONS = [
   {
@@ -17,15 +33,23 @@ const SECTIONS = [
     body: "You own what you generate, subject to the license terms of the underlying model you used. Vixerra doesn't claim ownership of your generations. Content marked public in the gallery can be viewed by other users; you can make it private at any time.",
   },
   {
-    title: "4. Team accounts",
+    title: "4. Commercial use",
+    body: `${list(COMMERCIAL_PLANS)} include the right to use what you generate commercially — in advertising, in a product, or for a client — within the licence terms of the underlying model. ${list(
+      PERSONAL_PLANS,
+    )} ${PERSONAL_PLANS.length === 1 ? "is" : "are"} for personal and evaluation use only, and video generated ${
+      PERSONAL_PLANS.length === 1 ? "on it" : "on those plans"
+    } carries a watermark. Work you generated while on a commercial plan stays licensed for commercial use if you later downgrade.`,
+  },
+  {
+    title: "5. Team accounts",
     body: "On plans that include multiple seats, the account owner is responsible for the team's credit usage and for who they invite. Removing a member from a team ends their access to that team's shared credit pool immediately.",
   },
   {
-    title: "5. Availability",
+    title: "6. Availability",
     body: "Generation depends on third-party model providers (kie.ai and others). We aim for high availability but don't guarantee uninterrupted service, and a provider outage may delay or fail generations outside our control.",
   },
   {
-    title: "6. Changes",
+    title: "7. Changes",
     body: "We may update these terms as the product changes. Material changes will be reflected here with an updated date.",
   },
 ];
