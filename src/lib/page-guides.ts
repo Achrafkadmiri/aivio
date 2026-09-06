@@ -399,17 +399,19 @@ export const PAGE_GUIDES: PageGuide[] = [
     ],
   },
   {
+    // The public face of the preset catalogue. It keeps the /prompts URL the
+    // site has always linked to; the in-app studio owns /presets.
     path: "/prompts",
-    title: "Prompt gallery",
-    what: "Shot-by-shot templates",
+    title: "Video presets",
+    what: "The catalogue, open to browse",
     plan: "any",
-    art: "composer",
+    art: "presets",
     steps: [
-      { icon: "eye", title: "Find a close clip", detail: "Start from the shot nearest what you want." },
-      { icon: "list", title: "Read its structure", detail: "Style, duration, main character, then timed shots." },
-      { icon: "wand", title: "Open it pre-filled", detail: "Straight into the generator, ready to adapt." },
+      { icon: "tag", title: "Browse freely", detail: "The whole catalogue is open, with no account." },
+      { icon: "eye", title: "Read the preview", detail: "It shows the kind of shot, not that preset's own output." },
+      { icon: "lock", title: "Sign in to run one", detail: "You land back on the preset you picked." },
     ],
-    note: "Templates written to be adapted — not the literal prompts that produced the clips beside them.",
+    note: "Recipes are finished: prompt, camera, length and audio are already written. Prefer control? Use the full composer.",
   },
   {
     path: "/about",
