@@ -1,5 +1,6 @@
 "use client";
 
+import { workspaceQuery } from "@/components/providers/workspace-provider";
 import { useEffect, useMemo, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useInvalidateCredits, useUsage } from "@/hooks/use-credits";
@@ -312,7 +313,7 @@ export function DynamicModelForm<T extends string>({
 
   const mutation = useMutation({
     mutationFn: async (data: Record<string, unknown>) => {
-      const res = await apiFetch(ENDPOINTS[mode], {
+      const res = await apiFetch(`${ENDPOINTS[mode]}${workspaceQuery()}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...data, model: config.id }),

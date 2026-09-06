@@ -1,5 +1,6 @@
 "use client";
 
+import { workspaceQuery } from "@/components/providers/workspace-provider";
 import { useEffect, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useInvalidateCredits, useUsage } from "@/hooks/use-credits";
@@ -283,7 +284,7 @@ export function Seedance2VideoForm({
 
   const mutation = useMutation({
     mutationFn: async (data: Seedance2VideoInput) => {
-      const res = await apiFetch("/api/generations/text-to-video", {
+      const res = await apiFetch(`/api/generations/text-to-video${workspaceQuery()}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...data, model: SEEDANCE2_MODEL_ID }),
