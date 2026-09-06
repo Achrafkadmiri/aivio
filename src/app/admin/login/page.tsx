@@ -11,6 +11,7 @@ import { Input, Label, FieldError } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { loginSchema, type LoginInput } from "@/lib/validation";
 import { apiFetch } from "@/lib/api-client";
+import { PageGuide } from "@/components/help/page-guide";
 
 /**
  * Staff sign-in — a separate page, a separate endpoint and a separate cookie
@@ -150,6 +151,9 @@ export default function AdminLoginPage() {
           </div>
         )}
       </Card>
+
+      {/* Outside the (panel) group, so this page mounts its own guide. */}
+      <PageGuide variant="floating" />
     </div>
   );
 }
