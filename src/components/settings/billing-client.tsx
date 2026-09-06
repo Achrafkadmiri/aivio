@@ -104,6 +104,15 @@ export function BillingClient() {
             {formatCredits(credits_used_this_month)} / {formatCredits(credits_limit)} credits used
             this month
           </p>
+          {/* A plan with no monthly allowance has nothing arriving on the
+              1st, and a bar reading "12 / 50 this month" invites exactly the
+              wrong assumption. Say so once, under the bar. */}
+          {!info.renewsMonthly && (
+            <p className="mt-1 text-caption text-muted">
+              {info.label} credits are a one-time grant — they never expire, and they don&apos;t
+              refill each month.
+            </p>
+          )}
         </div>
       </Card>
 

@@ -26,7 +26,7 @@ const SECTIONS = [
   },
   {
     title: "2. Credits and billing",
-    body: "Plans grant a monthly credit allowance; credit packs purchased separately don't expire. Credits are deducted when a generation is submitted and refunded automatically if it fails. Downgrading or cancelling doesn't retroactively refund credits already used.",
+    body: `Paid plans grant a monthly credit allowance. ${TIER_INFO.free.label} instead grants ${TIER_INFO.free.monthlyCredits} credits once, when the account is created — they do not renew, and they do not expire. Credit packs purchased separately don't expire either. Credits are deducted when a generation is submitted and refunded automatically if it fails. Downgrading or cancelling doesn't retroactively refund credits already used.`,
   },
   {
     title: "3. Your content",

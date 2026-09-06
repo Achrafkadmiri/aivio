@@ -31,7 +31,11 @@ type SwitchResult = {
   /** Set only on "no_grant": the plan that already took this month's
    *  grant, which is the reason nothing was credited. */
   already_granted_tier: Tier | null;
+  /** What the next renewal adds. Zero on a plan that doesn't renew. */
   next_renewal_credits: number;
+  /** False on a plan with no recurring allowance (Free's credits are a
+   *  one-time grant), where "arrives at your next renewal" would be a lie. */
+  plan_renews: boolean;
 };
 
 function tierLabel(tier: string) {
@@ -50,15 +54,22 @@ function SwitchResultDialog({ result, onClose }: { result: SwitchResult | null; 
   if (!result) return null;
 
   const label = tierLabel(result.tier);
+  // Three outcomes, and the no-grant one splits again on whether the plan
+  // renews at all: landing on a plan that issues nothing further is a
+  // different fact from "this cycle was already paid out", and promising a
+  // renewal that never comes is the exact confusion this dialog exists to
+  // prevent.
   const body =
     result.outcome === "granted"
       ? `${label}'s ${formatCredits(result.credits_granted)} credits are on your account now.`
       : result.outcome === "no_grant"
-        ? `No credits were added this time — this month's allowance was already issued at ${tierLabel(
-            result.already_granted_tier ?? result.tier,
-          )}, so your balance is unchanged. ${label}'s ${formatCredits(
-            result.next_renewal_credits,
-          )} credits arrive at your next renewal.`
+        ? result.plan_renews
+          ? `No credits were added this time — this month's allowance was already issued at ${tierLabel(
+              result.already_granted_tier ?? result.tier,
+            )}, so your balance is unchanged. ${label}'s ${formatCredits(
+              result.next_renewal_credits,
+            )} credits arrive at your next renewal.`
+          : `Your balance is unchanged, and it stays that way: ${label} has no monthly allowance. Credits you already hold keep working — top up with a credit pack, or move to a paid plan for a monthly refill.`
         : `You were already on ${label}, so nothing changed.`;
 
   return (

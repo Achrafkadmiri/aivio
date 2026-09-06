@@ -17,7 +17,7 @@ const FAQS = [
   },
   {
     question: "What's the pricing?",
-    answer: `${TIER_INFO.free.label} starts at $0 with ${TIER_INFO.free.monthlyCredits} credits a month. ${TIER_INFO.starter.label} is $${TIER_INFO.starter.priceMonthly}/month, ${TIER_INFO.creator.label} is $${TIER_INFO.creator.priceMonthly}/month, and ${TIER_INFO.studio.label} is $${TIER_INFO.studio.priceMonthly}/month. ${TIER_INFO.creator.label} and above also unlock the marketing studio, the editing studio, and publishing straight to TikTok, Instagram, YouTube, and Facebook — see the full comparison on the Pricing page.`,
+    answer: `${TIER_INFO.free.label} starts at $0 with ${TIER_INFO.free.monthlyCredits} one-time credits that never expire. ${TIER_INFO.starter.label} is $${TIER_INFO.starter.priceMonthly}/month, ${TIER_INFO.creator.label} is $${TIER_INFO.creator.priceMonthly}/month, and ${TIER_INFO.studio.label} is $${TIER_INFO.studio.priceMonthly}/month. ${TIER_INFO.creator.label} and above also unlock the marketing studio, the editing studio, and publishing straight to TikTok, Instagram, YouTube, and Facebook — see the full comparison on the Pricing page.`,
   },
   {
     question: "Is there an API?",
@@ -34,7 +34,7 @@ const FAQS = [
   },
   {
     question: "Do I need a credit card to start?",
-    answer: "No — sign up and start creating free with 50 credits, no credit card required.",
+    answer: `No — sign up and start creating free with ${TIER_INFO.free.monthlyCredits} credits, no credit card required.`,
   },
 ] as const;
 

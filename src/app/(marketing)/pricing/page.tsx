@@ -25,7 +25,7 @@ const FAQS = [
   },
   {
     q: "Do unused credits roll over?",
-    a: `On ${TIER_INFO.creator.label} and ${TIER_INFO.studio.label}, unused monthly credits roll over for 1 extra month. ${TIER_INFO.free.label} and ${TIER_INFO.starter.label} credits reset each month.`,
+    a: `On ${TIER_INFO.creator.label} and ${TIER_INFO.studio.label}, unused monthly credits roll over for 1 extra month. ${TIER_INFO.starter.label} credits reset each month. ${TIER_INFO.free.label} works differently: its ${TIER_INFO.free.monthlyCredits} credits are granted once and never expire, so there is nothing to reset — but nothing to renew either.`,
   },
   {
     q: "Can I change plans anytime?",
@@ -33,7 +33,7 @@ const FAQS = [
   },
   {
     q: "Is there a free trial?",
-    a: `The ${TIER_INFO.free.label} plan gives you ${TIER_INFO.free.monthlyCredits} credits every month at no cost, forever — no credit card required.`,
+    a: `The ${TIER_INFO.free.label} plan gives you ${TIER_INFO.free.monthlyCredits} credits when you sign up — no credit card required. They're a one-time grant rather than a monthly allowance, and they never expire, so you can spend them whenever you like. After that, top up with a credit pack or move to a paid plan for a monthly refill.`,
   },
 ];
 

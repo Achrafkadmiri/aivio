@@ -50,7 +50,19 @@ export const TIER_INFO: Record<
   {
     label: string;
     priceMonthly: number;
+    /** The size of a plan grant. Granted every calendar month when
+     *  renewsMonthly is true, once ever when it isn't. */
     monthlyCredits: number;
+    /**
+     * Whether monthlyCredits is granted again every calendar month.
+     *
+     * Free is a one-time welcome grant, not an allowance: 50 credits when
+     * the account is created, never refilled. rolloverMonths is not
+     * consulted at all when this is false — credits that never come back
+     * must not be taken away either, so the grant simply never expires.
+     * See ensurePlanGrant in the API's lib/credits.ts.
+     */
+    renewsMonthly: boolean;
     maxResolution: string;
     maxDurationSeconds: number;
     concurrentGenerations: number;
@@ -99,6 +111,7 @@ export const TIER_INFO: Record<
     label: "Free",
     priceMonthly: 0,
     monthlyCredits: 50,
+    renewsMonthly: false,
     // Capped at 480p (not 720p): the cheapest 5s 720p clip is 113 credits,
     // more than the entire free budget. Even at 480p, 50 credits only
     // reaches the shortest clip on the cheapest model (Seedance 2.0 Mini,
@@ -109,6 +122,8 @@ export const TIER_INFO: Record<
     maxResolution: "480p",
     maxDurationSeconds: 5,
     concurrentGenerations: 1,
+    // Unused on this plan: renewsMonthly is false, so the grant is issued
+    // with no expiry at all and there is nothing to roll over.
     rolloverMonths: 0,
     videoWatermark: true,
     commercialLicense: false,
@@ -117,9 +132,10 @@ export const TIER_INFO: Record<
     creatorSuite: false,
     apiAccess: false,
     features: [
-      "50 credits / month",
+      "50 one-time credits, no monthly refill",
       "~16 images",
       "~4s Seedance 2.0 Mini video",
+      "Credits never expire",
       "Video watermark",
       "Standard queue",
     ],
@@ -129,6 +145,7 @@ export const TIER_INFO: Record<
     label: "Starter",
     priceMonthly: 9.99,
     monthlyCredits: 1000,
+    renewsMonthly: true,
     maxResolution: "1080p",
     maxDurationSeconds: 20,
     concurrentGenerations: 2,
@@ -156,6 +173,7 @@ export const TIER_INFO: Record<
     label: "Creator",
     priceMonthly: 24,
     monthlyCredits: 2500,
+    renewsMonthly: true,
     maxResolution: "1080p",
     maxDurationSeconds: 30,
     concurrentGenerations: 3,
@@ -186,6 +204,7 @@ export const TIER_INFO: Record<
     label: "Studio",
     priceMonthly: 49,
     monthlyCredits: 5000,
+    renewsMonthly: true,
     // Only tier allowed to spend credits on 4K (Seedance 2.0) generations.
     maxResolution: "4k",
     maxDurationSeconds: 30,
@@ -209,7 +228,7 @@ export const TIER_INFO: Record<
       "Commercial license",
       "API access",
       "3 team seats",
-      "Max priority queue",
+      "Priority queue",
       "Unused credits roll over 1 month",
       "Add credits as needed",
     ],
