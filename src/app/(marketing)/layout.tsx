@@ -3,6 +3,7 @@ import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 import { ScrollProgress } from "@/components/marketing/scroll-progress";
 import { BackToTop } from "@/components/marketing/back-to-top";
+import { PageGuide } from "@/components/help/page-guide";
 
 export default function MarketingLayout({ children }: { children: ReactNode }) {
   return (
@@ -12,6 +13,8 @@ export default function MarketingLayout({ children }: { children: ReactNode }) {
       <main className="flex-1">{children}</main>
       <Footer />
       <BackToTop />
+      {/* Bottom-left: BackToTop already owns bottom-right. */}
+      <PageGuide variant="floating" />
     </div>
   );
 }

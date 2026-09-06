@@ -28,6 +28,7 @@ import {
 import { cn, formatCredits } from "@/lib/utils";
 import { hasCreatorSuite } from "@/lib/tier-limits";
 import { Logo } from "./logo";
+import { PageGuide } from "@/components/help/page-guide";
 import { Button } from "@/components/ui/button";
 import { Tooltip } from "@/components/ui/tooltip";
 import { useSidebarCollapsed, setSidebarCollapsed } from "@/components/providers/sidebar-provider";
@@ -347,6 +348,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <div className="hidden lg:block" />
 
           <div className="flex items-center gap-3">
+            <PageGuide />
             <CreditsBadge />
 
             <DropdownRoot>
