@@ -17,6 +17,10 @@ import { apiFetch } from "@/lib/api-client";
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  // Where the user was headed before the app bounced them here — a preset
+  // studio, most often (see presetHref in presets-gallery.tsx). Carried on
+  // to signup too, so "don't have an account?" doesn't lose the errand.
+  const next = searchParams.get("next");
   const [serverError, setServerError] = useState<string | null>(null);
 
   const {
@@ -37,7 +41,7 @@ function LoginForm() {
       return json;
     },
     onSuccess: () => {
-      router.push(searchParams.get("next") || "/dashboard");
+      router.push(next || "/dashboard");
       router.refresh();
     },
     onError: (err: Error) => setServerError(err.message),
@@ -104,7 +108,10 @@ function LoginForm() {
 
       <p className="mt-6 text-center text-body-sm text-muted">
         Don&apos;t have an account?{" "}
-        <Link href="/signup" className="text-brand hover:text-brand-hover">
+        <Link
+          href={next ? `/signup?next=${encodeURIComponent(next)}` : "/signup"}
+          className="text-brand hover:text-brand-hover"
+        >
           Sign up
         </Link>
       </p>

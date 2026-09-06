@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -9,14 +9,20 @@ import { useMutation } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Input, Label, FieldError } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 import { GoogleAuthButton } from "@/components/auth/google-auth-button";
 import { registerSchema, type RegisterInput } from "@/lib/validation";
 import { apiFetch } from "@/lib/api-client";
 import { TIER_INFO } from "@/lib/constants";
 import { formatCredits } from "@/lib/utils";
 
-export default function SignupPage() {
+function SignupForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  // Same ?next= contract as login: someone who reached a preset without an
+  // account signs up and lands on that preset, not on a dashboard they then
+  // have to navigate back out of.
+  const next = searchParams.get("next");
   const [serverError, setServerError] = useState<string | null>(null);
 
   const {
@@ -37,7 +43,7 @@ export default function SignupPage() {
       return json;
     },
     onSuccess: () => {
-      router.push("/dashboard");
+      router.push(next || "/dashboard");
       router.refresh();
     },
     onError: (err: Error) => setServerError(err.message),
@@ -105,7 +111,10 @@ export default function SignupPage() {
 
       <p className="mt-6 text-center text-body-sm text-muted">
         Already have an account?{" "}
-        <Link href="/login" className="text-brand hover:text-brand-hover">
+        <Link
+          href={next ? `/login?next=${encodeURIComponent(next)}` : "/login"}
+          className="text-brand hover:text-brand-hover"
+        >
           Log in
         </Link>
       </p>
@@ -121,5 +130,22 @@ export default function SignupPage() {
         .
       </p>
     </Card>
+  );
+}
+
+// Wrapped for the same reason the login page is: useSearchParams above
+// suspends, and without a boundary the whole route opts out of static
+// prerendering.
+export default function SignupPage() {
+  return (
+    <Suspense
+      fallback={
+        <Card variant="standard" className="flex justify-center py-16">
+          <Spinner />
+        </Card>
+      }
+    >
+      <SignupForm />
+    </Suspense>
   );
 }

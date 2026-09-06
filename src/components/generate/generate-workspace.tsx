@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { FolderOpen, Lightbulb, Megaphone, Sparkles, Wand2, Zap } from "lucide-react";
+import { FolderOpen, Megaphone, Sparkles, Wand2, Zap } from "lucide-react";
 import { TextToVideoForm } from "./text-to-video-form";
 import { TextToImageForm } from "./text-to-image-form";
 import { JobStatusCard } from "./job-status-card";
@@ -38,10 +38,10 @@ export function GenerateStudio({ type }: { type: GenerationType }) {
   const active = MODALITIES.find((m) => m.type === type) ?? MODALITIES[0];
   const spotlight = useSpotlight<HTMLDivElement>();
 
-  // Deep-link support — e.g. "Use this prompt" from /prompts lands on
-  // /generate (text-to-video) with ?model=&prompt= pre-filled. Read once:
-  // these only seed initial state, they don't stay in sync with the form
-  // afterwards.
+  // Deep-link support — the gallery preview's Recreate button and the
+  // landing page's "try this prompt" links both land here with
+  // ?model=&prompt= (and friends) pre-filled. Read once: these only seed
+  // initial state, they don't stay in sync with the form afterwards.
   const searchParams = useSearchParams();
   const requestedModel = searchParams.get("model");
   const initialModel = VIDEO_MODELS.some((m) => m.id === requestedModel)
@@ -156,15 +156,11 @@ export function GenerateStudio({ type }: { type: GenerationType }) {
             <FolderOpen className="size-3.5" aria-hidden="true" />
             Creations
           </Link>
-          <Link
-            href="/prompts"
-            className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface-2 px-3 py-1.5 text-label text-muted transition-colors hover:border-border-strong hover:text-ink-soft"
-          >
-            <Lightbulb className="size-3.5" aria-hidden="true" />
-            Prompt ideas
-          </Link>
           {/* The other end of the dial from this composer — a locked recipe
-              that only asks for one image. See /presets. */}
+              that only asks for one image. See /presets. (There used to be a
+              "Prompt ideas" chip beside this one pointing at /prompts; that
+              page is the same catalogue now, so it was one chip saying two
+              things.) */}
           <Link
             href="/presets"
             className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface-2 px-3 py-1.5 text-label text-muted transition-colors hover:border-border-strong hover:text-ink-soft"

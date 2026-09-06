@@ -15,11 +15,26 @@ import {
   type Preset,
 } from "@/lib/viral-presets";
 import { usePresets } from "@/hooks/use-presets";
+import { useMe } from "@/hooks/use-me";
 import { Spinner } from "@/components/ui/spinner";
 
 /** "All" is a UI-only filter value, not a category a preset can carry. */
 type Filter = "All" | PresetCategory;
 const FILTERS: Filter[] = ["All", ...PRESET_CATEGORIES];
+
+/**
+ * Where a card goes.
+ *
+ * The catalogue is public — it's what the marketing site puts on /prompts —
+ * but running a recipe is not: the studio lives behind the app shell and
+ * POST /api/generations/preset rejects an anonymous caller outright. So a
+ * signed-out visitor is sent to log in with the studio as their return
+ * trip, rather than into a page whose only move is to bounce them there.
+ */
+function presetHref(slug: string, isAuthed: boolean) {
+  const studio = `/presets/${slug}`;
+  return isAuthed ? studio : `/login?next=${encodeURIComponent(studio)}`;
+}
 
 function PresetPreview({
   url,
@@ -73,7 +88,7 @@ function MetaChip({ icon: Icon, label }: { icon: typeof Clock; label: string }) 
   );
 }
 
-function PresetCard({ preset }: { preset: Preset }) {
+function PresetCard({ preset, isAuthed }: { preset: Preset; isAuthed: boolean }) {
   // Duration and resolution now live in the model's own parameter blob
   // rather than as columns on the preset, since every model spells them
   // differently — hence the accessors instead of preset.duration.
@@ -93,7 +108,7 @@ function PresetCard({ preset }: { preset: Preset }) {
 
   return (
     <Link
-      href={`/presets/${preset.slug}`}
+      href={presetHref(preset.slug, isAuthed)}
       className="group relative flex flex-col overflow-hidden rounded-2xl border border-line bg-surface-2 transition-[border-color,box-shadow,transform] duration-300 hover:-translate-y-1 hover:border-brand/40 hover:shadow-glow-sm"
       {...hoverProps}
     >
@@ -136,11 +151,32 @@ function PresetCard({ preset }: { preset: Preset }) {
 export function PresetsGallery() {
   const [filter, setFilter] = useState<Filter>("All");
   const { data: presets, isLoading, error } = usePresets();
+  // A visitor on the marketing catalogue has no session; on /presets inside
+  // the app this is already resolved by the shell, so it reads from cache
+  // and no card ever flickers through its signed-out link. `isLoading`
+  // rather than the error state gates the notice below, so a signed-in user
+  // whose "me" is still in flight isn't told to log in.
+  const { data: me, isLoading: meLoading } = useMe();
+  const isAuthed = Boolean(me);
 
   const visible = (presets ?? []).filter((p) => filter === "All" || p.category === filter);
 
   return (
     <div className="space-y-6">
+      {!meLoading && !isAuthed && (
+        <p className="rounded-xl border border-line bg-surface-2 px-4 py-3 text-body-sm text-muted">
+          Browse the whole catalogue freely — running a preset needs an account.{" "}
+          <Link href="/signup" className="text-brand underline-offset-4 hover:underline">
+            Create one
+          </Link>{" "}
+          or{" "}
+          <Link href="/login" className="text-brand underline-offset-4 hover:underline">
+            log in
+          </Link>
+          , and you land straight back on the preset you picked.
+        </p>
+      )}
+
       <div className="flex flex-wrap gap-2">
         {FILTERS.map((f) => (
           <button
@@ -176,7 +212,7 @@ export function PresetsGallery() {
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {visible.map((preset) => (
-            <PresetCard key={preset.slug} preset={preset} />
+            <PresetCard key={preset.slug} preset={preset} isAuthed={isAuthed} />
           ))}
         </div>
       )}
