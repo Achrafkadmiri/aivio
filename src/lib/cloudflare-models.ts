@@ -414,7 +414,7 @@ export const CLOUDFLARE_MODELS: CloudflareModelConfig[] = [
       { key: "cameraFixed", cfParam: "camera_fixed", label: "Fix camera position", type: "switch", defaultValue: false },
       { key: "generateAudio", cfParam: "generate_audio", label: "Generate audio", type: "switch", defaultValue: true },
       { key: "watermark", cfParam: "watermark", label: "Watermark", type: "switch", defaultValue: false },
-      { key: "useVirtualAvatar", cfParam: "use_virtual_avatar", label: "Virtual avatar mode", type: "switch", defaultValue: false },
+      { key: "useVirtualAvatar", cfParam: "use_virtual_avatar", label: "Virtual avatar mode", type: "switch", defaultValue: true },
       { key: "seed", cfParam: "seed", label: "Seed", type: "number" },
     ],
     outputPath: ["video"],

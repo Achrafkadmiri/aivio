@@ -121,7 +121,7 @@ export const seedanceVideoSchema = z
     aspectRatio: z.enum(SEEDANCE_ASPECT_RATIOS).default("adaptive"),
     generateAudio: z.boolean().default(true),
     watermark: z.boolean().default(false),
-    useVirtualAvatar: z.boolean().default(false),
+    useVirtualAvatar: z.boolean().default(true),
     outputFormat: z.enum(SEEDANCE_OUTPUT_FORMATS).default("mp4"),
     seed: z.number().int().min(-9007199254740991).max(9007199254740991).optional(),
   })
@@ -174,7 +174,7 @@ export const seedance2VideoSchema = z
     cameraFixed: z.boolean().default(false),
     generateAudio: z.boolean().default(true),
     watermark: z.boolean().default(false),
-    useVirtualAvatar: z.boolean().default(false),
+    useVirtualAvatar: z.boolean().default(true),
     seed: z.number().int().min(-9007199254740991).max(9007199254740991).optional(),
   })
   .refine(

@@ -23,6 +23,18 @@ import type { DynamicField } from "@/lib/cloudflare-models";
 export const TIER_MANAGED_FIELD_KEYS: ReadonlySet<string> = new Set(["watermark"]);
 
 /**
+ * Never rendered either, and pinned on for every model that accepts it.
+ *
+ * `useVirtualAvatar` routes character references through ByteDance's trusted
+ * avatar library instead of its face/deepfake detector, so it only ever
+ * unblocks a generation. Left as a switch it was a piece of provider trivia
+ * that cost someone a rejected clip to learn. The registry defaults it to
+ * true and the row is dropped — same mechanism as the tier-managed keys
+ * above, so the value still ships.
+ */
+export const FORCED_ON_FIELD_KEYS: ReadonlySet<string> = new Set(["useVirtualAvatar"]);
+
+/**
  * The three spellings providers use for one idea: how big the output is.
  * Recraft/OpenAI/ByteDance call it `size`, Google `imageSize`, xAI
  * `resolution`. The registry keeps each provider's own key (it mirrors the
@@ -85,7 +97,8 @@ export type FieldPlacement = "toolbar" | "panel" | "hidden";
 /**
  * Where a field belongs in the composer.
  *
- * - `hidden` — the plan owns it, or it offers no actual choice. A one-option
+ * - `hidden` — the plan owns it, it is pinned on app-wide, or it offers no
+ *   actual choice. A one-option
  *   select is not a decision, and rendering a dropdown that can only be set
  *   to what it already is costs a slot in the row and teaches nothing. The
  *   value still ships: the zod schema defaults it on both sides.
@@ -96,6 +109,7 @@ export type FieldPlacement = "toolbar" | "panel" | "hidden";
  */
 export function fieldPlacement(field: DynamicField, durationSliderKey?: string): FieldPlacement {
   if (TIER_MANAGED_FIELD_KEYS.has(field.key)) return "hidden";
+  if (FORCED_ON_FIELD_KEYS.has(field.key)) return "hidden";
   if (field.key === durationSliderKey) return "toolbar";
   const choices = choicesFor(field);
   if (choices.length > 0) return choices.length > 1 ? "toolbar" : "hidden";

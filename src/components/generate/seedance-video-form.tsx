@@ -100,7 +100,10 @@ export function SeedanceVideoForm({
       aspectRatio: "adaptive",
       generateAudio: true,
       watermark: false,
-      useVirtualAvatar: false,
+      // Pinned on and no longer offered as a switch: it routes character
+      // references through ByteDance's trusted avatar library instead of its
+      // face/deepfake detector, so it only ever unblocks a generation.
+      useVirtualAvatar: true,
       outputFormat: "mp4",
     },
   });
@@ -410,17 +413,6 @@ export function SeedanceVideoForm({
                 control={control}
                 name="generateAudio"
                 render={({ field }) => <Switch checked={field.value ?? true} onCheckedChange={field.onChange} />}
-              />
-            </FieldRow>
-
-            <FieldRow
-              label="Virtual avatar mode"
-              description="For AI-generated character references — routes around face/deepfake detection via ByteDance's trusted avatar library."
-            >
-              <Controller
-                control={control}
-                name="useVirtualAvatar"
-                render={({ field }) => <Switch checked={field.value} onCheckedChange={field.onChange} />}
               />
             </FieldRow>
 
