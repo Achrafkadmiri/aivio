@@ -6,7 +6,6 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
 import { useConfirm } from "@/components/ui/confirm";
-import { useCurrency } from "@/components/providers/currency-provider";
 import { formatMoney } from "@/lib/currency";
 import { formatCredits } from "@/lib/utils";
 import { RECHARGE_PACKS, type RechargePackId } from "@/lib/constants";
@@ -32,19 +31,17 @@ export function RechargePacks({
 }) {
   const { toast } = useToast();
   const confirm = useConfirm();
-  const { currency } = useCurrency();
   const invalidateCredits = useInvalidateCredits();
   const [loadingPack, setLoadingPack] = useState<RechargePackId | null>(null);
 
   async function buy(packId: RechargePackId, credits: number) {
     const pack = RECHARGE_PACKS.find((p) => p.id === packId);
-    const price = pack ? formatMoney(pack.priceUsd, currency) : null;
+    const price = pack ? formatMoney(pack.priceUsd) : null;
     const ok = await confirm({
       title: `Buy ${formatCredits(credits)} credits?`,
       description: paymentsEnabled
-        ? // The click leads to Stripe, not to a charge — and the displayed
-          // price may be a converted one, while the card is charged in USD.
-          // Both are worth saying before the redirect rather than after it.
+        ? // The click leads to Stripe, not to a charge — worth saying
+          // before the redirect rather than after it.
           `You'll be taken to Stripe to pay${price ? ` ${price}` : ""}. The credits are added as soon as the payment goes through, and they never expire.`
         : price
           ? `You'll be charged ${price}. The credits are added immediately and never expire.`
@@ -120,7 +117,7 @@ export function RechargePacks({
               onClick={() => buy(pack.id, pack.credits)}
               className="mt-4 w-full"
             >
-              {formatMoney(pack.priceUsd, currency)}
+              {formatMoney(pack.priceUsd)}
             </Button>
           </Card>
         ))}

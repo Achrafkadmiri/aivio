@@ -1,9 +1,6 @@
-"use client";
-
-import { useCurrency } from "@/components/providers/currency-provider";
 import { formatMoney } from "@/lib/currency";
 
-/** Currency-aware replacement for the old hardcoded `$${priceMonthly}` displays. */
+/** Renders a plan's monthly price in US dollars. */
 export function PlanPrice({
   priceMonthly,
   className,
@@ -15,11 +12,9 @@ export function PlanPrice({
   suffixClassName?: string;
   showSuffix?: boolean;
 }) {
-  const { currency } = useCurrency();
-
   return (
     <>
-      <span className={className}>{formatMoney(priceMonthly, currency)}</span>
+      <span className={className}>{formatMoney(priceMonthly)}</span>
       {showSuffix && <span className={suffixClassName}>/month</span>}
     </>
   );

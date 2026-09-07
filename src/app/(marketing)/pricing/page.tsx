@@ -7,7 +7,6 @@ import { cn } from "@/lib/utils";
 import { TIERS, TIER_INFO, CREDIT_VALUE_USD } from "@/lib/constants";
 import { PlanFeatureList } from "@/components/pricing/plan-feature-list";
 import { PlanPrice } from "@/components/pricing/plan-price";
-import { CurrencySelector } from "@/components/currency-selector";
 
 export const metadata: Metadata = { title: "Pricing" };
 
@@ -17,7 +16,7 @@ export const metadata: Metadata = { title: "Pricing" };
 const FAQS = [
   {
     q: "What's a credit?",
-    a: `Credits are consumed per generation based on model, resolution, and duration — video costs scale with the underlying compute, so a longer or higher-resolution clip costs more than a quick 480p one. Each credit is worth $${CREDIT_VALUE_USD} — shown in your chosen currency throughout the app, and the exact cost is always shown before you generate.`,
+    a: `Credits are consumed per generation based on model, resolution, and duration — video costs scale with the underlying compute, so a longer or higher-resolution clip costs more than a quick 480p one. Each credit is worth ${CREDIT_VALUE_USD}, and the exact cost is always shown before you generate.`,
   },
   {
     q: "Which plans include the marketing studio, editing studio, and social publishing?",
@@ -47,10 +46,6 @@ export default function PricingPage() {
         <p className="mt-4 text-body text-muted">
           Simple credit-based pricing. Pay for what you generate, cancel anytime.
         </p>
-        <div className="mt-6 flex items-center justify-center gap-2">
-          <span className="text-caption text-muted">Currency</span>
-          <CurrencySelector />
-        </div>
       </div>
 
       <div className="mt-16 grid gap-6 lg:grid-cols-4">

@@ -14,8 +14,7 @@ function getSnapshot(): boolean {
 }
 
 // Server always renders expanded — localStorage doesn't exist there, and
-// useSyncExternalStore reconciles the mismatch on hydration for us. Same
-// pattern as CurrencyProvider.
+// useSyncExternalStore reconciles the mismatch on hydration for us.
 function getServerSnapshot(): boolean {
   return false;
 }

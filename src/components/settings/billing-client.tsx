@@ -14,12 +14,10 @@ import { Spinner } from "@/components/ui/spinner";
 import { useToast } from "@/components/ui/toast";
 import { formatCredits } from "@/lib/utils";
 import { formatMoney } from "@/lib/currency";
-import { useCurrency } from "@/components/providers/currency-provider";
 import { PlanSwitcher } from "@/components/settings/plan-switcher";
 import { RechargePacks } from "@/components/settings/recharge-packs";
 import { PlanPrice } from "@/components/pricing/plan-price";
 import { CreditValue } from "@/components/credit-value";
-import { CurrencySelector } from "@/components/currency-selector";
 import { useSpotlight } from "@/hooks/use-spotlight";
 import { useInvalidateCredits } from "@/hooks/use-credits";
 
@@ -230,7 +228,6 @@ function SubscriptionStatus({ subscription }: { subscription: SubscriptionState 
 }
 
 function PaymentHistory({ payments }: { payments: PaymentRecord[] }) {
-  const { currency } = useCurrency();
   if (payments.length === 0) return null;
 
   return (
@@ -242,12 +239,12 @@ function PaymentHistory({ payments }: { payments: PaymentRecord[] }) {
             payment.kind === "subscription"
               ? `${TIER_INFO[payment.tier as Tier]?.label ?? payment.tier} plan`
               : `${formatCredits(payment.credits)} credits`;
-          // Charges are made in USD, so the display currency conversion only
-          // applies to those. Anything else is shown in the currency it was
-          // actually taken in rather than silently mis-converted.
+          // Charges are made in USD, but a historical record can still carry
+          // another currency — show that one as taken rather than passing it
+          // through the dollar formatter and mislabelling it.
           const amount =
             payment.currency.toLowerCase() === "usd"
-              ? formatMoney(payment.amount_cents / 100, currency)
+              ? formatMoney(payment.amount_cents / 100)
               : `${(payment.amount_cents / 100).toFixed(2)} ${payment.currency.toUpperCase()}`;
           return (
             <li key={payment.id} className="flex items-center justify-between px-4 py-3">
@@ -316,11 +313,6 @@ export function BillingClient() {
 
   return (
     <div className="max-w-2xl space-y-6">
-      <div className="flex items-center justify-between">
-        <p className="text-caption text-muted">Display currency</p>
-        <CurrencySelector />
-      </div>
-
       {awaiting && (
         <div className="flex items-center gap-3 rounded-xl border border-brand/30 bg-brand/10 px-4 py-3 text-caption text-ink">
           <Spinner size={16} />
