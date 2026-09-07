@@ -14,7 +14,7 @@ import { useConfirm } from "@/components/ui/confirm";
 import { useMe } from "@/hooks/use-me";
 import { TIER_INFO, type Tier } from "@/lib/constants";
 import { apiFetch } from "@/lib/api-client";
-import { useUsage } from "@/hooks/use-credits";
+import { useUsage, useInvalidateCredits } from "@/hooks/use-credits";
 import { formatDate, formatCredits } from "@/lib/utils";
 
 export const MEMBER_ROLES = ["creator", "editor", "viewer"] as const;
@@ -161,6 +161,18 @@ export function TeamManager() {
   const [inviteEmail, setInviteEmail] = useState("");
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ["organization"] });
+
+  // Anything that moves an allowance moves the owner's spendable balance in
+  // the same breath — allocating reserves credits, removing a member frees
+  // them. So the team query and the credit views have to be refreshed
+  // together, or the badge keeps last minute's number until something else
+  // happens to refetch it. ["usage"] is matched by prefix, so both the
+  // personal and team variants of the key are invalidated.
+  const invalidateCredits = useInvalidateCredits();
+  const invalidateTeamAndCredits = () => {
+    invalidate();
+    invalidateCredits();
+  };
   // Accepting an invite changes the team AND what this account can do (a
   // member inherits the owner's tier), so /me has to be refetched too or the
   // sidebar keeps the old locks until a reload.
@@ -232,7 +244,7 @@ export function TeamManager() {
     },
     onSuccess: () => {
       toast({ title: "Member updated", variant: "success" });
-      invalidate();
+      invalidateTeamAndCredits();
     },
     onError: (err: Error) =>
       toast({ title: "Couldn't update member", description: err.message, variant: "error" }),
@@ -244,7 +256,8 @@ export function TeamManager() {
     },
     onSuccess: () => {
       toast({ title: "Member removed", variant: "success" });
-      invalidate();
+      // Their unspent allowance returns to the pool immediately.
+      invalidateTeamAndCredits();
     },
   });
 
@@ -254,7 +267,8 @@ export function TeamManager() {
     },
     onSuccess: () => {
       toast({ title: "You left the team", variant: "success" });
-      invalidate();
+      // Billing goes back to their own credits, so every balance changes.
+      invalidateTeamAndCredits();
     },
   });
 
@@ -442,7 +456,12 @@ export function TeamManager() {
         </div>
         {data.members.map((m) => (
           <MemberRow
-            key={m.id}
+            // Keyed on the committed values, not just the id: the slider
+            // holds a local draft while dragging, and remounting on the
+            // server's answer is what makes a REJECTED allowance (over the
+            // pool, or below what they already spent) snap back instead of
+            // sitting there looking saved.
+            key={`${m.id}:${m.role}:${m.monthlyCreditLimit ?? "none"}`}
             member={m}
             poolCeiling={ceilingFor(m)}
             isOwnerView
