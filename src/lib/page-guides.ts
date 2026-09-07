@@ -384,7 +384,7 @@ export const PAGE_GUIDES: PageGuide[] = [
     steps: [
       { icon: "gauge", title: "Three things differ", detail: "Resolution ceiling, clip length, creator suite." },
       { icon: "scissors", title: "The creator suite", detail: "Marketing studio, editor and publishing — from Créateur." },
-      { icon: "coins", title: "Set your currency", detail: "If the prices read oddly to you." },
+      { icon: "coins", title: "Prices are in US dollars", detail: "Credits are the unit; cost is shown before you generate." },
     ],
   },
   {

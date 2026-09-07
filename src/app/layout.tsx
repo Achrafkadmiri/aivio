@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Inter, Space_Grotesk, Instrument_Serif, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { QueryProvider } from "@/components/providers/query-provider";
-import { CurrencyProvider } from "@/components/providers/currency-provider";
 import { ToastProvider } from "@/components/ui/toast";
 import { ConfirmProvider } from "@/components/ui/confirm";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -50,14 +49,12 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html lang="en" className={`${body.variable} ${display.variable} ${accent.variable} ${mono.variable}`}>
       <body>
         <QueryProvider>
-          <CurrencyProvider>
-            <TooltipProvider>
-              <ConfirmProvider>
-                <ToastProvider>{children}</ToastProvider>
-              </ConfirmProvider>
-              <ReleaseAnnouncementModal />
-            </TooltipProvider>
-          </CurrencyProvider>
+          <TooltipProvider>
+            <ConfirmProvider>
+              <ToastProvider>{children}</ToastProvider>
+            </ConfirmProvider>
+            <ReleaseAnnouncementModal />
+          </TooltipProvider>
         </QueryProvider>
       </body>
     </html>
