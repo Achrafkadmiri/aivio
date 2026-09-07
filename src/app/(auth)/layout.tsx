@@ -2,7 +2,6 @@ import type { ReactNode } from "react";
 import { Logo } from "@/components/layout/logo";
 import { GradientGlow } from "@/components/marketing/gradient-glow";
 import { RedirectIfAuthenticated } from "@/components/auth/redirect-if-authenticated";
-import { PageGuide } from "@/components/help/page-guide";
 
 export default function AuthLayout({ children }: { children: ReactNode }) {
   return (
@@ -11,7 +10,6 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
       <GradientGlow className="opacity-70" />
       <Logo className="relative mb-8" />
       <div className="relative w-full max-w-md">{children}</div>
-      <PageGuide variant="floating" />
     </div>
   );
 }
