@@ -1,10 +1,13 @@
 export const CURRENCIES = ["USD", "EUR", "MAD"] as const;
 export type Currency = (typeof CURRENCIES)[number];
 
-// This app has no live payment provider (see api/subscription/upgrade —
-// payments are simulated), so there's no billing backend to source live FX
-// rates from. These are a fixed snapshot for display purposes only, not
-// real-time rates.
+// Display only, and deliberately so: every Stripe price is created in USD
+// (see the backend's scripts/stripe-setup.ts), so a card is always charged
+// in dollars no matter which currency is selected here. These rates are a
+// fixed snapshot for showing a familiar number next to a price, not
+// real-time rates and not what anyone is billed — which is why the checkout
+// confirmations say the payment happens at Stripe rather than quoting a
+// converted figure as the amount.
 export const CURRENCY_INFO: Record<Currency, { label: string; symbol: string; rateFromUsd: number }> = {
   USD: { label: "US Dollar", symbol: "$", rateFromUsd: 1 },
   EUR: { label: "Euro", symbol: "€", rateFromUsd: 0.92 },
