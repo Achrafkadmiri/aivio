@@ -48,7 +48,7 @@ const SEEDANCE_FIELDS: Record<string, DynamicField[]> = {
     { key: "aspectRatio", cfParam: "aspect_ratio", label: "Aspect ratio", type: "select", options: [...SEEDANCE_ASPECT_RATIOS], defaultValue: "adaptive" },
     { key: "generateAudio", cfParam: "generate_audio", label: "Generate audio", type: "switch", defaultValue: true },
     { key: "watermark", cfParam: "watermark", label: "Watermark", type: "switch", defaultValue: false },
-    { key: "useVirtualAvatar", cfParam: "use_virtual_avatar", label: "Virtual avatar mode", type: "switch", defaultValue: false },
+    { key: "useVirtualAvatar", cfParam: "use_virtual_avatar", label: "Virtual avatar mode", type: "switch", defaultValue: true },
     { key: "outputFormat", cfParam: "output_format", label: "Output format", type: "select", options: [...SEEDANCE_OUTPUT_FORMATS], defaultValue: "mp4" },
   ],
   [SEEDANCE2_MODEL_ID]: [
@@ -58,7 +58,7 @@ const SEEDANCE_FIELDS: Record<string, DynamicField[]> = {
     { key: "cameraFixed", cfParam: "camera_fixed", label: "Fix camera position", type: "switch", defaultValue: false },
     { key: "generateAudio", cfParam: "generate_audio", label: "Generate audio", type: "switch", defaultValue: true },
     { key: "watermark", cfParam: "watermark", label: "Watermark", type: "switch", defaultValue: false },
-    { key: "useVirtualAvatar", cfParam: "use_virtual_avatar", label: "Virtual avatar mode", type: "switch", defaultValue: false },
+    { key: "useVirtualAvatar", cfParam: "use_virtual_avatar", label: "Virtual avatar mode", type: "switch", defaultValue: true },
   ],
 };
 
