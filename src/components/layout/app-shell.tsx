@@ -33,6 +33,7 @@ import { WorkspaceSwitcher } from "./workspace-switcher";
 import { Button } from "@/components/ui/button";
 import { Tooltip } from "@/components/ui/tooltip";
 import { useSidebarCollapsed, setSidebarCollapsed } from "@/components/providers/sidebar-provider";
+import { useWorkspace } from "@/components/providers/workspace-provider";
 import {
   DropdownRoot,
   DropdownTrigger,
@@ -44,10 +45,14 @@ import {
 type UsageResponse = { credit_balance: number };
 
 function CreditsBadge() {
+  const { data: me } = useMe();
+  // Keyed by workspace: personal shows your own credits, team shows the
+  // owner's pool, and switching has to change the number.
+  const workspace = useWorkspace(Boolean(me?.organization));
   const { data } = useQuery({
-    queryKey: ["usage"],
+    queryKey: ["usage", workspace],
     queryFn: async (): Promise<UsageResponse> => {
-      const res = await apiFetch("/api/user/usage");
+      const res = await apiFetch(`/api/user/usage?workspace=${workspace}`);
       if (!res.ok) throw new Error("Failed to load usage");
       return res.json();
     },

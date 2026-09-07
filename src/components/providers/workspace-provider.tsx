@@ -72,3 +72,32 @@ export function workspaceQuery(): string {
   if (typeof window === "undefined") return "";
   return window.localStorage.getItem(STORAGE_KEY) === "team" ? "?workspace=team" : "";
 }
+
+/**
+ * Whether the current workspace lets this account create new work, and why
+ * not when it doesn't.
+ *
+ * Roles only ever restrict the TEAM workspace — your personal workspace is
+ * yours, paid for out of your own credits, whatever role a team gave you.
+ * The owner has no role restriction at all.
+ *
+ * This is a courtesy, not the enforcement: the API refuses the same cases on
+ * its own (assertCanGenerateInTeam), so a stale tab cannot spend the pool.
+ */
+export function useCanGenerate(
+  organization: { role: "owner" | "creator" | "editor" | "viewer" } | null | undefined,
+): { allowed: boolean; reason: string | null } {
+  const workspace = useWorkspace(Boolean(organization));
+
+  if (workspace !== "team" || !organization) return { allowed: true, reason: null };
+  if (organization.role === "owner" || organization.role === "creator") {
+    return { allowed: true, reason: null };
+  }
+  return {
+    allowed: false,
+    reason:
+      organization.role === "viewer"
+        ? "You have view-only access to this team. Switch to your personal workspace to create, or ask the owner for creator access."
+        : "Your editor access covers editing and publishing the team's work, not creating new work. Switch to your personal workspace, or ask the owner for creator access.",
+  };
+}

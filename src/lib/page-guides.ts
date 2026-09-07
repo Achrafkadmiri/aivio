@@ -169,7 +169,7 @@ export const PAGE_GUIDES: PageGuide[] = [
     plan: "any",
     art: "gallery",
     steps: [
-      { icon: "users", title: "Pick the workspace", detail: "Personal, or your team's shared one, from the sidebar." },
+      { icon: "users", title: "Pick the workspace", detail: "Personal uses your credits; team uses the owner's pool." },
       { icon: "search", title: "Filter it down", detail: "By type and status. Failed jobs are listed too." },
       { icon: "eye", title: "Open a result", detail: "Its full prompt and parameters are kept with it." },
       { icon: "share", title: "Take it further", detail: "Download, collect, send to the editor, or publish." },
@@ -283,10 +283,11 @@ export const PAGE_GUIDES: PageGuide[] = [
     steps: [
       { icon: "users", title: "Create the team", detail: "Until you do, there is nothing to invite into." },
       { icon: "mail", title: "Invite by email", detail: "They can accept here in the app, or from the email." },
-      { icon: "zap", title: "They spend your credits", detail: "At your plan's capabilities, in the team workspace." },
-      { icon: "shield", title: "Manage the seats", detail: "You are the owner; everyone else joins as a member." },
+      { icon: "shield", title: "Set each role", detail: "Creator generates, editor reshapes, viewer only looks." },
+      { icon: "coins", title: "Cap the spend", detail: "Give a member a monthly credit allowance, or leave it open." },
+      { icon: "gauge", title: "Watch the usage", detail: "Each row shows what that member spent this month." },
     ],
-    note: "A Studio feature: you plus 3 teammates. Members share your credit pool but cannot invite people or change the plan.",
+    note: "A Studio feature: you plus 3 teammates. Only team-workspace work spends your pool — their personal work uses their own credits.",
     noteTone: "gate",
   },
   {

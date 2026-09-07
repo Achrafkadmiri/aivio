@@ -1,9 +1,11 @@
 "use client";
 
+import { useMe } from "@/hooks/use-me";
+import { useCanGenerate } from "@/components/providers/workspace-provider";
 import { useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { FolderOpen, Megaphone, Sparkles, Wand2, Zap } from "lucide-react";
+import { FolderOpen, Lock, Megaphone, Sparkles, Wand2, Zap } from "lucide-react";
 import { TextToVideoForm } from "./text-to-video-form";
 import { TextToImageForm } from "./text-to-image-form";
 import { JobStatusCard } from "./job-status-card";
@@ -67,6 +69,8 @@ export function GenerateStudio({ type }: { type: GenerationType }) {
   // Shared with every composer form's submit button, which prices and gates
   // itself off the same balance — see useUsage.
   const usageQuery = useUsage();
+  const { data: me } = useMe();
+  const canGenerate = useCanGenerate(me?.organization);
 
   const busy = generation.status === "queued" || generation.status === "processing";
   const hasJob = Boolean(activeJobId);
@@ -122,9 +126,19 @@ export function GenerateStudio({ type }: { type: GenerationType }) {
           </span>
         </div>
 
+        {/* A team member without creator access can still browse the team's
+            work; they just can't add to it from here. Said once at the top of
+            the composer rather than on each of the five submit buttons. */}
+        {!canGenerate.allowed && canGenerate.reason && (
+          <p className="mx-4 mt-3 flex gap-2 rounded-xl border border-warning/40 bg-warning/5 px-3.5 py-2.5 text-caption text-ink-soft sm:mx-5">
+            <Lock className="mt-px size-3.5 shrink-0 text-warning" aria-hidden="true" />
+            {canGenerate.reason}
+          </p>
+        )}
+
         {/* The form fills the rest of the panel and manages its own scroll
             area + pinned Generate footer — see the forms' root <form>. */}
-        <div className="min-h-0 flex-1">
+        <div className={cn("min-h-0 flex-1", !canGenerate.allowed && "pointer-events-none opacity-50")}>
           {type === "text-to-video" && (
             <TextToVideoForm
               onCreated={handleCreated(true)}

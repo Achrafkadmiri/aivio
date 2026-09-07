@@ -4,8 +4,19 @@ import { useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api-client";
 import type { TierInfo } from "@/lib/constants";
+import { useMe } from "@/hooks/use-me";
+import { useWorkspace } from "@/components/providers/workspace-provider";
 
-export type UsageResponse = { credit_balance: number; tier_info?: TierInfo };
+export type UsageResponse = {
+  credit_balance: number;
+  tier_info?: TierInfo;
+  /** Team context for the workspace this was fetched for; null outside one. */
+  workspace_role?: "owner" | "creator" | "editor" | "viewer" | null;
+  /** The member's monthly allowance out of the pool, null when unlimited. */
+  member_limit?: number | null;
+  /** Spent against that allowance this month; null when there is no limit. */
+  member_spent?: number | null;
+};
 
 // Every view that shows a credit balance/usage number reads from one of
 // these three queries. Call the returned function anywhere a mutation
@@ -35,10 +46,17 @@ export function useInvalidateCredits() {
  * already several props deep.
  */
 export function useUsage() {
+  const { data: me } = useMe();
+  // The workspace is part of the key, not just the URL. Personal and team
+  // are different balances (your own credits vs the owner's pool), so they
+  // are different queries — keying them together is what made the badge show
+  // the same number in both.
+  const workspace = useWorkspace(Boolean(me?.organization));
+
   return useQuery({
-    queryKey: ["usage"],
+    queryKey: ["usage", workspace],
     queryFn: async (): Promise<UsageResponse> => {
-      const res = await apiFetch("/api/user/usage");
+      const res = await apiFetch(`/api/user/usage?workspace=${workspace}`);
       if (!res.ok) throw new Error("Failed to load usage");
       return res.json();
     },

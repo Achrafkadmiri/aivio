@@ -6,16 +6,37 @@ import Link from "next/link";
 import { Users, UserPlus, X, Crown } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button, buttonVariants } from "@/components/ui/button";
-import { Input, Label } from "@/components/ui/input";
+import { Input, Label, Select } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { useToast } from "@/components/ui/toast";
 import { useConfirm } from "@/components/ui/confirm";
 import { useMe } from "@/hooks/use-me";
 import { TIER_INFO, type Tier } from "@/lib/constants";
 import { apiFetch } from "@/lib/api-client";
-import { formatDate } from "@/lib/utils";
+import { cn, formatDate, formatCredits } from "@/lib/utils";
 
-type Member = { id: string; userId: string; name: string; email: string; role: string; joinedAt: string };
+export const MEMBER_ROLES = ["creator", "editor", "viewer"] as const;
+export type MemberRole = (typeof MEMBER_ROLES)[number];
+
+/** What each role may do, in the owner's words rather than the schema's. */
+export const ROLE_BLURB: Record<MemberRole, string> = {
+  creator: "Can generate, edit and publish",
+  editor: "Can edit and publish, but not generate",
+  viewer: "Can look, but not change anything",
+};
+
+type Member = {
+  id: string;
+  userId: string;
+  name: string;
+  email: string;
+  role: string;
+  joinedAt: string;
+  /** Credits of the pool this member may spend per month; null = unlimited. */
+  monthlyCreditLimit: number | null;
+  /** Spent against the pool this month, derived from their generations. */
+  spentThisMonth: number;
+};
 type Invite = { id: string; email: string; createdAt: string; expiresAt: string };
 type TeamResponse =
   | { role: null }
@@ -187,6 +208,31 @@ export function TeamManager() {
       await apiFetch(`/api/organization/invites/${id}`, { method: "DELETE" });
     },
     onSuccess: invalidate,
+  });
+
+  // Role and allowance are one endpoint; either field may be sent alone.
+  const updateMemberMutation = useMutation({
+    mutationFn: async ({
+      id,
+      patch,
+    }: {
+      id: string;
+      patch: { role?: MemberRole; monthlyCreditLimit?: number | null };
+    }) => {
+      const res = await apiFetch(`/api/organization/members/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(patch),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json.error ?? "Couldn't update this member");
+    },
+    onSuccess: () => {
+      toast({ title: "Member updated", variant: "success" });
+      invalidate();
+    },
+    onError: (err: Error) =>
+      toast({ title: "Couldn't update member", description: err.message, variant: "error" }),
   });
 
   const removeMemberMutation = useMutation({
@@ -373,6 +419,7 @@ export function TeamManager() {
             key={m.id}
             member={m}
             isOwnerView
+            onUpdate={(patch) => updateMemberMutation.mutate({ id: m.id, patch })}
             onRemove={async () => {
               const ok = await confirm({
                 title: `Remove ${m.name} from the team?`,
@@ -423,17 +470,106 @@ function MemberRow({
   member,
   isOwnerView,
   onRemove,
+  onUpdate,
 }: {
   member: Member;
   isOwnerView: boolean;
   onRemove?: () => void;
+  onUpdate?: (patch: { role?: MemberRole; monthlyCreditLimit?: number | null }) => void;
 }) {
+  // Local so the field can be typed in without firing a request per key;
+  // committed on blur or Enter.
+  const [limitDraft, setLimitDraft] = useState(
+    member.monthlyCreditLimit === null ? "" : String(member.monthlyCreditLimit),
+  );
+
+  const role = (MEMBER_ROLES as readonly string[]).includes(member.role)
+    ? (member.role as MemberRole)
+    : "creator";
+
+  const commitLimit = () => {
+    const trimmed = limitDraft.trim();
+    // Empty means unlimited, which is a real value here, not "unchanged".
+    const next = trimmed === "" ? null : Number(trimmed);
+    if (next !== null && (!Number.isInteger(next) || next < 0)) {
+      setLimitDraft(member.monthlyCreditLimit === null ? "" : String(member.monthlyCreditLimit));
+      return;
+    }
+    if (next !== member.monthlyCreditLimit) onUpdate?.({ monthlyCreditLimit: next });
+  };
+
+  const overspent =
+    member.monthlyCreditLimit !== null && member.spentThisMonth >= member.monthlyCreditLimit;
+
   return (
-    <div className="flex items-center justify-between gap-4 p-4">
-      <div className="min-w-0">
+    <div className="flex flex-wrap items-center justify-between gap-4 p-4">
+      <div className="min-w-0 flex-1">
         <p className="text-label text-ink-soft">{member.name}</p>
         <p className="mt-1 text-caption text-muted">{member.email}</p>
+
+        {isOwnerView && (
+          <div className="mt-2 flex items-center gap-2">
+            <div
+              className="h-1 w-28 overflow-hidden rounded-full bg-white/10"
+              aria-hidden="true"
+            >
+              <span
+                className={cn("block h-full rounded-full", overspent ? "bg-accent" : "bg-brand")}
+                style={{
+                  width:
+                    member.monthlyCreditLimit === null
+                      ? "100%"
+                      : `${Math.min(100, (member.spentThisMonth / Math.max(1, member.monthlyCreditLimit)) * 100)}%`,
+                }}
+              />
+            </div>
+            <span className="text-caption text-muted tabular-nums">
+              {member.monthlyCreditLimit === null
+                ? `${formatCredits(member.spentThisMonth)} used this month`
+                : `${formatCredits(member.spentThisMonth)} of ${formatCredits(member.monthlyCreditLimit)} this month`}
+            </span>
+          </div>
+        )}
       </div>
+
+      {isOwnerView && onUpdate && (
+        <div className="flex items-center gap-2">
+          <div>
+            <Label htmlFor={`role-${member.id}`} className="sr-only">
+              Role for {member.name}
+            </Label>
+            <Select
+              id={`role-${member.id}`}
+              value={role}
+              onChange={(e) => onUpdate({ role: e.target.value as MemberRole })}
+              title={ROLE_BLURB[role]}
+            >
+              {MEMBER_ROLES.map((r) => (
+                <option key={r} value={r}>
+                  {r[0].toUpperCase() + r.slice(1)}
+                </option>
+              ))}
+            </Select>
+          </div>
+          <div className="w-28">
+            <Label htmlFor={`limit-${member.id}`} className="sr-only">
+              Monthly credit limit for {member.name}
+            </Label>
+            <Input
+              id={`limit-${member.id}`}
+              inputMode="numeric"
+              value={limitDraft}
+              placeholder="No limit"
+              onChange={(e) => setLimitDraft(e.target.value)}
+              onBlur={commitLimit}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") e.currentTarget.blur();
+              }}
+            />
+          </div>
+        </div>
+      )}
+
       {isOwnerView && onRemove && (
         <Button variant="ghost" size="icon" onClick={onRemove} aria-label="Remove member">
           <X className="size-4" />

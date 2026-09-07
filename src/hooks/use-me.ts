@@ -21,8 +21,15 @@ export type Me = {
    *  generations. Every capability gate reads this one — see
    *  hasCreatorSuite's callers. Falls back to `tier` for a solo account. */
   effectiveTier: string;
-  /** The one team this account is attached to, or null. */
-  organization: { id: string; name: string; role: "owner" | "member" } | null;
+  /** The one team this account is attached to, or null.
+   *  `role` is "owner" for the person who pays, or the member's own role:
+   *  creator (may generate), editor (may reshape/publish existing team work)
+   *  or viewer (read-only). */
+  organization: {
+    id: string;
+    name: string;
+    role: "owner" | "creator" | "editor" | "viewer";
+  } | null;
   createdAt: string;
 };
 
