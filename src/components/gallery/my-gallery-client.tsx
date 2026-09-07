@@ -151,7 +151,10 @@ export function MyGalleryClient() {
           <option value={EDIT_GENERATION_TYPE}>studio edit</option>
         </Select>
         <Select value={status} onChange={(e) => setStatus(e.target.value)} className="sm:w-40">
-          <option value="">All statuses</option>
+          {/* Not "All statuses": the list endpoint drops failed rows unless
+              one is asked for by name, so saying "all" here would be a lie
+              about what the default view contains. */}
+          <option value="">All except failed</option>
           {GENERATION_STATUSES.map((s) => (
             <option key={s} value={s}>
               {s}

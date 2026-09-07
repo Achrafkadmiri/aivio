@@ -99,6 +99,12 @@ export type GalleryItem = {
   /** Only sent by the public feed and shared collections — the surfaces
    *  where the viewer might not be the creator. */
   author?: { name: string; avatarUrl: string | null } | null;
+  /** True when this came out of a preset. A preset's recipe is ours rather
+   *  than the viewer's — the studio that runs one shows an upload slot and
+   *  nothing else — so the surfaces that would otherwise print its prompt
+   *  keep it back (see itemLabel and the preview modal's prompt panel).
+   *  Set by the API from the row's presetId. */
+  fromPreset?: boolean;
   // Everything below is already on every serialized generation the API
   // returns (see serializeGeneration in the backend) — optional here only
   // because a few local call sites build GalleryItems by hand. The preview
@@ -117,6 +123,14 @@ export type GalleryItem = {
   errorMessage?: string | null;
   createdAt?: string;
 };
+
+/** What to call a generation where the prompt would otherwise be the label:
+ *  an aria-label, an alt, the lightbox's screen-reader title. A preset's
+ *  prompt is not on show anywhere else, and an alt attribute is still on
+ *  show — so those get named after the preset instead. */
+export function itemLabel(item: GalleryItem) {
+  return item.fromPreset ? "Preset generation" : item.prompt;
+}
 
 export function GenerationCard({
   item,
@@ -149,14 +163,14 @@ export function GenerationCard({
         type="button"
         onClick={onOpen}
         className="absolute inset-0 h-full w-full cursor-pointer"
-        aria-label={`Open ${item.prompt}`}
+        aria-label={`Open ${itemLabel(item)}`}
       >
         {item.status === "completed" && item.resultUrl ? (
           isVideo ? (
             <LazyVideoTile
               src={item.resultUrl}
               poster={item.thumbnailUrl}
-              alt={item.prompt}
+              alt={itemLabel(item)}
               playing={hovered}
             />
           ) : (
@@ -169,7 +183,7 @@ export function GenerationCard({
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={item.resultUrl}
-              alt={item.prompt}
+              alt={itemLabel(item)}
               loading="lazy"
               decoding="async"
               className="absolute inset-0 size-full object-cover"

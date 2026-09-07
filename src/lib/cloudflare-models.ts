@@ -267,10 +267,17 @@ export const CLOUDFLARE_MODELS: CloudflareModelConfig[] = [
       { key: "aspectRatio", cfParam: "aspect_ratio", label: "Aspect ratio", type: "select", options: ["1:1", "3:4", "4:3", "9:16", "16:9", "2:3", "3:2", "9:19.5", "19.5:9", "9:20", "20:9", "1:2", "2:1", "auto"], defaultValue: "16:9" },
       { key: "resolution", cfParam: "resolution", label: "Resolution", type: "select", options: ["1k", "2k"], defaultValue: "1k" },
     ],
-    staticParams: { response_format: "url" },
+    // Our xAI account is on Zero Data Retention, and ZDR teams are refused
+    // response_format: "url" outright ("Zero Data Retention teams do not
+    // have access to URL format as it requires storing the generated
+    // images") — the same policy that forces outputUploadTarget on Grok
+    // video. Probed 2026-09-07: the schema accepts only "url" | "b64_json",
+    // so b64_json it is, and the result comes back as raw JPEG bytes.
+    staticParams: { response_format: "b64_json" },
     outputPath: ["image"],
     fallbackOutputPath: ["images", "0"],
-    outputKind: "url",
+    outputKind: "base64",
+    outputMimeType: "image/jpeg",
   },
   // Re-probed 2026-08-30. Both xAI image models share one schema, and three
   // of its fields were wrong here: aspect_ratio and resolution are real enums
@@ -304,10 +311,13 @@ export const CLOUDFLARE_MODELS: CloudflareModelConfig[] = [
       { key: "aspectRatio", cfParam: "aspect_ratio", label: "Aspect ratio", type: "select", options: ["1:1", "3:4", "4:3", "9:16", "16:9", "2:3", "3:2", "9:19.5", "19.5:9", "9:20", "20:9", "1:2", "2:1", "auto"], defaultValue: "16:9" },
       { key: "resolution", cfParam: "resolution", label: "Resolution", type: "select", options: ["1k", "2k"], defaultValue: "2k" },
     ],
-    staticParams: { response_format: "url" },
+    // b64_json for the same Zero Data Retention reason as the fast variant
+    // above — both xAI image models share one schema and one policy.
+    staticParams: { response_format: "b64_json" },
     outputPath: ["image"],
     fallbackOutputPath: ["images", "0"],
-    outputKind: "url",
+    outputKind: "base64",
+    outputMimeType: "image/jpeg",
   },
 
   // Probed live, and it differs from ByteDance's published schema: it also

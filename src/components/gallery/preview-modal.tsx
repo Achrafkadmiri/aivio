@@ -32,7 +32,7 @@ import { downloadGenerationResult } from "@/lib/download";
 import { PublishButton } from "@/components/social/publish-button";
 import { IMAGE_MODELS, SEEDANCE_DURATION_AUTO, VIDEO_MODELS } from "@/lib/constants";
 import { EDIT_GENERATION_MODEL } from "@/lib/editor/types";
-import type { GalleryItem } from "./generation-card";
+import { itemLabel, type GalleryItem } from "./generation-card";
 
 export type PreviewAuthor = { name: string; avatarUrl: string | null };
 
@@ -278,6 +278,12 @@ function PreviewBody({
   }
 
   const isLongPrompt = item.prompt.length > 220;
+  // "Recreate" carries the prompt into the composer through the URL, which
+  // is exactly what a preset's recipe must not do. Re-running the same row
+  // server-side does the same job without the prompt ever passing through
+  // the client, so that takes its place; with no re-run on offer (someone
+  // else's piece, on the public feed) the way back in is the catalogue.
+  const canRerun = Boolean(onDuplicate);
 
   return (
     <>
@@ -293,7 +299,7 @@ function PreviewBody({
           if (e.target === e.currentTarget) onClose();
         }}
       >
-        <Dialog.Title className="sr-only">{item.prompt || "Generation preview"}</Dialog.Title>
+        <Dialog.Title className="sr-only">{itemLabel(item) || "Generation preview"}</Dialog.Title>
 
         {hasPrev && (
           <Button
@@ -334,7 +340,7 @@ function PreviewBody({
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={item.resultUrl}
-              alt={item.prompt}
+              alt={itemLabel(item)}
               className="max-h-full max-w-full rounded-xl border border-line object-contain"
             />
           )
@@ -412,48 +418,65 @@ function PreviewBody({
         </div>
 
         <div className="flex-1 overflow-y-auto">
-          {/* Prompt */}
+          {/* Prompt — or, for a preset, the fact that there is one and that
+              it stays put. A preset is a recipe we wrote and the studio that
+              runs it never shows it (see PresetStudio), so this panel would
+              be the one place it leaked. */}
           <section className="border-b border-border-subtle p-4">
             <div className="flex items-center justify-between gap-2">
               <span className="flex items-center gap-2 text-caption font-semibold tracking-wide text-text-tertiary uppercase">
-                <Sparkles className="size-3.5" aria-hidden="true" /> Prompt
+                <Sparkles className="size-3.5" aria-hidden="true" />{" "}
+                {item.fromPreset ? "Recipe" : "Prompt"}
               </span>
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => {
-                  navigator.clipboard.writeText(item.prompt);
-                  toast({ title: "Prompt copied", variant: "success" });
-                }}
-              >
-                <Copy className="size-3.5" /> Copy
-              </Button>
-            </div>
-            <p
-              className={cn(
-                "mt-3 whitespace-pre-wrap text-body-sm text-ink-soft",
-                !promptOpen && "line-clamp-5",
+              {/* Copy would hand over the exact text the panel is holding
+                  back, so a preset doesn't get the button. */}
+              {!item.fromPreset && (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => {
+                    navigator.clipboard.writeText(item.prompt);
+                    toast({ title: "Prompt copied", variant: "success" });
+                  }}
+                >
+                  <Copy className="size-3.5" /> Copy
+                </Button>
               )}
-            >
-              {item.prompt || "No prompt recorded."}
-            </p>
-            {isLongPrompt && (
-              <button
-                type="button"
-                onClick={() => setPromptOpen((v) => !v)}
-                className="mt-2 flex items-center gap-1 text-body-sm text-muted transition-colors hover:text-ink"
-              >
-                {promptOpen ? "See less" : "See all"}
-                <ChevronDown
-                  className={cn("size-4 transition-transform", promptOpen && "rotate-180")}
-                  aria-hidden="true"
-                />
-              </button>
-            )}
-            {item.negativePrompt && (
+            </div>
+            {item.fromPreset ? (
               <p className="mt-3 text-body-sm text-muted">
-                <span className="text-text-tertiary">Negative:</span> {item.negativePrompt}
+                Made from a preset — its prompt, camera move and settings are part of the recipe
+                and stay locked.
               </p>
+            ) : (
+              <>
+                <p
+                  className={cn(
+                    "mt-3 whitespace-pre-wrap text-body-sm text-ink-soft",
+                    !promptOpen && "line-clamp-5",
+                  )}
+                >
+                  {item.prompt || "No prompt recorded."}
+                </p>
+                {isLongPrompt && (
+                  <button
+                    type="button"
+                    onClick={() => setPromptOpen((v) => !v)}
+                    className="mt-2 flex items-center gap-1 text-body-sm text-muted transition-colors hover:text-ink"
+                  >
+                    {promptOpen ? "See less" : "See all"}
+                    <ChevronDown
+                      className={cn("size-4 transition-transform", promptOpen && "rotate-180")}
+                      aria-hidden="true"
+                    />
+                  </button>
+                )}
+                {item.negativePrompt && (
+                  <p className="mt-3 text-body-sm text-muted">
+                    <span className="text-text-tertiary">Negative:</span> {item.negativePrompt}
+                  </p>
+                )}
+              </>
             )}
           </section>
 
@@ -529,12 +552,27 @@ function PreviewBody({
               decoded". Images therefore keep Re-run until the timeline
               learns to hold a still. */}
           <div className="flex gap-2">
-            <Link
-              href={recreateHref(item)}
-              className={buttonVariants({ variant: "accent", size: "sm", className: "flex-1" })}
-            >
-              <Sparkles className="size-4" aria-hidden="true" /> Recreate
-            </Link>
+            {item.fromPreset ? (
+              canRerun ? (
+                <Button variant="accent" size="sm" className="flex-1" onClick={onDuplicate}>
+                  <RefreshCw className="size-4" aria-hidden="true" /> Re-run
+                </Button>
+              ) : (
+                <Link
+                  href="/presets"
+                  className={buttonVariants({ variant: "accent", size: "sm", className: "flex-1" })}
+                >
+                  <Sparkles className="size-4" aria-hidden="true" /> Try a preset
+                </Link>
+              )
+            ) : (
+              <Link
+                href={recreateHref(item)}
+                className={buttonVariants({ variant: "accent", size: "sm", className: "flex-1" })}
+              >
+                <Sparkles className="size-4" aria-hidden="true" /> Recreate
+              </Link>
+            )}
             {canEditInStudio ? (
               <Link
                 href={`/editor?add=${item.id}`}
@@ -547,7 +585,10 @@ function PreviewBody({
                 <Scissors className="size-4" aria-hidden="true" /> Edit in studio
               </Link>
             ) : (
-              onDuplicate && (
+              // Not for a preset when the slot above is already Re-run —
+              // that's the same button twice.
+              onDuplicate &&
+              !item.fromPreset && (
                 <Button variant="secondary" size="sm" className="flex-1" onClick={onDuplicate}>
                   <RefreshCw className="size-4" aria-hidden="true" /> Re-run
                 </Button>
