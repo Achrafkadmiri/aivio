@@ -3,10 +3,16 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
-import { Users, UserPlus, X, Crown } from "lucide-react";
+import { Users, UserPlus, X, Crown, Check, ChevronDown } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button, buttonVariants } from "@/components/ui/button";
-import { Input, Label, Select } from "@/components/ui/input";
+import { Input, Label } from "@/components/ui/input";
+import {
+  DropdownRoot,
+  DropdownTrigger,
+  DropdownContent,
+  DropdownItem,
+} from "@/components/ui/dropdown";
 import { Slider } from "@/components/ui/slider";
 import { Spinner } from "@/components/ui/spinner";
 import { useToast } from "@/components/ui/toast";
@@ -15,12 +21,26 @@ import { useMe } from "@/hooks/use-me";
 import { TIER_INFO, type Tier } from "@/lib/constants";
 import { apiFetch } from "@/lib/api-client";
 import { useUsage, useInvalidateCredits } from "@/hooks/use-credits";
-import { formatDate, formatCredits } from "@/lib/utils";
+import { cn, formatDate, formatCredits } from "@/lib/utils";
 
 export const MEMBER_ROLES = ["creator", "editor", "viewer"] as const;
 export type MemberRole = (typeof MEMBER_ROLES)[number];
 
 /** What each role may do, in the owner's words rather than the schema's. */
+export const ROLE_LABEL: Record<MemberRole, string> = {
+  creator: "Creator",
+  editor: "Editor",
+  viewer: "Viewer",
+};
+
+/** A dot per role, ordered by how much it can do: the action colour for the
+ *  role that spends credits, then silver, then muted. */
+export const ROLE_DOT: Record<MemberRole, string> = {
+  creator: "bg-brand",
+  editor: "bg-silver",
+  viewer: "bg-text-tertiary",
+};
+
 export const ROLE_BLURB: Record<MemberRole, string> = {
   creator: "Can generate, edit and publish",
   editor: "Can edit and publish, but not generate",
@@ -560,18 +580,52 @@ function MemberRow({
       {isOwnerView && onUpdate ? (
         <div className="flex w-full shrink-0 flex-col gap-3 sm:w-80">
           <div className="flex items-center gap-2">
-            <Select
-              aria-label={`Role for ${member.name}`}
-              value={role}
-              onChange={(e) => onUpdate({ role: e.target.value as MemberRole })}
-              className="flex-1"
-            >
-              {MEMBER_ROLES.map((r) => (
-                <option key={r} value={r}>
-                  {r[0].toUpperCase() + r.slice(1)}
-                </option>
-              ))}
-            </Select>
+            {/* A styled menu rather than a native <select>: the option list
+                of a native one is drawn by the operating system, so it lands
+                as a white pane with a blue highlight in the middle of a dark
+                app and cannot be themed. This also gives each role room for
+                the one line that says what it actually means. */}
+            <DropdownRoot>
+              <DropdownTrigger asChild>
+                <button
+                  type="button"
+                  aria-label={`Role for ${member.name}: ${role}`}
+                  className="flex flex-1 items-center justify-between gap-2 rounded-xl border border-line bg-surface-2 px-3 py-2 text-left text-label text-ink-soft transition-colors hover:border-border-strong hover:bg-surface-3"
+                >
+                  <span className="flex items-center gap-2">
+                    <i
+                      aria-hidden="true"
+                      className={cn("size-1.5 rounded-full", ROLE_DOT[role])}
+                    />
+                    {ROLE_LABEL[role]}
+                  </span>
+                  <ChevronDown className="size-4 shrink-0 text-text-tertiary" aria-hidden="true" />
+                </button>
+              </DropdownTrigger>
+              <DropdownContent align="start" className="min-w-[260px]">
+                {MEMBER_ROLES.map((r) => (
+                  <DropdownItem
+                    key={r}
+                    onSelect={() => {
+                      if (r !== role) onUpdate({ role: r });
+                    }}
+                    className="flex items-start gap-2.5 py-2.5"
+                  >
+                    <i
+                      aria-hidden="true"
+                      className={cn("mt-1.5 size-1.5 shrink-0 rounded-full", ROLE_DOT[r])}
+                    />
+                    <span className="flex-1">
+                      <span className="block text-label text-ink">{ROLE_LABEL[r]}</span>
+                      <span className="mt-0.5 block text-caption text-muted">{ROLE_BLURB[r]}</span>
+                    </span>
+                    {r === role && (
+                      <Check className="mt-1 size-3.5 shrink-0 text-brand" aria-hidden="true" />
+                    )}
+                  </DropdownItem>
+                ))}
+              </DropdownContent>
+            </DropdownRoot>
             {onRemove && (
               <Button
                 variant="ghost"
