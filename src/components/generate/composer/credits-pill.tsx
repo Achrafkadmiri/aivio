@@ -2,7 +2,6 @@
 
 import { Loader2, Sparkles } from "lucide-react";
 import { Tooltip } from "@/components/ui/tooltip";
-import { CREDIT_VALUE_USD } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
 /**
@@ -49,15 +48,14 @@ export function CreditsSubmitPill({
 }) {
   const unaffordable = balance !== undefined && credits > balance;
   const unit = `credit${credits === 1 ? "" : "s"}`;
-  const money = (credits * CREDIT_VALUE_USD).toFixed(2);
 
   const hint = blockedReason
     ? blockedReason
     : unaffordable
       ? `Not enough credits — this costs ~${credits} ${unit} and you have ${balance}. Top up or upgrade to continue.`
       : balance !== undefined
-        ? `Generate — costs ~${credits} ${unit} (≈$${money}), leaving ${balance - credits}.`
-        : `Generate — costs ~${credits} ${unit} (≈$${money}).`;
+        ? `Generate — costs ~${credits} ${unit}, leaving ${balance - credits}.`
+        : `Generate — costs ~${credits} ${unit}.`;
 
   const blocked = Boolean(blockedReason) || unaffordable;
 

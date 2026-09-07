@@ -16,7 +16,7 @@ export const metadata: Metadata = { title: "Pricing" };
 const FAQS = [
   {
     q: "What's a credit?",
-    a: `Credits are consumed per generation based on model, resolution, and duration — video costs scale with the underlying compute, so a longer or higher-resolution clip costs more than a quick 480p one. Each credit is worth ${CREDIT_VALUE_USD}, and the exact cost is always shown before you generate.`,
+    a: `Credits are consumed per generation based on model, resolution, and duration — video costs scale with the underlying compute, so a longer or higher-resolution clip costs more than a quick 480p one. Each credit is worth $${CREDIT_VALUE_USD}, and the exact cost is always shown before you generate.`,
   },
   {
     q: "Which plans include the marketing studio, editing studio, and social publishing?",

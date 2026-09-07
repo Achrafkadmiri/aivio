@@ -7,14 +7,12 @@ import { apiFetch } from "@/lib/api-client";
 import { useMe } from "@/hooks/use-me";
 import { TIER_INFO, type Tier } from "@/lib/constants";
 import { Card } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
 import { buttonVariants } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { UsageChart } from "@/components/dashboard/usage-chart";
 import { GalleryGrid } from "@/components/gallery/gallery-grid";
 import type { GalleryItem } from "@/components/gallery/generation-card";
 import { formatCredits } from "@/lib/utils";
-import { CreditValue } from "@/components/credit-value";
 
 type DashboardSummary = {
   usage: { creditsUsed: number; generationsCount: number };
@@ -49,8 +47,7 @@ export function DashboardClient() {
     );
   }
 
-  const { usage, limit, creditBalance, creditsExpiringSoon, tierInfo, recentGenerations, dailyCounts } = data;
-  const usedPct = limit ? Math.min(100, Math.round((usage.creditsUsed / limit) * 100)) : 0;
+  const { usage, creditBalance, creditsExpiringSoon, tierInfo, recentGenerations, dailyCounts } = data;
 
   return (
     <div className="space-y-8">
@@ -109,14 +106,11 @@ export function DashboardClient() {
           <p className="font-display relative mt-2 text-heading font-bold tracking-tight text-accent-amber sm:text-display">
             {formatCredits(creditBalance)}
           </p>
-          <p className="relative mt-1 text-body-sm text-muted">
-            <CreditValue credits={creditBalance} />
-          </p>
-          <Progress value={usedPct} className="relative mt-6" />
-          <div className="relative mt-2 flex flex-wrap items-center justify-between gap-2 text-caption text-muted">
-            <span>
-              {formatCredits(usage.creditsUsed)} / {formatCredits(limit)} used this month
-            </span>
+          {/* No monthly ceiling to draw a bar against: the balance is the
+              only thing that limits a generation, so this month's spend is
+              reported as a plain figure rather than a progress meter. */}
+          <div className="relative mt-6 flex flex-wrap items-center justify-between gap-2 text-caption text-muted">
+            <span>{formatCredits(usage.creditsUsed)} used this month</span>
             {creditsExpiringSoon > 0 && (
               <span className="text-warning">
                 {formatCredits(creditsExpiringSoon)} credits expire soon

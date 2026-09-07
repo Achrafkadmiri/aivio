@@ -9,7 +9,6 @@ import { TIER_INFO, type Tier } from "@/lib/constants";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
 import { Spinner } from "@/components/ui/spinner";
 import { useToast } from "@/components/ui/toast";
 import { formatCredits } from "@/lib/utils";
@@ -17,7 +16,6 @@ import { formatMoney } from "@/lib/currency";
 import { PlanSwitcher } from "@/components/settings/plan-switcher";
 import { RechargePacks } from "@/components/settings/recharge-packs";
 import { PlanPrice } from "@/components/pricing/plan-price";
-import { CreditValue } from "@/components/credit-value";
 import { useSpotlight } from "@/hooks/use-spotlight";
 import { useInvalidateCredits } from "@/hooks/use-credits";
 
@@ -300,15 +298,11 @@ export function BillingClient() {
     tier,
     info,
     credits_used_this_month,
-    credits_limit,
     credit_balance,
     credits_expiring_soon,
     subscription,
     payments_misconfigured,
   } = data;
-  const usedPct = credits_limit
-    ? Math.min(100, Math.round((credits_used_this_month / credits_limit) * 100))
-    : 0;
   const misconfigured = payments_misconfigured.length > 0;
 
   return (
@@ -354,7 +348,6 @@ export function BillingClient() {
           <p className="text-caption text-muted">Credit balance</p>
           <p className="text-subheading font-bold text-accent-amber">
             {formatCredits(credit_balance)}
-            <CreditValue credits={credit_balance} className="ml-2 text-caption font-normal text-muted" />
           </p>
         </div>
         {credits_expiring_soon > 0 && (
@@ -364,14 +357,15 @@ export function BillingClient() {
         )}
 
         <div className="relative mt-4">
-          <Progress value={usedPct} />
-          <p className="mt-2 text-caption text-muted">
-            {formatCredits(credits_used_this_month)} / {formatCredits(credits_limit)} credits used
-            this month
+          {/* No monthly ceiling to draw a bar against: the balance is the
+              only thing that limits a generation, so this month's spend is
+              reported as a plain figure rather than a progress meter. */}
+          <p className="text-caption text-muted">
+            {formatCredits(credits_used_this_month)} credits used this month
           </p>
           {/* A plan with no monthly allowance has nothing arriving on the
-              1st, and a bar reading "12 / 50 this month" invites exactly the
-              wrong assumption. Say so once, under the bar. */}
+              1st, and a "this month" figure invites exactly the wrong
+              assumption. Say so once, underneath it. */}
           {!info.renewsMonthly && (
             <p className="mt-1 text-caption text-muted">
               {info.label} credits are a one-time grant — they never expire, and they don&apos;t
