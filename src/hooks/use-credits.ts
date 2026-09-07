@@ -16,6 +16,12 @@ export type UsageResponse = {
   member_limit?: number | null;
   /** Spent against that allowance this month; null when there is no limit. */
   member_spent?: number | null;
+  /** The ledger balance before team allowances are set aside. The owner's
+   *  billing page shows this; the badge shows `credit_balance`, which is
+   *  what is actually spendable here. */
+  pool_balance?: number;
+  /** Promised to members and not yet spent. 0 outside a team. */
+  reserved_for_members?: number;
 };
 
 // Every view that shows a credit balance/usage number reads from one of

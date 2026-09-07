@@ -7,12 +7,14 @@ import { Users, UserPlus, X, Crown } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input, Label, Select } from "@/components/ui/input";
+import { Slider } from "@/components/ui/slider";
 import { Spinner } from "@/components/ui/spinner";
 import { useToast } from "@/components/ui/toast";
 import { useConfirm } from "@/components/ui/confirm";
 import { useMe } from "@/hooks/use-me";
 import { TIER_INFO, type Tier } from "@/lib/constants";
 import { apiFetch } from "@/lib/api-client";
+import { useUsage } from "@/hooks/use-credits";
 import { cn, formatDate, formatCredits } from "@/lib/utils";
 
 export const MEMBER_ROLES = ["creator", "editor", "viewer"] as const;
@@ -154,6 +156,7 @@ export function TeamManager() {
   const { data: me } = useMe();
   const { data, isLoading } = useTeam();
   const { data: myInvites } = useMyInvites();
+  const { data: usage } = useUsage();
   const [teamName, setTeamName] = useState("");
   const [inviteEmail, setInviteEmail] = useState("");
 
@@ -359,12 +362,21 @@ export function TeamManager() {
         </Card>
         <Card variant="standard" className="divide-y divide-line p-0">
           {data.members.map((m) => (
-            <MemberRow key={m.id} member={m} isOwnerView={false} />
+            <MemberRow key={m.id} member={m} isOwnerView={false} poolCeiling={0} />
           ))}
         </Card>
       </div>
     );
   }
+
+  // What the owner may still hand out. An allowance is a reservation
+  // against real credits, so the slider must not offer more than the pool
+  // can back — a member's own current allowance is added back because it is
+  // already counted in `reserved`.
+  const poolBalance = usage?.pool_balance ?? 0;
+  const reserved = usage?.reserved_for_members ?? 0;
+  const ceilingFor = (m: Member) =>
+    Math.max(0, poolBalance - reserved + (m.monthlyCreditLimit ?? 0));
 
   // role === "owner"
   const seatsUsed = data.members.length + data.invites.length + 1; // +1 for the owner
@@ -418,6 +430,7 @@ export function TeamManager() {
           <MemberRow
             key={m.id}
             member={m}
+            poolCeiling={ceilingFor(m)}
             isOwnerView
             onUpdate={(patch) => updateMemberMutation.mutate({ id: m.id, patch })}
             onRemove={async () => {
@@ -469,80 +482,58 @@ export function TeamManager() {
 function MemberRow({
   member,
   isOwnerView,
+  poolCeiling,
   onRemove,
   onUpdate,
 }: {
   member: Member;
   isOwnerView: boolean;
+  /** The most this member could be given: everything not already promised
+   *  to someone else, plus whatever is already theirs. */
+  poolCeiling: number;
   onRemove?: () => void;
   onUpdate?: (patch: { role?: MemberRole; monthlyCreditLimit?: number | null }) => void;
 }) {
-  // Local so the field can be typed in without firing a request per key;
-  // committed on blur or Enter.
-  const [limitDraft, setLimitDraft] = useState(
-    member.monthlyCreditLimit === null ? "" : String(member.monthlyCreditLimit),
-  );
-
   const role = (MEMBER_ROLES as readonly string[]).includes(member.role)
     ? (member.role as MemberRole)
     : "creator";
 
-  const commitLimit = () => {
-    const trimmed = limitDraft.trim();
-    // Empty means unlimited, which is a real value here, not "unchanged".
-    const next = trimmed === "" ? null : Number(trimmed);
-    if (next !== null && (!Number.isInteger(next) || next < 0)) {
-      setLimitDraft(member.monthlyCreditLimit === null ? "" : String(member.monthlyCreditLimit));
-      return;
-    }
-    if (next !== member.monthlyCreditLimit) onUpdate?.({ monthlyCreditLimit: next });
-  };
-
-  const overspent =
-    member.monthlyCreditLimit !== null && member.spentThisMonth >= member.monthlyCreditLimit;
+  const limited = member.monthlyCreditLimit !== null;
+  // Dragging updates locally; the request fires on release, so a drag across
+  // the track is one PATCH rather than forty.
+  const [draft, setDraft] = useState(member.monthlyCreditLimit ?? 0);
+  const value = limited ? draft : 0;
+  const spent = member.spentThisMonth;
+  const pct = limited && draft > 0 ? Math.min(100, (spent / draft) * 100) : 0;
+  const exhausted = limited && spent >= draft && draft > 0;
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-4 p-4">
-      <div className="min-w-0 flex-1">
-        <p className="text-label text-ink-soft">{member.name}</p>
-        <p className="mt-1 text-caption text-muted">{member.email}</p>
-
-        {isOwnerView && (
-          <div className="mt-2 flex items-center gap-2">
-            <div
-              className="h-1 w-28 overflow-hidden rounded-full bg-white/10"
-              aria-hidden="true"
-            >
-              <span
-                className={cn("block h-full rounded-full", overspent ? "bg-accent" : "bg-brand")}
-                style={{
-                  width:
-                    member.monthlyCreditLimit === null
-                      ? "100%"
-                      : `${Math.min(100, (member.spentThisMonth / Math.max(1, member.monthlyCreditLimit)) * 100)}%`,
-                }}
-              />
-            </div>
-            <span className="text-caption text-muted tabular-nums">
-              {member.monthlyCreditLimit === null
-                ? `${formatCredits(member.spentThisMonth)} used this month`
-                : `${formatCredits(member.spentThisMonth)} of ${formatCredits(member.monthlyCreditLimit)} this month`}
-            </span>
-          </div>
-        )}
+    <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-start sm:gap-5">
+      {/* Identity */}
+      <div className="flex min-w-0 flex-1 items-start gap-3">
+        <span
+          aria-hidden="true"
+          className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-full bg-surface-3 text-label font-semibold text-ink-soft"
+        >
+          {member.name.trim().charAt(0).toUpperCase() || "?"}
+        </span>
+        <div className="min-w-0">
+          <p className="truncate text-label text-ink-soft">{member.name}</p>
+          <p className="mt-0.5 truncate text-caption text-muted">{member.email}</p>
+          {isOwnerView && (
+            <p className="mt-1 text-caption text-text-tertiary">{ROLE_BLURB[role]}</p>
+          )}
+        </div>
       </div>
 
-      {isOwnerView && onUpdate && (
-        <div className="flex items-center gap-2">
-          <div>
-            <Label htmlFor={`role-${member.id}`} className="sr-only">
-              Role for {member.name}
-            </Label>
+      {isOwnerView && onUpdate ? (
+        <div className="flex w-full shrink-0 flex-col gap-2.5 sm:w-72">
+          <div className="flex items-center gap-2">
             <Select
-              id={`role-${member.id}`}
+              aria-label={`Role for ${member.name}`}
               value={role}
               onChange={(e) => onUpdate({ role: e.target.value as MemberRole })}
-              title={ROLE_BLURB[role]}
+              className="flex-1"
             >
               {MEMBER_ROLES.map((r) => (
                 <option key={r} value={r}>
@@ -550,30 +541,69 @@ function MemberRow({
                 </option>
               ))}
             </Select>
+            {onRemove && (
+              <Button variant="ghost" size="icon" onClick={onRemove} aria-label={`Remove ${member.name}`}>
+                <X className="size-4" />
+              </Button>
+            )}
           </div>
-          <div className="w-28">
-            <Label htmlFor={`limit-${member.id}`} className="sr-only">
-              Monthly credit limit for {member.name}
-            </Label>
-            <Input
-              id={`limit-${member.id}`}
-              inputMode="numeric"
-              value={limitDraft}
-              placeholder="No limit"
-              onChange={(e) => setLimitDraft(e.target.value)}
-              onBlur={commitLimit}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") e.currentTarget.blur();
-              }}
+
+          {/* Monthly allowance. A slider rather than a number field: the
+              question is "how much of my pool", which is a proportion, and a
+              proportion is easier to judge against a track than to type. */}
+          <div className="rounded-xl border border-line bg-surface-2 p-3">
+            <div className="flex items-baseline justify-between gap-2">
+              <span className="text-caption text-muted">Monthly allowance</span>
+              <span className="font-mono text-caption text-ink-soft tabular-nums">
+                {limited ? formatCredits(draft) : "Unlimited"}
+              </span>
+            </div>
+
+            <Slider
+              className="mt-2.5"
+              value={[value]}
+              min={0}
+              max={Math.max(poolCeiling, member.monthlyCreditLimit ?? 0, 100)}
+              step={50}
+              aria-label={`Monthly credit allowance for ${member.name}`}
+              onValueChange={([next]) => setDraft(next)}
+              onValueCommit={([next]) => onUpdate({ monthlyCreditLimit: next })}
             />
+
+            {/* Spend against the allowance, on its own track so the two
+                readings never get confused with one another. */}
+            <div className="mt-2.5 flex items-center gap-2">
+              <div className="h-1 flex-1 overflow-hidden rounded-full bg-white/10" aria-hidden="true">
+                <div
+                  className={cn(
+                    "h-full rounded-full transition-[width] duration-300",
+                    exhausted ? "bg-accent" : "bg-accent-amber",
+                  )}
+                  style={{ width: `${pct}%` }}
+                />
+              </div>
+              <span className="font-mono text-caption text-muted tabular-nums">
+                {limited
+                  ? `${formatCredits(spent)} / ${formatCredits(draft)} used`
+                  : `${formatCredits(spent)} used`}
+              </span>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => onUpdate({ monthlyCreditLimit: limited ? null : 500 })}
+              className="mt-2 text-caption text-brand transition-colors hover:text-brand-hover"
+            >
+              {limited ? "Remove the limit" : "Set a limit"}
+            </button>
           </div>
         </div>
-      )}
-
-      {isOwnerView && onRemove && (
-        <Button variant="ghost" size="icon" onClick={onRemove} aria-label="Remove member">
-          <X className="size-4" />
-        </Button>
+      ) : (
+        onRemove && (
+          <Button variant="ghost" size="icon" onClick={onRemove} aria-label={`Remove ${member.name}`}>
+            <X className="size-4" />
+          </Button>
+        )
       )}
     </div>
   );
