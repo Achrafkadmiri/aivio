@@ -63,7 +63,10 @@ const FEATURES: Record<CreatorFeature, { title: string; blurb: string; icon: Luc
  *  tier never counts as entitled. */
 export function useCreatorSuite() {
   const { data: me, isLoading } = useMe();
-  return { allowed: hasCreatorSuite(me?.tier), isLoading };
+  // effectiveTier, not tier — see the note on Me.effectiveTier. A free
+  // member of a Studio team is billed as Studio server-side, so locking the
+  // tool here would refuse something they can actually afford.
+  return { allowed: hasCreatorSuite(me?.effectiveTier), isLoading };
 }
 
 /** The plan being sold, read from the data so the copy can never name a plan

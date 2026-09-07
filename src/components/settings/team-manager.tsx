@@ -22,6 +22,99 @@ type TeamResponse =
   | { role: "owner"; organization: { id: string; name: string }; seats: number; members: Member[]; invites: Invite[] }
   | { role: "member"; organization: { id: string; name: string; ownerName: string }; members: Member[] };
 
+/** An invite addressed to the signed-in user, waiting to be accepted. */
+type MyInvite = {
+  id: string;
+  organizationName: string;
+  invitedByName: string;
+  createdAt: string;
+  expiresAt: string;
+};
+
+/**
+ * Invites waiting for this account.
+ *
+ * Fetched by email server-side, so joining a team never depends on finding
+ * the invite email — the link still works, this is just the other door.
+ */
+function useMyInvites() {
+  return useQuery({
+    queryKey: ["my-invites"],
+    queryFn: async (): Promise<MyInvite[]> => {
+      const res = await apiFetch("/api/organization/invites/mine");
+      if (!res.ok) throw new Error("Failed to load invites");
+      return (await res.json()).invites ?? [];
+    },
+  });
+}
+
+/** The accept/decline panel, shown above the empty state for someone who has
+ *  been invited but has no team yet. */
+function PendingInvites({ invites, onChanged }: { invites: MyInvite[]; onChanged: () => void }) {
+  const { toast } = useToast();
+
+  const accept = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await apiFetch(`/api/organization/invites/${id}/accept`, { method: "POST" });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? "Couldn't accept this invite.");
+    },
+    onSuccess: () => {
+      toast({ title: "You're in", description: "You've joined the team.", variant: "success" });
+      onChanged();
+    },
+    onError: (err: Error) =>
+      toast({ title: "Couldn't join", description: err.message, variant: "error" }),
+  });
+
+  const decline = useMutation({
+    mutationFn: async (id: string) => {
+      await apiFetch(`/api/organization/invites/${id}/decline`, { method: "POST" });
+    },
+    onSuccess: onChanged,
+  });
+
+  if (invites.length === 0) return null;
+
+  return (
+    <Card variant="standard" className="space-y-4">
+      <div className="flex items-center gap-2">
+        <Users className="size-4 text-brand" aria-hidden="true" />
+        <h2 className="text-subheading font-semibold text-ink">
+          {invites.length === 1 ? "You've been invited" : "You've been invited to a few teams"}
+        </h2>
+      </div>
+      <div className="divide-y divide-line">
+        {invites.map((invite) => (
+          <div key={invite.id} className="flex items-center justify-between gap-4 py-3">
+            <div className="min-w-0">
+              <p className="text-label text-ink-soft">{invite.organizationName}</p>
+              <p className="mt-1 text-caption text-muted">
+                Invited by {invite.invitedByName} — expires {formatDate(invite.expiresAt)}
+              </p>
+            </div>
+            <div className="flex shrink-0 items-center gap-2">
+              <Button
+                variant="secondary"
+                onClick={() => decline.mutate(invite.id)}
+                loading={decline.isPending}
+              >
+                Decline
+              </Button>
+              <Button onClick={() => accept.mutate(invite.id)} loading={accept.isPending}>
+                Join
+              </Button>
+            </div>
+          </div>
+        ))}
+      </div>
+      <p className="text-caption text-muted">
+        Joining a team means generating against its shared credit pool, with the owner&apos;s plan.
+      </p>
+    </Card>
+  );
+}
+
 function useTeam() {
   return useQuery({
     queryKey: ["organization"],
@@ -39,10 +132,20 @@ export function TeamManager() {
   const queryClient = useQueryClient();
   const { data: me } = useMe();
   const { data, isLoading } = useTeam();
+  const { data: myInvites } = useMyInvites();
   const [teamName, setTeamName] = useState("");
   const [inviteEmail, setInviteEmail] = useState("");
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ["organization"] });
+  // Accepting an invite changes the team AND what this account can do (a
+  // member inherits the owner's tier), so /me has to be refetched too or the
+  // sidebar keeps the old locks until a reload.
+  const invalidateAfterJoin = () => {
+    queryClient.invalidateQueries({ queryKey: ["organization"] });
+    queryClient.invalidateQueries({ queryKey: ["my-invites"] });
+    queryClient.invalidateQueries({ queryKey: ["me"] });
+    queryClient.invalidateQueries({ queryKey: ["usage"] });
+  };
 
   const createMutation = useMutation({
     mutationFn: async (name: string) => {
@@ -119,9 +222,17 @@ export function TeamManager() {
   // No team yet, and this plan doesn't include extra seats — upsell rather
   // than a bare empty state, since this is the one settings page that's
   // genuinely plan-gated.
+  const pending = myInvites ?? [];
+
+  // Being invited is independent of your own plan: a free account can join a
+  // Studio team, so the invite panel sits ABOVE the upsell rather than behind
+  // it. Without this, the one screen an invitee is sent to would show them a
+  // "buy Studio" card and no way to accept.
   if (data.role === null && seats <= 1) {
     return (
-      <Card variant="standard" className="flex flex-col items-center gap-3 py-12 text-center">
+      <div className="space-y-6">
+        <PendingInvites invites={pending} onChanged={invalidateAfterJoin} />
+        <Card variant="standard" className="flex flex-col items-center gap-3 py-12 text-center">
         <span className="flex size-12 items-center justify-center rounded-2xl bg-brand/10">
           <Users className="size-5 text-brand" aria-hidden="true" />
         </span>
@@ -129,16 +240,19 @@ export function TeamManager() {
         <p className="max-w-sm text-body-sm text-muted">
           Studio includes 3 seats — invite teammates to generate against one shared credit pool.
         </p>
-        <Link href="/settings/billing" className={buttonVariants({ className: "mt-2" })}>
-          View plans
-        </Link>
-      </Card>
+          <Link href="/settings/billing" className={buttonVariants({ className: "mt-2" })}>
+            View plans
+          </Link>
+        </Card>
+      </div>
     );
   }
 
   if (data.role === null) {
     return (
-      <Card variant="standard" className="flex flex-col items-center gap-3 py-12 text-center">
+      <div className="space-y-6">
+        <PendingInvites invites={pending} onChanged={invalidateAfterJoin} />
+        <Card variant="standard" className="flex flex-col items-center gap-3 py-12 text-center">
         <span className="flex size-12 items-center justify-center rounded-2xl bg-brand/10">
           <Users className="size-5 text-brand" aria-hidden="true" />
         </span>
@@ -159,11 +273,12 @@ export function TeamManager() {
             placeholder="Team name"
             aria-label="Team name"
           />
-          <Button type="submit" loading={createMutation.isPending}>
-            Create
-          </Button>
-        </form>
-      </Card>
+            <Button type="submit" loading={createMutation.isPending}>
+              Create
+            </Button>
+          </form>
+        </Card>
+      </div>
     );
   }
 

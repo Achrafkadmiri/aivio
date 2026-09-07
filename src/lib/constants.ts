@@ -212,7 +212,10 @@ export const TIER_INFO: Record<
     rolloverMonths: 1,
     videoWatermark: false,
     commercialLicense: true,
-    seats: 3,
+    // Total seats INCLUDING the owner: "you plus 3 teammates". The backend's
+    // seat checks count the owner as one, so this must stay in step with
+    // TIER_INFO in aivioback's supabase/functions/api/lib/constants.ts.
+    seats: 4,
     priorityQueue: true,
     creatorSuite: true,
     apiAccess: true,
@@ -227,7 +230,7 @@ export const TIER_INFO: Record<
       "Publish to TikTok, Instagram, YouTube & Facebook",
       "Commercial license",
       "API access",
-      "3 team seats",
+      "You + 3 teammates",
       "Priority queue",
       "Unused credits roll over 1 month",
       "Add credits as needed",

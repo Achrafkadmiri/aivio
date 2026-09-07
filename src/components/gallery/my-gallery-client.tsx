@@ -11,6 +11,7 @@ import { useToast } from "@/components/ui/toast";
 import { useConfirm } from "@/components/ui/confirm";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useMe } from "@/hooks/use-me";
+import { useWorkspace } from "@/components/providers/workspace-provider";
 import { GalleryGrid } from "./gallery-grid";
 import { AddToCollectionModal } from "./add-to-collection-modal";
 import { ShareIdentityModal } from "./share-identity-modal";
@@ -39,7 +40,11 @@ export function MyGalleryClient() {
   const [shareTarget, setShareTarget] = useState<GalleryItem | null>(null);
   const debouncedSearch = useDebouncedValue(search, 400);
 
-  const filters = { type, status, search: debouncedSearch, likedOnly };
+  // The workspace is part of the filter set, not a separate concern: it
+  // decides whose work the list contains, so it has to sit in the query key
+  // or switching would show the previous workspace's cached page.
+  const workspace = useWorkspace(Boolean(me?.organization));
+  const filters = { type, status, search: debouncedSearch, likedOnly, workspace };
 
   const query = useInfiniteQuery({
     queryKey: ["generations", filters],
@@ -49,6 +54,7 @@ export function MyGalleryClient() {
       if (filters.status) params.set("status", filters.status);
       if (filters.search) params.set("search", filters.search);
       if (filters.likedOnly) params.set("liked", "true");
+      if (filters.workspace === "team") params.set("workspace", "team");
       if (pageParam) params.set("cursor", pageParam);
       const res = await apiFetch(`/api/generations?${params.toString()}`);
       if (!res.ok) throw new Error("Failed to load generations");

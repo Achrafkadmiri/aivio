@@ -169,6 +169,7 @@ export const PAGE_GUIDES: PageGuide[] = [
     plan: "any",
     art: "gallery",
     steps: [
+      { icon: "users", title: "Pick the workspace", detail: "Personal, or your team's shared one, from the sidebar." },
       { icon: "search", title: "Filter it down", detail: "By type and status. Failed jobs are listed too." },
       { icon: "eye", title: "Open a result", detail: "Its full prompt and parameters are kept with it." },
       { icon: "share", title: "Take it further", detail: "Download, collect, send to the editor, or publish." },
@@ -281,10 +282,11 @@ export const PAGE_GUIDES: PageGuide[] = [
     art: "team",
     steps: [
       { icon: "users", title: "Create the team", detail: "Until you do, there is nothing to invite into." },
-      { icon: "mail", title: "Invite by email", detail: "Each invite becomes its own link." },
+      { icon: "mail", title: "Invite by email", detail: "They can accept here in the app, or from the email." },
+      { icon: "zap", title: "They spend your credits", detail: "At your plan's capabilities, in the team workspace." },
       { icon: "shield", title: "Manage the seats", detail: "You are the owner; everyone else joins as a member." },
     ],
-    note: "Team accounts are a Studio feature, with 3 seats.",
+    note: "A Studio feature: you plus 3 teammates. Members share your credit pool but cannot invite people or change the plan.",
     noteTone: "gate",
   },
   {
@@ -295,7 +297,8 @@ export const PAGE_GUIDES: PageGuide[] = [
     art: "team",
     steps: [
       { icon: "lock", title: "Sign in", detail: "Or create an account if you have none." },
-      { icon: "check", title: "Accept", detail: "You share that team's workspace from then on." },
+      { icon: "check", title: "Accept", detail: "Also possible from Settings, Team — no email needed." },
+      { icon: "users", title: "Switch workspace", detail: "The sidebar toggles between personal and the team." },
     ],
   },
 

@@ -1,5 +1,6 @@
 "use client";
 
+import { workspaceQuery } from "@/components/providers/workspace-provider";
 import { useRef, useState } from "react";
 import Link from "next/link";
 import { useMutation } from "@tanstack/react-query";
@@ -251,7 +252,7 @@ export function MarketingStudio() {
   const mutation = useMutation({
     mutationFn: async () => {
       const image = await resolveReferenceUrl();
-      const res = await apiFetch(STUDIO_ENDPOINT[kind], {
+      const res = await apiFetch(`${STUDIO_ENDPOINT[kind]}${workspaceQuery()}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

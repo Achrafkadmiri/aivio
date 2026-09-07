@@ -1,5 +1,6 @@
 "use client";
 
+import { workspaceQuery } from "@/components/providers/workspace-provider";
 import { useState } from "react";
 import Link from "next/link";
 import { useMutation } from "@tanstack/react-query";
@@ -89,7 +90,7 @@ export function PresetStudio({ preset }: { preset: Preset }) {
       // /generations/preset handler. While this posted a composed prompt to
       // /text-to-video, the "locked" recipe was locked only by this UI
       // declining to show it.
-      const res = await apiFetch("/api/generations/preset", {
+      const res = await apiFetch(`/api/generations/preset${workspaceQuery()}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ slug: preset.slug, image: imageUrl }),

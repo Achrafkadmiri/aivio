@@ -12,7 +12,17 @@ export type Me = {
    *  it's minted on demand, not at signup. */
   nickname: string | null;
   nicknameAvatarUrl: string | null;
+  /** What THIS account pays for. Billing and the plan switcher must use it,
+   *  or a team member would be shown a plan they don't own and offered a
+   *  downgrade they can't make. */
   tier: string;
+  /** What this account can actually DO. For a team member that is the
+   *  owner's tier, because the owner's plan is what pays for their
+   *  generations. Every capability gate reads this one — see
+   *  hasCreatorSuite's callers. Falls back to `tier` for a solo account. */
+  effectiveTier: string;
+  /** The one team this account is attached to, or null. */
+  organization: { id: string; name: string; role: "owner" | "member" } | null;
   createdAt: string;
 };
 

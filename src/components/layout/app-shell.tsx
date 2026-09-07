@@ -29,6 +29,7 @@ import { cn, formatCredits } from "@/lib/utils";
 import { hasCreatorSuite } from "@/lib/tier-limits";
 import { Logo } from "./logo";
 import { PageGuide } from "@/components/help/page-guide";
+import { WorkspaceSwitcher } from "./workspace-switcher";
 import { Button } from "@/components/ui/button";
 import { Tooltip } from "@/components/ui/tooltip";
 import { useSidebarCollapsed, setSidebarCollapsed } from "@/components/providers/sidebar-provider";
@@ -201,7 +202,9 @@ function NavLinks({ onNavigate, collapsed = false }: { onNavigate?: () => void; 
   const pathname = usePathname();
   // Same ["me"] query AppShell already has in cache, so this costs nothing.
   const { data: me } = useMe();
-  const creatorSuite = hasCreatorSuite(me?.tier);
+  // effectiveTier, not tier: a member of a Studio team has the owner's
+  // capabilities because the owner's plan pays for their work.
+  const creatorSuite = hasCreatorSuite(me?.effectiveTier);
   return (
     <nav className="flex-1 space-y-6 p-4">
       {NAV_SECTIONS.map((section) => (
@@ -298,6 +301,10 @@ export function AppShell({ children }: { children: ReactNode }) {
 
         <div className={cn("flex h-16 items-center border-b border-line", collapsed ? "justify-center px-2" : "px-4")}>
           <Logo iconOnly={collapsed} />
+        </div>
+        {/* Renders nothing unless this account is in a team. */}
+        <div className={cn(collapsed ? "flex justify-center px-2 pt-3" : "px-4 pt-3")}>
+          <WorkspaceSwitcher collapsed={collapsed} />
         </div>
         <NavLinks collapsed={collapsed} />
         <div className="border-t border-line p-4">
@@ -412,6 +419,9 @@ export function AppShell({ children }: { children: ReactNode }) {
                   <X className="size-5" />
                 </Button>
               </Dialog.Close>
+            </div>
+            <div className="px-4 pt-3">
+              <WorkspaceSwitcher collapsed={false} />
             </div>
             <NavLinks onNavigate={() => setDrawerOpen(false)} />
           </Dialog.Content>
