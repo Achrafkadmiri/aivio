@@ -9,6 +9,8 @@ import { Logo } from "./logo";
 const FOOTER_LINKS = [
   { href: "/features", label: "Features" },
   { href: "/pricing", label: "Pricing" },
+  { href: "/models", label: "Models" },
+  { href: "/guides", label: "Guides" },
   { href: "/prompts", label: "Presets" },
   { href: "/gallery", label: "Gallery" },
   { href: "/about", label: "About" },

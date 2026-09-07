@@ -6,6 +6,11 @@ import { GalleryGrid } from "@/components/gallery/gallery-grid";
 import { Spinner } from "@/components/ui/spinner";
 import type { GalleryItem } from "@/components/gallery/generation-card";
 
+// The interactive grid only. The page's heading and intro moved to the server
+// component at (marketing)/gallery/page.tsx so they are in the initial HTML
+// rather than appearing after a client fetch — this rendered its own <h1> as
+// well, which left the page with two of them once the server one existed.
+
 function usePublicGenerations() {
   return useQuery({
     queryKey: ["generations-public"],
@@ -21,29 +26,21 @@ function usePublicGenerations() {
 export function PublicGalleryClient() {
   const { data: generations, isLoading } = usePublicGenerations();
 
-  return (
-    <div className="container-page py-20 sm:py-28">
-      <div className="mx-auto max-w-2xl text-center">
-        <h1 className="text-heading font-bold tracking-tight text-ink sm:text-display">
-          Community <span className="text-gradient">gallery</span>
-        </h1>
-        <p className="mt-4 text-body text-muted">
-          A public showcase of generations from the Vixerra community.
-        </p>
+  if (isLoading || !generations) {
+    return (
+      <div className="flex items-center justify-center py-16">
+        <Spinner />
       </div>
-      <div className="mt-12">
-        {isLoading || !generations ? (
-          <div className="flex items-center justify-center py-16">
-            <Spinner />
-          </div>
-        ) : generations.length === 0 ? (
-          <p className="text-center text-body-sm text-muted">
-            Nothing shared publicly yet — check back soon.
-          </p>
-        ) : (
-          <GalleryGrid items={generations} showAuthor />
-        )}
-      </div>
-    </div>
-  );
+    );
+  }
+
+  if (generations.length === 0) {
+    return (
+      <p className="text-center text-body-sm text-muted">
+        Nothing shared publicly yet — check back soon.
+      </p>
+    );
+  }
+
+  return <GalleryGrid items={generations} showAuthor />;
 }

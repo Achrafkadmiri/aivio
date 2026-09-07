@@ -1,8 +1,19 @@
 import type { Metadata } from "next";
 import { LegalDraftNotice } from "@/components/marketing/legal-draft-notice";
 import { TIERS, TIER_INFO } from "@/lib/constants";
+import { openGraph } from "@/lib/seo";
 
-export const metadata: Metadata = { title: "Terms of Service" };
+export const metadata: Metadata = {
+  title: "Terms of Service",
+  description: "The terms that govern use of Vixerra, including generation, credits and commercial use.",
+  alternates: { canonical: "/terms" },
+  openGraph: openGraph({
+    title: "Terms of Service",
+    description:
+      "The terms that govern use of Vixerra, including generation, credits and commercial use.",
+    path: "/terms",
+  }),
+};
 
 // Plan names and the commercial-use split are read from TIER_INFO rather
 // than written out, so section 4 can never describe a different ladder than

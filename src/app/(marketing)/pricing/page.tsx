@@ -7,8 +7,23 @@ import { cn } from "@/lib/utils";
 import { TIERS, TIER_INFO, CREDIT_VALUE_USD } from "@/lib/constants";
 import { PlanFeatureList } from "@/components/pricing/plan-feature-list";
 import { PlanPrice } from "@/components/pricing/plan-price";
+import { JsonLd } from "@/components/seo/json-ld";
+import { faqPageJsonLd } from "@/lib/faqs";
+import { pricingProductJsonLd } from "@/lib/structured-data";
+import { openGraph } from "@/lib/seo";
 
-export const metadata: Metadata = { title: "Pricing" };
+export const metadata: Metadata = {
+  title: "AI video generator pricing",
+  description:
+    "Credit-based pricing for AI video and image generation. Start free with no credit card — watermark-free export and a commercial licence from Starter up.",
+  alternates: { canonical: "/pricing" },
+  openGraph: openGraph({
+    title: "AI video generator pricing",
+    description:
+      "Credit-based pricing for AI video and image generation. Start free with no credit card — watermark-free export and a commercial licence from Starter up.",
+    path: "/pricing",
+  }),
+};
 
 // Plan names come from TIER_INFO rather than being written out here: this
 // list still said "Découverte"/"Créateur" after the cards had been renamed,
@@ -39,6 +54,15 @@ const FAQS = [
 export default function PricingPage() {
   return (
     <div className="container-page py-20 sm:py-28">
+      {/* Offers come from TIER_INFO, the FAQ payload from the same FAQS array
+          rendered below — structured data that disagrees with the visible page
+          is a markup violation rather than a bonus. */}
+      <JsonLd
+        data={[
+          pricingProductJsonLd,
+          faqPageJsonLd(FAQS.map((faq) => ({ question: faq.q, answer: faq.a }))),
+        ]}
+      />
       <div className="mx-auto max-w-2xl text-center">
         <h1 className="text-heading font-bold tracking-tight text-ink sm:text-display">
           <span className="text-gradient">Pricing</span>

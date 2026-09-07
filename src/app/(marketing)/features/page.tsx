@@ -2,8 +2,20 @@ import type { Metadata } from "next";
 import { FeaturesGrid } from "@/components/landing/features-grid";
 import { HowItWorks } from "@/components/landing/how-it-works";
 import { ModelStrip } from "@/components/landing/model-strip";
+import { openGraph } from "@/lib/seo";
 
-export const metadata: Metadata = { title: "Features" };
+export const metadata: Metadata = {
+  title: "Features — AI video, image and ad creative",
+  description:
+    "Text-to-video, image-to-video and text-to-image across every major model, plus a marketing studio, an editing studio and one-click publishing to social.",
+  alternates: { canonical: "/features" },
+  openGraph: openGraph({
+    title: "Features — AI video, image and ad creative",
+    description:
+      "Text-to-video, image-to-video and text-to-image across every major model, plus a marketing studio, an editing studio and one-click publishing.",
+    path: "/features",
+  }),
+};
 
 export default function FeaturesPage() {
   return (

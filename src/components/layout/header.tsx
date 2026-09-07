@@ -10,6 +10,7 @@ import { MobileNav } from "./mobile-nav";
 
 const NAV_LINKS = [
   { href: "/features", label: "Features" },
+  { href: "/models", label: "Models" },
   { href: "/pricing", label: "Pricing" },
   { href: "/prompts", label: "Presets" },
   { href: "/gallery", label: "Gallery" },
