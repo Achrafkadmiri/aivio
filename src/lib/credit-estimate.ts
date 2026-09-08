@@ -8,6 +8,7 @@ import {
   SEEDANCE_MODEL_ID,
   SEEDANCE2_MODEL_ID,
   SEEDANCE_DURATION_MIN,
+  SEEDANCE_REFERENCE_MEDIA_MAX_SECONDS,
   type GenerationType,
   type VideoResolution,
 } from "@/lib/constants";
@@ -83,9 +84,19 @@ const VIDEO_COST_USD: Record<
     minSecondsWithReferenceVideo?: number;
   }
 > = {
+  // withReferenceVideo is derived, not measured: the pricing artifact only
+  // measured 2.0's two tables, and 2.0's reference-video mode costs a flat
+  // ~2.46x its text->video rate across every resolution (0.07->0.172,
+  // 0.15->0.372, 0.37->0.914, 0.78->1.866). The same multiplier is applied
+  // to 2.5's own measured base rates here — same convention as every other
+  // estimated entry below. It matters because 2.5 accepts up to ten
+  // reference videos and a 30s output: quoting that mode off the plain table
+  // would under-bill it by more than half.
   "bytedance/seedance-2.5": {
     perSecond: { "480p": 0.103, "720p": 0.231 },
+    withReferenceVideo: { "480p": 0.253, "720p": 0.573 },
     minSeconds: 4,
+    minSecondsWithReferenceVideo: 4,
   },
   "bytedance/seedance-2.0": {
     perSecond: { "480p": 0.07, "720p": 0.15, "1080p": 0.37, "4k": 0.78 },
@@ -166,6 +177,33 @@ const VIDEO_COST_USD: Record<
 // time, so cost estimation assumes this many seconds for that case. Only
 // Seedance 2.5 supports auto duration — 2.0 always sends a real 4-12s value.
 const LIVE_VIDEO_AUTO_DURATION_ESTIMATE = 8;
+
+/**
+ * How many seconds of output to price and gate a request on.
+ *
+ * A real 4-30 value answers itself. -1 has to be assumed, and the right
+ * assumption depends on what the request carries: with a timed reference
+ * attached, the provider keeps the output "close to the input", and that
+ * input may be the full 30s the reference lists allow — so an 8s guess would
+ * under-bill a 30s clip by nearly 4x, in the one mode whose per-second rate
+ * is also the highest. The ceiling over-quotes a short reference; billing
+ * above what the provider charges is the only direction that costs the user
+ * rather than us, and it is the reason the composer defaults to an explicit
+ * duration and offers Auto rather than the reverse.
+ *
+ * Exported because the API's tier duration cap gates on the same number it
+ * bills on (see aiVideo-backend's generations.ts) — two independent -1
+ * assumptions is how a plan limit and a price quietly disagree.
+ */
+export function effectiveVideoSeconds(
+  durationSeconds: number,
+  options: { hasTimedReference?: boolean } = {},
+): number {
+  if (durationSeconds !== -1) return durationSeconds;
+  return options.hasTimedReference
+    ? SEEDANCE_REFERENCE_MEDIA_MAX_SECONDS
+    : LIVE_VIDEO_AUTO_DURATION_ESTIMATE;
+}
 
 // Two-bucket image pricing: a "quality" catalog id is priced off a $0.05
 // provider cost, every other (fast) model off $0.01 — a judgment call
@@ -308,10 +346,15 @@ export function estimateVideoCredits(
   model: string,
   durationSeconds: number,
   resolution: VideoResolution | string,
-  options: { hasReferenceVideo?: boolean } = {},
+  options: { hasReferenceVideo?: boolean; hasReferenceAudio?: boolean } = {},
 ) {
-  const effectiveDuration =
-    durationSeconds === -1 ? LIVE_VIDEO_AUTO_DURATION_ESTIMATE : durationSeconds;
+  // Reference audio raises the assumed length of an auto-duration clip the
+  // same way a reference video does (both carry their own timeline the output
+  // is fitted to) but NOT the per-second rate, which has only ever been
+  // measured for the video mode.
+  const effectiveDuration = effectiveVideoSeconds(durationSeconds, {
+    hasTimedReference: options.hasReferenceVideo || options.hasReferenceAudio,
+  });
 
   if (model === SEEDANCE_MODEL_ID && resolution === "1080p") {
     return Math.max(
@@ -382,6 +425,7 @@ export function estimateCreditsForRequest(input: {
   durationSeconds?: number;
   resolution?: string;
   hasReferenceVideo?: boolean;
+  hasReferenceAudio?: boolean;
   /** Image only — the picked size and quality. See estimateImageCredits. */
   imageSize?: string;
   imageQuality?: string;
@@ -393,6 +437,9 @@ export function estimateCreditsForRequest(input: {
     input.model,
     input.durationSeconds ?? 5,
     (input.resolution ?? "720p") as VideoResolution,
-    { hasReferenceVideo: input.hasReferenceVideo },
+    {
+      hasReferenceVideo: input.hasReferenceVideo,
+      hasReferenceAudio: input.hasReferenceAudio,
+    },
   );
 }

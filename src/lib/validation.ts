@@ -19,6 +19,9 @@ import {
   SEEDANCE_RESOLUTIONS,
   SEEDANCE_ASPECT_RATIOS,
   SEEDANCE_OUTPUT_FORMATS,
+  SEEDANCE_REFERENCE_IMAGES_MAX,
+  SEEDANCE_REFERENCE_VIDEOS_MAX,
+  SEEDANCE_REFERENCE_AUDIOS_MAX,
   SEEDANCE2_DURATION_MIN,
   SEEDANCE2_DURATION_MAX,
   SEEDANCE2_RESOLUTIONS,
@@ -110,6 +113,38 @@ export const seedanceVideoSchema = z
     prompt: z.string().trim().max(PROMPT_MAX_LENGTH).optional(),
     image: z.string().min(1).optional(),
     lastFrameImage: z.string().min(1).optional(),
+    // The three multimodal reference lists. Unlike 2.0's single
+    // referenceVideo, none of these are exclusive with image/lastFrameImage:
+    // the provider documents them as guiding "multimodal video generation,
+    // editing, or extension", i.e. they travel alongside whatever frame
+    // references are set.
+    //
+    // An empty array is accepted here but never stored or sent as one: the
+    // composer sends undefined, the API normalises [] to absent when storing,
+    // and drops an empty list again before building the provider payload.
+    // Absent is what the provider wants — [] is a different statement.
+    referenceImages: z
+      .array(z.string().min(1))
+      .max(SEEDANCE_REFERENCE_IMAGES_MAX, {
+        error: `Up to ${SEEDANCE_REFERENCE_IMAGES_MAX} reference images.`,
+      })
+      .optional(),
+    // Total duration across the list is capped at
+    // SEEDANCE_REFERENCE_MEDIA_MAX_SECONDS by the provider. Not checkable
+    // here — the API has no video toolchain — so this composer measures
+    // each file as it's picked. Only the count is enforced server-side.
+    referenceVideos: z
+      .array(z.string().min(1))
+      .max(SEEDANCE_REFERENCE_VIDEOS_MAX, {
+        error: `Up to ${SEEDANCE_REFERENCE_VIDEOS_MAX} reference videos.`,
+      })
+      .optional(),
+    referenceAudios: z
+      .array(z.string().min(1))
+      .max(SEEDANCE_REFERENCE_AUDIOS_MAX, {
+        error: `Up to ${SEEDANCE_REFERENCE_AUDIOS_MAX} reference audio clips.`,
+      })
+      .optional(),
     duration: z
       .number()
       .refine(
@@ -125,14 +160,45 @@ export const seedanceVideoSchema = z
     outputFormat: z.enum(SEEDANCE_OUTPUT_FORMATS).default("mp4"),
     seed: z.number().int().min(-9007199254740991).max(9007199254740991).optional(),
   })
-  .refine((data) => Boolean(data.prompt?.trim()) || Boolean(data.image), {
-    error: "Add a prompt or a reference image.",
-    path: ["prompt"],
-  })
+  // A prompt is optional as soon as ANY reference is attached — 2.5 accepts
+  // audio-only input, with no image and no video, which is why the audio
+  // list counts here too.
+  .refine(
+    (data) =>
+      Boolean(data.prompt?.trim()) ||
+      Boolean(data.image) ||
+      Boolean(data.referenceImages?.length) ||
+      Boolean(data.referenceVideos?.length) ||
+      Boolean(data.referenceAudios?.length),
+    {
+      error: "Add a prompt, or a reference image, video or audio clip.",
+      path: ["prompt"],
+    },
+  )
   .refine((data) => !data.lastFrameImage || Boolean(data.image), {
     error: "Add a start frame before setting an end frame.",
     path: ["lastFrameImage"],
-  });
+  })
+  // 1080p is the one resolution Cloudflare's integration can't serve, so it
+  // routes to kie.ai instead (see aiVideo-backend's generation-runner.ts), and
+  // kie.ai's Seedance 2.5 task takes a first frame and nothing else. Sending
+  // the reference lists anyway would drop them silently and bill for a
+  // generation that ignored most of its input — refused here so it stays a
+  // free validation error at submit time. Must keep matching usesKieAi() there.
+  .refine(
+    (data) =>
+      data.resolution !== "1080p" ||
+      !(
+        data.referenceImages?.length ||
+        data.referenceVideos?.length ||
+        data.referenceAudios?.length
+      ),
+    {
+      error:
+        "1080p runs on a provider that only accepts a first frame. Switch to 720p to use reference images, videos or audio.",
+      path: ["resolution"],
+    },
+  );
 export type SeedanceVideoInput = z.infer<typeof seedanceVideoSchema>;
 
 // Seedance 2.0's own parameter set — see SEEDANCE2_* in constants.ts for why

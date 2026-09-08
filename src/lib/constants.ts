@@ -394,8 +394,10 @@ export const SEEDANCE_DURATION_MIN = 4;
 export const SEEDANCE_DURATION_MAX = 30;
 export const SEEDANCE_DURATION_AUTO = -1;
 // 1080p isn't offered by Cloudflare's Seedance 2.5 integration — those
-// requests (and any that attach a reference video) route to kie.ai instead,
-// see SEEDANCE_MODEL_ID handling in generation-engine.ts.
+// requests route to kie.ai instead, on resolution alone (see usesKieAi in
+// aiVideo-backend's generation-runner.ts). That provider's task takes a first
+// frame and nothing else, which is why validation.ts refuses 1080p together
+// with any of the reference lists below.
 export const SEEDANCE_RESOLUTIONS = ["480p", "720p", "1080p"] as const;
 export const SEEDANCE_ASPECT_RATIOS = [
   "adaptive",
@@ -407,6 +409,27 @@ export const SEEDANCE_ASPECT_RATIOS = [
   "21:9",
 ] as const;
 export const SEEDANCE_OUTPUT_FORMATS = ["mp4", "mov"] as const;
+
+// Seedance 2.5's multimodal reference slots — the three lists it accepts
+// alongside (or instead of) the single image/last_frame_image pair. Ceilings
+// straight off the provider's own input schema:
+//
+//   reference_images   0-30, guide multimodal generation, editing, extension
+//   reference_videos   0-10, style/motion guidance, video editing/extension
+//   reference_audios   0-10, and the one input that needs no visual at all —
+//                      2.5 takes audio with no image and no video
+//
+// Both timed lists carry the same 30s total-duration ceiling (per list, not
+// across the two). The API cannot verify that — it has no video toolchain
+// (see aiVideo-backend/AGENTS.md) — so this composer measures each file as it
+// is picked and the provider is the backstop. The per-list COUNTS are
+// re-checked server-side for the same reason 2.0's are: a request written by
+// anything but this composer must not be able to hand the model a longer list
+// than it accepts.
+export const SEEDANCE_REFERENCE_IMAGES_MAX = 30;
+export const SEEDANCE_REFERENCE_VIDEOS_MAX = 10;
+export const SEEDANCE_REFERENCE_AUDIOS_MAX = 10;
+export const SEEDANCE_REFERENCE_MEDIA_MAX_SECONDS = 30;
 
 // Seedance 2.0's own parameter set (confirmed via the ByteDance/Cloudflare
 // integration guide, 2026-08-14) — kept separate from the 2.5 constants

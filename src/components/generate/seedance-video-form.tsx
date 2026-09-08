@@ -14,6 +14,7 @@ import { Tooltip } from "@/components/ui/tooltip";
 import { useToast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
 import { estimateVideoCredits } from "@/lib/credit-estimate";
+import { measureMediaDuration, formatMediaDuration } from "@/lib/media-duration";
 import { seedanceVideoSchema, type SeedanceVideoInput } from "@/lib/validation";
 import { apiFetch } from "@/lib/api-client";
 import {
@@ -34,6 +35,10 @@ import {
   SEEDANCE_RESOLUTIONS,
   SEEDANCE_ASPECT_RATIOS,
   SEEDANCE_OUTPUT_FORMATS,
+  SEEDANCE_REFERENCE_IMAGES_MAX,
+  SEEDANCE_REFERENCE_VIDEOS_MAX,
+  SEEDANCE_REFERENCE_AUDIOS_MAX,
+  SEEDANCE_REFERENCE_MEDIA_MAX_SECONDS,
   type VideoModelId,
   type TierInfo,
 } from "@/lib/constants";
@@ -50,6 +55,28 @@ import {
   type PickerModel,
   type ReferenceMode,
 } from "./composer";
+
+/** One attached reference: the uploaded URL the form submits, the blob: URL
+ * the tile renders, and — for the two timed lists — how long it runs, so the
+ * 30s budget can be spent without re-reading the file. */
+type Attachment = { url: string; preview: string; seconds?: number };
+
+/** The three multimodal lists differ only in what they accept and how many of
+ * it. Keeping them as one shape means the add/remove/budget logic is written
+ * once instead of three times, with three chances to diverge. */
+const REFERENCE_LISTS = {
+  referenceImages: { max: SEEDANCE_REFERENCE_IMAGES_MAX, timed: false },
+  referenceVideos: { max: SEEDANCE_REFERENCE_VIDEOS_MAX, timed: true },
+  referenceAudios: { max: SEEDANCE_REFERENCE_AUDIOS_MAX, timed: true },
+} as const;
+
+type ReferenceListKey = keyof typeof REFERENCE_LISTS;
+
+/** Unmeasurable files count as 0 — see handleListFile for why that is the
+ *  right way for this budget to fail. */
+function totalSeconds(items: Attachment[]): number {
+  return items.reduce((sum, item) => sum + (item.seconds ?? 0), 0);
+}
 
 export function SeedanceVideoForm({
   models,
@@ -83,6 +110,18 @@ export function SeedanceVideoForm({
   const [uploadingEndFrame, setUploadingEndFrame] = useState(false);
   const [endFramePreview, setEndFramePreview] = useState<string | null>(null);
   const [refMode, setRefMode] = useState<ReferenceMode>("reference");
+  // The three multimodal lists. Growable rather than fixed slots, for the same
+  // reason 2.0's characters are: the form only ever holds what was actually
+  // uploaded, so each array stays dense and removing the middle one doesn't
+  // leave a hole the provider would have to interpret. Each blob: preview is
+  // kept beside its URL so a tile renders the picked file itself instead of
+  // re-fetching the upload it was just made from.
+  const [attachments, setAttachments] = useState<Record<ReferenceListKey, Attachment[]>>({
+    referenceImages: [],
+    referenceVideos: [],
+    referenceAudios: [],
+  });
+  const [uploadingList, setUploadingList] = useState<ReferenceListKey | null>(null);
 
   const {
     register,
@@ -114,11 +153,23 @@ export function SeedanceVideoForm({
   const outputFormat = watch("outputFormat");
   const image = watch("image");
   const isAuto = duration === SEEDANCE_DURATION_AUTO;
-  const estimatedCredits = estimateVideoCredits(SEEDANCE_MODEL_ID, duration, resolution);
+  const hasReferenceVideos = attachments.referenceVideos.length > 0;
+  const hasReferenceAudios = attachments.referenceAudios.length > 0;
+  const hasTimedReference = hasReferenceVideos || hasReferenceAudios;
+  // Reference-video mode bills off the provider's higher per-second table, and
+  // an auto-duration clip with any timed reference is quoted at the 30s
+  // ceiling — the quote has to know about both, or the pill under-prices the
+  // very request the server is about to charge for. See credit-estimate.ts.
+  const estimatedCredits = estimateVideoCredits(SEEDANCE_MODEL_ID, duration, resolution, {
+    hasReferenceVideo: hasReferenceVideos,
+    hasReferenceAudio: hasReferenceAudios,
+  });
 
-  // "Auto" duration lands around ~8s (see LIVE_VIDEO_AUTO_DURATION_ESTIMATE
-  // in credit-estimate.ts) — locked on plans capped below that.
-  const autoLocked = isDurationLocked(8, tierInfo);
+  // "Auto" duration lands around ~8s (see LIVE_VIDEO_AUTO_DURATION_ESTIMATE in
+  // credit-estimate.ts) — or the whole reference ceiling once a timed
+  // reference is attached, since the output then tracks the input's length.
+  const autoSeconds = hasTimedReference ? SEEDANCE_REFERENCE_MEDIA_MAX_SECONDS : 8;
+  const autoLocked = isDurationLocked(autoSeconds, tierInfo);
   const durationCap = tierInfo ? Math.min(SEEDANCE_DURATION_MAX, tierInfo.maxDurationSeconds) : SEEDANCE_DURATION_MAX;
   const durationCapped = durationCap < SEEDANCE_DURATION_MAX;
 
@@ -132,24 +183,52 @@ export function SeedanceVideoForm({
     if (allowed) setValue("resolution", allowed as typeof resolution, { shouldValidate: true });
   }, [tierInfo, resolution, setValue]);
 
+  // Attaching a timed reference re-prices Auto at the reference ceiling, which
+  // can put it over the plan's cap while it is already selected: the switch
+  // below goes disabled, but the -1 it set would still be submitted and 403.
+  // Fall back to a real duration instead of leaving a dead value in the form.
+  useEffect(() => {
+    if (isAuto && autoLocked) setValue("duration", 5, { shouldValidate: true });
+  }, [isAuto, autoLocked, setValue]);
+
+  const hasAnyReferenceList =
+    attachments.referenceImages.length > 0 || hasReferenceVideos || hasReferenceAudios;
+
   // Every Seedance 2.5 resolution is reachable on some plan, so a pick still
   // locked here means the clamp above had nothing to fall back to.
   const blockedReason = isResolutionLocked(resolution, tierInfo)
     ? upgradeHint(minTierForResolution(resolution), resolution)
-    : undefined;
+    : // 1080p leaves Cloudflare for kie.ai, whose Seedance 2.5 task takes a
+      // first frame and nothing else. The schema refuses the pairing, so say
+      // why on the button rather than letting Generate surface a field error
+      // on a control that may be scrolled out of view.
+      resolution === "1080p" && hasAnyReferenceList
+      ? "1080p can't carry reference images, videos or audio — switch to 720p."
+      : undefined;
+
+  /** Shared by every upload slot this form owns — first frame, last frame and
+   * the three reference lists. Throws so each caller can undo its own
+   * optimistic preview. */
+  async function uploadFile(file: File): Promise<string> {
+    const formData = new FormData();
+    formData.append("file", file);
+    const res = await apiFetch("/api/upload", { method: "POST", body: formData });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error ?? "Upload failed.");
+    return json.url as string;
+  }
+
+  function reportUploadFailure(err: unknown) {
+    toast({ title: "Upload failed", description: (err as Error).message, variant: "error" });
+  }
 
   async function handleFile(file: File) {
     setUploading(true);
     setPreview(URL.createObjectURL(file));
     try {
-      const formData = new FormData();
-      formData.append("file", file);
-      const res = await apiFetch("/api/upload", { method: "POST", body: formData });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error ?? "Upload failed.");
-      setValue("image", json.url, { shouldValidate: true });
+      setValue("image", await uploadFile(file), { shouldValidate: true });
     } catch (err) {
-      toast({ title: "Upload failed", description: (err as Error).message, variant: "error" });
+      reportUploadFailure(err);
       setPreview(null);
     } finally {
       setUploading(false);
@@ -160,25 +239,77 @@ export function SeedanceVideoForm({
     setUploadingEndFrame(true);
     setEndFramePreview(URL.createObjectURL(file));
     try {
-      const formData = new FormData();
-      formData.append("file", file);
-      const res = await apiFetch("/api/upload", { method: "POST", body: formData });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error ?? "Upload failed.");
-      setValue("lastFrameImage", json.url, { shouldValidate: true });
+      setValue("lastFrameImage", await uploadFile(file), { shouldValidate: true });
     } catch (err) {
-      toast({ title: "Upload failed", description: (err as Error).message, variant: "error" });
+      reportUploadFailure(err);
       setEndFramePreview(null);
     } finally {
       setUploadingEndFrame(false);
     }
   }
 
+  function commitList(key: ReferenceListKey, next: Attachment[]) {
+    setAttachments((prev) => ({ ...prev, [key]: next }));
+    // Undefined rather than [] once the last one goes: the schema treats the
+    // field as absent, where an empty array would still reach the provider.
+    setValue(key, next.length ? next.map((item) => item.url) : undefined, {
+      shouldValidate: true,
+    });
+  }
+
+  async function handleListFile(key: ReferenceListKey, file: File) {
+    const { max, timed } = REFERENCE_LISTS[key];
+    const current = attachments[key];
+    if (current.length >= max) return;
+
+    // Measured before the upload rather than after: a clip that would blow the
+    // 30s budget should never reach the bucket at all, and the check needs a
+    // number the API has no way to produce (no video toolchain — see
+    // aiVideo-backend/AGENTS.md). A file we fail to measure counts as 0 and
+    // travels on, leaving the ceiling to the provider — refusing what we
+    // merely could not measure would be the worse failure.
+    let seconds: number | undefined;
+    if (timed) {
+      seconds = await measureMediaDuration(file);
+      const total = totalSeconds(current) + (seconds ?? 0);
+      if (seconds !== undefined && total > SEEDANCE_REFERENCE_MEDIA_MAX_SECONDS) {
+        toast({
+          title: "That clip doesn't fit",
+          description: `Reference ${
+            key === "referenceVideos" ? "video" : "audio"
+          } is limited to ${SEEDANCE_REFERENCE_MEDIA_MAX_SECONDS}s in total — this one would take it to ${formatMediaDuration(
+            total,
+          )}.`,
+          variant: "error",
+        });
+        return;
+      }
+    }
+
+    setUploadingList(key);
+    try {
+      const url = await uploadFile(file);
+      commitList(key, [...current, { url, preview: URL.createObjectURL(file), seconds }]);
+    } catch (err) {
+      reportUploadFailure(err);
+    } finally {
+      setUploadingList(null);
+    }
+  }
+
+  function removeListItem(key: ReferenceListKey, index: number) {
+    commitList(
+      key,
+      attachments[key].filter((_, i) => i !== index),
+    );
+  }
+
   function handleModeChange(next: ReferenceMode) {
     setRefMode(next);
     // The two modes are mutually exclusive — leaving "Keyframe" drops
     // whatever end frame was set, since a last frame with no mode that
-    // supports it is not a valid pairing.
+    // supports it is not a valid pairing. The reference lists are untouched:
+    // they are additive to both modes rather than a third one.
     if (next !== "keyframe") {
       setEndFramePreview(null);
       setValue("lastFrameImage", undefined, { shouldValidate: true });
@@ -216,6 +347,67 @@ export function SeedanceVideoForm({
   });
 
   const submit = handleSubmit((data) => mutation.mutate(data));
+
+  /** One of the three reference lists: its filled tiles, plus an Add tile
+   * while there is room left. `columns` is per-list because the ceilings are
+   * so different — 30 images want small thumbnails, 10 clips want tiles wide
+   * enough to read a duration off. */
+  function renderList(
+    key: ReferenceListKey,
+    columns: string,
+    mediaKind: "image" | "video" | "audio",
+  ) {
+    const { max } = REFERENCE_LISTS[key];
+    const items = attachments[key];
+    const noun = key === "referenceImages" ? "Image" : key === "referenceVideos" ? "Clip" : "Audio";
+    return (
+      <>
+        <div className={cn("grid gap-1.5", columns)}>
+          {items.map((item, index) => (
+            <PanelDropzone
+              key={item.url}
+              compact
+              className="h-20"
+              mediaKind={mediaKind}
+              label={`${noun} ${index + 1}`}
+              previewUrl={item.preview}
+              badge={item.seconds !== undefined ? formatMediaDuration(item.seconds) : undefined}
+              // A filled tile is never clickable (see PanelDropzone's
+              // `clickable`), so it can't pick a replacement — remove it and
+              // add another instead.
+              onFile={() => {}}
+              onRemove={() => removeListItem(key, index)}
+            />
+          ))}
+          {items.length < max && (
+            <PanelDropzone
+              compact
+              className="h-20"
+              mediaKind={mediaKind}
+              label="Add"
+              uploading={uploadingList === key}
+              onFile={(file) => handleListFile(key, file)}
+              onRemove={() => {}}
+            />
+          )}
+        </div>
+        <FieldError>{errors[key]?.message}</FieldError>
+      </>
+    );
+  }
+
+  /** "3 of 30" for an untimed list, "3 of 10 · 12s of 30s" for a timed one.
+   * The budget has to be visible while it is being spent, not only once a clip
+   * is refused for overflowing it. */
+  function listCounter(key: ReferenceListKey): string {
+    const { max, timed } = REFERENCE_LISTS[key];
+    const items = attachments[key];
+    const count = `${items.length} of ${max}`;
+    if (!timed) return count;
+    return `${count} · ${formatMediaDuration(
+      totalSeconds(items),
+    )} of ${SEEDANCE_REFERENCE_MEDIA_MAX_SECONDS}s`;
+  }
 
   return (
     // Fills the studio panel: fields scroll in the middle, Generate stays
@@ -306,6 +498,34 @@ export function SeedanceVideoForm({
           )}
         </PanelSection>
 
+        {/* The three multimodal lists. Not reference *modes*: they travel
+            alongside whatever the frame slots above hold rather than replacing
+            it, which is what separates 2.5 from 2.0 (where a reference video
+            is exclusive with a reference image). */}
+        <PanelSection
+          label="Reference images"
+          action={<span className="text-caption text-muted">{listCounter("referenceImages")}</span>}
+          hint="Optional — people, objects or scenes to keep recognisable. Refer to them in the prompt."
+        >
+          {renderList("referenceImages", "grid-cols-5", "image")}
+        </PanelSection>
+
+        <PanelSection
+          label="Reference videos"
+          action={<span className="text-caption text-muted">{listCounter("referenceVideos")}</span>}
+          hint={`Optional — MP4 or MOV for style, motion, editing or extension. ${SEEDANCE_REFERENCE_MEDIA_MAX_SECONDS}s in total across the clips, and this mode bills at the model's higher reference-video rate. Editing an input clip needs Auto duration.`}
+        >
+          {renderList("referenceVideos", "grid-cols-3", "video")}
+        </PanelSection>
+
+        <PanelSection
+          label="Reference audio"
+          action={<span className="text-caption text-muted">{listCounter("referenceAudios")}</span>}
+          hint={`Optional — MP3, WAV, M4A, AAC or OGG to drive the performance, ${SEEDANCE_REFERENCE_MEDIA_MAX_SECONDS}s in total. Enough on its own: 2.5 generates from audio with no image, video or prompt.`}
+        >
+          {renderList("referenceAudios", "grid-cols-3", "audio")}
+        </PanelSection>
+
         <PanelSection label="Prompt">
           <Controller
             control={control}
@@ -335,9 +555,11 @@ export function SeedanceVideoForm({
               <div className="flex items-center justify-between gap-4">
                 <p className="text-label text-ink-soft">Duration</p>
                 <div className="flex items-center gap-2">
-                  <span className="text-caption text-muted">Auto (~8s)</span>
+                  <span className="text-caption text-muted">Auto (~{autoSeconds}s)</span>
                   {autoLocked ? (
-                    <Tooltip content={upgradeHint(minTierForDuration(8), "automatic duration")}>
+                    <Tooltip
+                      content={upgradeHint(minTierForDuration(autoSeconds), "automatic duration")}
+                    >
                       <span className="inline-flex" tabIndex={0}>
                         <Switch checked={false} disabled />
                       </span>
@@ -371,6 +593,16 @@ export function SeedanceVideoForm({
                 {durationCapped && (
                   <p className="mt-1.5 text-caption text-muted">
                     {upgradeHint(minTierForDuration(SEEDANCE_DURATION_MAX), `up to ${SEEDANCE_DURATION_MAX}s`)}
+                  </p>
+                )}
+                {/* Why the number beside Auto just jumped, and why it costs
+                    what it costs: an edited clip comes back about as long as
+                    its input, and the input can be the whole 30s budget. */}
+                {isAuto && hasTimedReference && (
+                  <p className="mt-1.5 text-caption text-muted">
+                    Auto follows the reference clip&apos;s length, so it is quoted at the{" "}
+                    {SEEDANCE_REFERENCE_MEDIA_MAX_SECONDS}s maximum. Set a duration to pay for
+                    exactly that many seconds.
                   </p>
                 )}
               </div>
@@ -437,7 +669,9 @@ export function SeedanceVideoForm({
         <CreditsSubmitPill
           fullWidth
           credits={estimatedCredits}
-          loading={mutation.isPending || busy || uploading}
+          loading={
+            mutation.isPending || busy || uploading || uploadingEndFrame || uploadingList !== null
+          }
           balance={creditBalance}
           blockedReason={blockedReason}
         />
