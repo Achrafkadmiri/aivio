@@ -237,10 +237,12 @@ function PreviewBody({
   // the community feed it stays a reference an <img> would break on. Gated
   // on the same flag rather than on presence for exactly that reason.
   const sourceImageUrl = viewerIsOwner ? (item.inputImageUrl ?? null) : null;
-  // Whether /editor can actually open this one — owner, finished, and a
-  // video, since the studio's timeline only holds video clips.
+  // Whether /editor can actually open this one — owner, finished, and with
+  // a file behind it. Stills count: the timeline holds image clips as well
+  // as video (ClipKind in lib/editor/types.ts), they just take a chosen
+  // length instead of one the decoder reports.
   const canEditInStudio =
-    viewerIsOwner && isVideo && item.status === "completed" && Boolean(item.resultUrl);
+    viewerIsOwner && item.status === "completed" && Boolean(item.resultUrl);
   const hasPrev = index > 0;
   const hasNext = index < total - 1;
 
@@ -542,15 +544,11 @@ function PreviewBody({
 
         {/* Actions */}
         <div className="flex flex-col gap-2 border-t border-border-subtle p-4">
-          {/* "Edit in studio" takes the second slot whenever the studio can
-              actually open this result, and Re-run falls back to it when it
-              can't. Editing a finished piece is the more useful next step
-              than rolling the dice again, so it gets the prominent position
-              — but the studio cuts and combines *clips*, and its clip model
-              has no still-image kind (lib/editor/types.ts), so pointing an
-              image at /editor would only produce "that clip could not be
-              decoded". Images therefore keep Re-run until the timeline
-              learns to hold a still. */}
+          {/* "Edit" takes the second slot whenever the studio can actually
+              open this result, and Re-run only falls back to it when it
+              can't — someone else's piece, or one that never finished.
+              Opening a finished piece in the studio is the more useful next
+              step than rolling the dice again, so it gets the slot. */}
           <div className="flex gap-2">
             {item.fromPreset ? (
               canRerun ? (
@@ -582,7 +580,7 @@ function PreviewBody({
                   className: "flex-1",
                 })}
               >
-                <Scissors className="size-4" aria-hidden="true" /> Edit in studio
+                <Scissors className="size-4" aria-hidden="true" /> Edit
               </Link>
             ) : (
               // Not for a preset when the slot above is already Re-run —
