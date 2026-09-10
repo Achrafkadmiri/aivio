@@ -341,7 +341,8 @@ export function TeamManager() {
         </span>
         <h2 className="text-subheading font-semibold text-ink">Create your team</h2>
         <p className="max-w-sm text-body-sm text-muted">
-          Your plan includes {seats} seats. Give your team a name to start inviting people.
+          Your plan includes you plus {Math.max(0, seats - 1)} teammates. Give your team a name to
+          start inviting people.
         </p>
         <form
           onSubmit={(e) => {
@@ -427,8 +428,16 @@ export function TeamManager() {
   };
 
   // role === "owner"
-  const seatsUsed = data.members.length + data.invites.length + 1; // +1 for the owner
-  const seatsLeft = data.seats - seatsUsed;
+  // Counted in TEAMMATES, not seats. The plan's `seats` figure includes the
+  // owner, so a team of one member read as "2 of 4 seats used" — accurate,
+  // and confusing, because nobody thinks of themselves as occupying one of
+  // their own seats. The arithmetic is unchanged; only the frame is.
+  //
+  // A pending invite still holds a place, so it counts here: the seat is not
+  // free until the invite is accepted or cancelled.
+  const teammateSeats = Math.max(0, data.seats - 1);
+  const teammatesUsed = data.members.length + data.invites.length;
+  const seatsLeft = teammateSeats - teammatesUsed;
 
   return (
     <div className="space-y-6">
@@ -437,7 +446,9 @@ export function TeamManager() {
           <div>
             <h2 className="text-subheading font-semibold text-ink">{data.organization.name}</h2>
             <p className="mt-1 text-body-sm text-muted">
-              {seatsUsed} of {data.seats} seats used
+              {teammatesUsed} of {teammateSeats} teammates
+              {data.invites.length > 0 &&
+                ` · ${data.invites.length} invite${data.invites.length === 1 ? "" : "s"} pending`}
             </p>
           </div>
         </div>
