@@ -6,6 +6,7 @@ import { ToastProvider } from "@/components/ui/toast";
 import { ConfirmProvider } from "@/components/ui/confirm";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ReleaseAnnouncementModal } from "@/components/marketing/release-announcement-modal";
+import { DEFAULT_OG_IMAGE, SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/seo";
 
 // Three type roles instead of one Inter-everywhere system — see the
 // --font-sans/--font-display/--font-accent tokens in globals.css for how
@@ -35,13 +36,42 @@ const mono = JetBrains_Mono({
   subsets: ["latin"],
 });
 
+// metadataBase is what turns every relative `alternates.canonical` and OG
+// image on a page into an absolute URL. Without it Next.js emits relative
+// canonicals, which crawlers resolve against whatever host served the page —
+// so a preview deploy would canonicalise production's content to itself.
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: {
     default: "Vixerra — AI Video & Image Generation",
     template: "%s · Vixerra",
   },
-  description:
-    "Generate cinematic video and imagery from text, images, or audio in seconds. Vixerra is an AI creative studio for teams that ship fast.",
+  description: SITE_DESCRIPTION,
+  applicationName: SITE_NAME,
+  // Deliberately no `alternates.canonical` here. Metadata is inherited, so a
+  // canonical set on the root layout becomes the canonical of every page that
+  // doesn't override it — pointing the whole site at "/" and de-indexing it.
+  // Each indexable page sets its own; the rest emit none, which leaves the
+  // requested URL as the canonical, and that is already correct.
+  openGraph: {
+    type: "website",
+    siteName: SITE_NAME,
+    title: "Vixerra — AI Video & Image Generation",
+    description: SITE_DESCRIPTION,
+    url: SITE_URL,
+    images: [DEFAULT_OG_IMAGE],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Vixerra — AI Video & Image Generation",
+    description: SITE_DESCRIPTION,
+    images: [DEFAULT_OG_IMAGE],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true, "max-image-preview": "large", "max-video-preview": -1 },
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

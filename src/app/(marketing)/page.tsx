@@ -1,3 +1,11 @@
+import type { Metadata } from "next";
+import { JsonLd } from "@/components/seo/json-ld";
+import { faqPageJsonLd, HOME_FAQS } from "@/lib/faqs";
+import {
+  organizationJsonLd,
+  softwareApplicationJsonLd,
+  webSiteJsonLd,
+} from "@/lib/structured-data";
 import { Hero } from "@/components/landing/hero";
 import { SeedancePromoBanner } from "@/components/landing/seedance-promo-banner";
 import { StatsStrip } from "@/components/landing/stats-strip";
@@ -14,9 +22,24 @@ import { PricingPreview } from "@/components/landing/pricing-preview";
 import { FaqAccordion } from "@/components/landing/faq-accordion";
 import { CtaSection } from "@/components/landing/cta-section";
 
+export const metadata: Metadata = {
+  alternates: { canonical: "/" },
+};
+
 export default function LandingPage() {
   return (
     <>
+      {/* Identity, product and pricing for the site as a whole, plus the FAQ
+          block further down this page — all emitted from the same data the
+          page renders (TIER_INFO, HOME_FAQS) rather than restated. */}
+      <JsonLd
+        data={[
+          organizationJsonLd,
+          webSiteJsonLd,
+          softwareApplicationJsonLd,
+          faqPageJsonLd(HOME_FAQS),
+        ]}
+      />
       <Hero />
       <SeedancePromoBanner />
       <StatsStrip />

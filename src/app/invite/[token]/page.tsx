@@ -1,5 +1,10 @@
+import type { Metadata } from "next";
 import { InviteAcceptClient } from "@/components/invite/invite-accept-client";
-import { PageGuide } from "@/components/help/page-guide";
+
+// One-time workspace invitation behind a token — never indexable.
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+};
 
 // Plain Promise<{ token }> typing rather than this repo's usual
 // PageProps<"/route/[param]"> helper — that type comes from Next's
@@ -9,11 +14,5 @@ import { PageGuide } from "@/components/help/page-guide";
 // build. This is the plain, portable Next.js 15 async-params typing.
 export default async function InvitePage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
-  return (
-    <>
-      <InviteAcceptClient token={token} />
-      {/* This route sits outside every group layout, so it mounts its own. */}
-      <PageGuide variant="floating" />
-    </>
-  );
+  return <InviteAcceptClient token={token} />;
 }

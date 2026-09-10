@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState, type ReactNode } from "react";
-import { FileVideo, ImagePlus, X } from "lucide-react";
+import { AudioLines, FileVideo, ImagePlus, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 /**
@@ -44,7 +44,8 @@ export function PanelSection({
  * whichever fields don't apply to the newly selected mode.
  *
  * Not every model offers all three — a form passes SegmentedTabs only the
- * modes its model actually accepts (only Seedance 2.0 takes "video"). */
+ * modes its model actually accepts (only Seedance 2.0 takes "video" — 2.5's
+ * reference videos are a separate list, not a mode). */
 export type ReferenceMode = "reference" | "keyframe" | "video";
 
 /** Compact segmented control — the panel's equivalent of the reference
@@ -149,6 +150,7 @@ export function PanelDropzone({
   disabledHint,
   compact,
   mediaKind = "image",
+  badge,
   previewMode = "cover",
   className,
 }: {
@@ -161,9 +163,15 @@ export function PanelDropzone({
   disabled?: boolean;
   disabledHint?: string;
   /** What this slot takes. Drives the file picker's filter, the resting
-   * icon, and whether the preview renders as an <img> or a muted, looping
-   * <video> — /api/upload accepts MP4/MOV alongside the image types. */
-  mediaKind?: "image" | "video";
+   * icon, and whether the preview renders as an <img>, a muted looping
+   * <video>, or (for audio, which has nothing to show) the resting icon on
+   * the filled surface — /api/upload accepts MP4/MOV video and MP3/WAV/M4A/
+   * AAC/OGG audio alongside the image types. */
+  mediaKind?: "image" | "video" | "audio";
+  /** Small overlay on a filled tile — used for a reference clip's measured
+   * duration, since the two timed lists share a 30s budget and a tile with
+   * no number on it can't tell you which clip is eating it. */
+  badge?: string;
   /** Keyframe pair tiles — shorter box, no sublabel, smaller icon. */
   compact?: boolean;
   /**
@@ -222,7 +230,11 @@ export function PanelDropzone({
         ref={inputRef}
         type="file"
         accept={
-          mediaKind === "video" ? "video/mp4,video/quicktime" : "image/jpeg,image/png,image/webp"
+          mediaKind === "video"
+            ? "video/mp4,video/quicktime"
+            : mediaKind === "audio"
+              ? "audio/mpeg,audio/mp3,audio/wav,audio/x-wav,audio/mp4,audio/aac,audio/ogg,audio/webm"
+              : "image/jpeg,image/png,image/webp"
         }
         className="hidden"
         disabled={disabled}
@@ -237,7 +249,29 @@ export function PanelDropzone({
         // Local blob: URL or already-uploaded remote URL filling a fixed
         // slot, so a plain <img> is the right tool — next/image would
         // force/crop dimensions we don't know here.
-        mediaKind === "video" ? (
+        mediaKind === "audio" ? (
+          // Audio has no frame to show, so a filled slot keeps the resting
+          // icon and label and just changes its own styling (solid border,
+          // remove button) to read as "attached". No <audio controls>: the
+          // slot is an input rather than a player, same call as video's
+          // controls-off preview.
+          //
+          // The badge becomes a second line here rather than the corner
+          // overlay it is on a picture: there is nothing to overlay, and on
+          // an 80px tile a floating pill lands on top of the label.
+          <>
+            <span
+              className={cn(
+                "flex items-center justify-center rounded-full border border-brand/40 bg-brand/15 text-brand",
+                compact ? "size-8" : "size-10",
+              )}
+            >
+              <AudioLines className={compact ? "size-4" : "size-5"} aria-hidden="true" />
+            </span>
+            <span className="text-caption font-medium text-ink-soft">{label}</span>
+            {badge && <span className="text-caption text-muted">{badge}</span>}
+          </>
+        ) : mediaKind === "video" ? (
           // Muted + looping so the tile reads as "this is the clip you
           // attached" at a glance; controls stay off because the slot is an
           // input, not a player. showcase's blurred backdrop isn't worth a
@@ -296,6 +330,8 @@ export function PanelDropzone({
               <span className="size-3.5 animate-spin rounded-full border-2 border-brand/30 border-t-brand" />
             ) : mediaKind === "video" ? (
               <FileVideo className={compact ? "size-4" : "size-5"} aria-hidden="true" />
+            ) : mediaKind === "audio" ? (
+              <AudioLines className={compact ? "size-4" : "size-5"} aria-hidden="true" />
             ) : (
               <ImagePlus className={compact ? "size-4" : "size-5"} aria-hidden="true" />
             )}
@@ -303,6 +339,14 @@ export function PanelDropzone({
           <span className="text-caption font-medium text-ink-soft">{label}</span>
           {!compact && sublabel && <span className="text-caption text-muted">{sublabel}</span>}
         </>
+      )}
+
+      {/* Audio renders its badge inline above, so the corner pill is for the
+          two kinds that actually have a frame to overlay. */}
+      {hasFile && badge && mediaKind !== "audio" && (
+        <span className="absolute bottom-1.5 left-1.5 rounded-full bg-black/70 px-1.5 py-0.5 text-caption font-medium text-white backdrop-blur-sm">
+          {badge}
+        </span>
       )}
 
       {hasFile && (

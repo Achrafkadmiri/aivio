@@ -1,7 +1,19 @@
 import type { Metadata } from "next";
 import { LegalDraftNotice } from "@/components/marketing/legal-draft-notice";
+import { openGraph } from "@/lib/seo";
 
-export const metadata: Metadata = { title: "Privacy Policy" };
+export const metadata: Metadata = {
+  title: "Privacy Policy",
+  description:
+    "What Vixerra collects when you generate video and images, why it is collected, how long it is kept, and the choices you have over it.",
+  alternates: { canonical: "/privacy" },
+  openGraph: openGraph({
+    title: "Privacy Policy",
+    description:
+      "What Vixerra collects when you generate video and images, why it is collected, and how long it is kept.",
+    path: "/privacy",
+  }),
+};
 
 const SECTIONS = [
   {

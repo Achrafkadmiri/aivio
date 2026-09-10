@@ -1,6 +1,18 @@
 import type { Metadata } from "next";
+import { openGraph } from "@/lib/seo";
 
-export const metadata: Metadata = { title: "About" };
+export const metadata: Metadata = {
+  title: "About",
+  description:
+    "Vixerra is an AI creative studio for teams that ship fast — describe a scene or animate a photo, and get broadcast-ready video and imagery back in minutes.",
+  alternates: { canonical: "/about" },
+  openGraph: openGraph({
+    title: "About",
+    description:
+      "Vixerra is an AI creative studio for teams that ship fast — describe a scene, animate a photo, and get broadcast-ready video and imagery back in minutes.",
+    path: "/about",
+  }),
+};
 
 export default function AboutPage() {
   return (

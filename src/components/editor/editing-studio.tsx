@@ -346,13 +346,13 @@ export function EditingStudio() {
     void (async () => {
       try {
         const res = await apiFetch(`/api/generations/${id}`);
-        if (!res.ok) throw new Error("That video couldn't be opened.");
+        if (!res.ok) throw new Error("That generation couldn't be opened.");
         const item = (await res.json()) as LibraryItem;
-        if (!item.resultUrl) throw new Error("That generation has no video to edit.");
+        if (!item.resultUrl) throw new Error("That generation has no file to edit.");
         await addFromLibrary(item);
       } catch (error) {
         toast({
-          title: "Couldn't open that video",
+          title: "Couldn't open that generation",
           description: error instanceof Error ? error.message : undefined,
           variant: "error",
         });

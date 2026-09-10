@@ -4,39 +4,10 @@ import { useState } from "react";
 import { Plus } from "lucide-react";
 import { Reveal } from "@/components/marketing/reveal";
 import { cn } from "@/lib/utils";
-import { TIER_INFO } from "@/lib/constants";
+import { HOME_FAQS } from "@/lib/faqs";
 
-// Answers are grounded in facts stated elsewhere in this app (TIER_INFO,
-// the real /settings/api-keys page, the CtaSection/StatsStrip copy) rather
-// than invented claims.
-const FAQS = [
-  {
-    question: "What models does Vixerra support?",
-    answer:
-      "Several video models — Seedance 2.5 and 2.0, Google's Veo 3.1, and more from ByteDance, Black Forest Labs, and xAI — and several image models, including Recraft, Stable Diffusion, and Google's Nano Banana — the model behind the example images throughout this page.",
-  },
-  {
-    question: "What's the pricing?",
-    answer: `${TIER_INFO.free.label} starts at $0 with ${TIER_INFO.free.monthlyCredits} one-time credits that never expire. ${TIER_INFO.starter.label} is $${TIER_INFO.starter.priceMonthly}/month, ${TIER_INFO.creator.label} is $${TIER_INFO.creator.priceMonthly}/month, and ${TIER_INFO.studio.label} is $${TIER_INFO.studio.priceMonthly}/month. ${TIER_INFO.creator.label} and above also unlock the marketing studio, the editing studio, and publishing straight to TikTok, Instagram, YouTube, and Facebook — see the full comparison on the Pricing page.`,
-  },
-  {
-    question: "Is there an API?",
-    answer:
-      "Yes. Generate an API key from Settings → API Keys once you're signed in, and call the same generation pipeline the web app uses.",
-  },
-  {
-    question: "What file formats are supported?",
-    answer: "Video exports as MP4 (MOV on select models); images export as standard PNG/JPEG files.",
-  },
-  {
-    question: "How fast is generation?",
-    answer: "Typical turnaround is under 60 seconds for a finished clip, with live progress streamed to the page.",
-  },
-  {
-    question: "Do I need a credit card to start?",
-    answer: `No — sign up and start creating free with ${TIER_INFO.free.monthlyCredits} credits, no credit card required.`,
-  },
-] as const;
+// FAQ copy lives in lib/faqs.ts so the homepage can emit the matching
+// FAQPage structured data from the same array this renders.
 
 export function FaqAccordion() {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
@@ -48,7 +19,7 @@ export function FaqAccordion() {
       </Reveal>
 
       <div className="mx-auto mt-12 max-w-2xl space-y-3">
-        {FAQS.map((faq, index) => {
+        {HOME_FAQS.map((faq, index) => {
           const isOpen = openIndex === index;
           return (
             <div key={faq.question} className="rounded-lg border border-line transition-colors hover:bg-surface-2">

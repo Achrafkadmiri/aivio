@@ -6,6 +6,13 @@
 // places drifts, and the version someone reads should be the one shipped
 // beside the screen it describes.
 //
+// The guide is now mounted ONLY inside the signed-in app (AppShell) and the
+// admin panel. It used to float on the marketing, auth and public-link
+// pages too, where a "how to use this page" bubble greets a visitor who has
+// not yet been given anything to use. Those entries are kept rather than
+// deleted — the copy is still accurate, and restoring the guide anywhere is
+// a one-line mount — but nothing reads them today.
+//
 // The panel shows ONE step at a time next to an animated illustration, so
 // the copy is written to be glanced at, not read: a 2-4 word `title` is
 // the thing the eye lands on, and `detail` is a single supporting line.
